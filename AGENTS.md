@@ -1,4 +1,4 @@
-# Auditive
+# FarEdge Labs
 
 ## 📁 Project Structure
 
@@ -9,7 +9,6 @@ src/
 ├── components/
 │   ├── Content/    # Page creation, editing, display
 │   ├── Menu/       # Navigation system
-│   ├── BackgroundVideo/
 │   └── CyberCursor/  # Custom cursor effect
 ├── hooks/          # Custom hooks (useSiteSettings)
 ├── lib/amplify/    # AWS Amplify configuration (Cognito auth only)
