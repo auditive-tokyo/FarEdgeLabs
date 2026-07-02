@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+      "jsx": "react",
+      "target": "ES2020",
+      "lib": ["ES2021", "DOM", "DOM.Iterable"],
+      "module": "ESNext",
+      "types": ["vite/client"],
+      "skipLibCheck": true,
+      "paths": {
+      "@/*": [
+          "./src/*"
+      ]
+      },
+      "moduleResolution": "bundler"
+  },
+  "include": [
+      "src/**/*"
+  ],
+  "exclude": [
+      "node_modules"
+  ],
+  "references": [
+      { "path": "./tsconfig.playwright.json" }
+  ]
+}
