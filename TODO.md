@@ -40,12 +40,15 @@ Auditive（旧・音楽サイト）から FarEdge Labs（IT企業コーポレー
 
 ## 4. インフラ / CI・CD リブランド
 
-- [ ] **CI/CD・インフラの "auditive-*" 命名の刷新**（プロジェクト名定数を1箇所に定義して各所へ渡す方針）:
-  - `deploy.yml` のスタック名・パラメータ（`auditive-lambda` / `auditive-apigw`）
-  - `cdk/app.py`, `cdk/apigw_stack.py`, `cdk/lambda_stack.py` のスタック名・テーブル名・バケット名・export名
-  - `lambda_functions/*/app.py` のデフォルトテーブル名・`ALLOWED_ORIGINS`
-  - CORS/オリジン: `auditive-tokyo.github.io` / `auditive.tokyo` の見直し
-  - 注意: DynamoDBテーブル/S3バケットは RETAIN。改名 = 新規リソース作成になるため移行方針を要検討
+- [x] **インフラの "auditive-*" リソース名を `faredgelabs-*` に刷新**（アカウント内衝突回避。`cdk synth` 検証済み）:
+  - `cdk/app.py`: スタック名 `faredgelabs-lambda` / `faredgelabs-apigw`
+  - `cdk/apigw_stack.py`, `cdk/lambda_stack.py`: テーブル/バケット/Cognito/API GW/Lambda/ロググループ/export名
+  - `lambda_functions/*/app.py`: デフォルトテーブル名・バケット名
+  - `deploy.yml`: スタック名・パラメータ参照
+  - `package.json` / `package-lock.json`: `name` を `faredgelabs`、`homepage` を GitHub Pages URL に
+  - CORS: `https://auditive-tokyo.github.io`（実ホストのため**維持**）、`https://auditive.tokyo`（旧ドメイン・**削除**）
+  - 注意: DynamoDB/S3 は RETAIN。旧auditiveリソースが別途残る場合は手動削除を検討（新規は faredgelabs で作成される）
+- [ ] （任意）プロジェクト名を単一定数化して各所へ渡すリファクタ（現状は各ファイルに直書き。CDK/Lambda/YAMLで実行環境が異なるため共通化は限定的）
 - [ ] `.vscode/settings.json` の SonarLint プロジェクトキー（`auditive-tokyo_auditive`）の扱い
 
 ## 5. デプロイ / ドメイン

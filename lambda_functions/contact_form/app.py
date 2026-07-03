@@ -21,7 +21,6 @@ RATE_LIMIT_WINDOW = 60  # 60秒
 
 ALLOWED_ORIGINS = [
     'https://auditive-tokyo.github.io',
-    'https://auditive.tokyo',
     'http://localhost:5173',
 ]
 _DEFAULT_ORIGIN = ALLOWED_ORIGINS[0]

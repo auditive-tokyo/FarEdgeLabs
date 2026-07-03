@@ -1,7 +1,7 @@
 {
-  "name": "auditive",
+  "name": "faredgelabs",
   "version": "0.1.0",
-  "homepage": "https://auditive.tokyo",
+  "homepage": "https://auditive-tokyo.github.io/FarEdgeLabs/",
   "private": true,
   "type": "module",
   "dependencies": {

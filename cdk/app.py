@@ -13,11 +13,11 @@ env = cdk.Environment(
     region=os.getenv("CDK_DEFAULT_REGION", "ap-northeast-1"),
 )
 
-lambda_stack = LambdaStack(app, "auditive-lambda", env=env)
+lambda_stack = LambdaStack(app, "faredgelabs-lambda", env=env)
 
 apigw_stack = ApiGwStack(
     app,
-    "auditive-apigw",
+    "faredgelabs-apigw",
     contact_form_fn=lambda_stack.contact_form_fn,
     content_crud_fn=lambda_stack.content_crud_fn,
     env=env,
