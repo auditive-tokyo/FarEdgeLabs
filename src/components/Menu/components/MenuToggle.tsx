@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '@/i18n';
 
 interface MenuToggleProps {
   isOpen: boolean;
@@ -6,11 +7,12 @@ interface MenuToggleProps {
 }
 
 export const MenuToggle: React.FC<MenuToggleProps> = ({ isOpen, onClick }) => {
+  const t = useT();
   return (
     <button 
       onClick={onClick}
       className="p-3 bg-black/30 rounded-md"
-      aria-label={isOpen ? 'Close menu' : 'Open menu'}
+      aria-label={isOpen ? t('menu.close') : t('menu.open')}
     >
       <div className={`w-8 h-[3px] bg-white rounded-full transition-all duration-300 ${
         isOpen ? 'rotate-45 translate-y-[10px]' : ''

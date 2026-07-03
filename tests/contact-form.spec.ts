@@ -14,6 +14,10 @@ async function clickSendAndCaptureDialog(page: Page): Promise<string> {
 }
 
 async function fillContactForm(page: Page) {
+  // UI言語をenに固定（既定はjaのため、英語ラベル前提のセレクタ/アサーションを安定させる）
+  await page.addInitScript(() => {
+    localStorage.setItem("lang", "en");
+  });
   await page.goto("/");
   await page.getByRole("button", { name: "Open menu" }).click();
   await page.getByText("Contact").click();

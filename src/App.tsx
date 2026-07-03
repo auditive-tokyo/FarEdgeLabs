@@ -9,12 +9,16 @@ import Login from "./components/Content/Login/Login";
 import CyberCursor from "./components/CyberCursor/CyberCursor";
 import { useSiteSettings } from "./hooks/useSiteSettings";
 import { getAllContents } from "./api/public";
+import { useT } from "@/i18n";
+import { useDocumentMeta } from "@/i18n/useDocumentMeta";
 
 const SECRET_LOGIN_HASH = "#fxxking-login";
 
 const STATIC_MENUS = new Set(VALID_MENU_OPTIONS.filter((m) => m !== "login"));
 
 const AppContent: React.FC = () => {
+  useDocumentMeta();
+  const t = useT();
   const { isAuthenticated, isAuthLoading } = useAuth();
   const { defaultPageId, isLoading } = useSiteSettings();
   const [selectedMenu, setSelectedMenu] = useState<string | null>(null);
@@ -72,7 +76,7 @@ const AppContent: React.FC = () => {
   if ((isLoading || isAuthLoading) && !activeMenu) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black/70">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-white text-xl">{t("common.loading")}</div>
       </div>
     );
   }

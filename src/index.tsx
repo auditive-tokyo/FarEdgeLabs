@@ -7,6 +7,7 @@ import "@fontsource/outfit/600.css";
 import "@fontsource/outfit/700.css";
 import "./index.css";
 import App from "./App";
+import { I18nProvider } from "@/i18n/provider";
 import "./lib/amplify";
 
 const rootElement = document.getElementById("root");
@@ -14,7 +15,9 @@ if (rootElement) {
   const root = ReactDOM.createRoot(rootElement);
   root.render(
     <React.StrictMode>
-      <App />
+      <I18nProvider>
+        <App />
+      </I18nProvider>
     </React.StrictMode>,
   );
 }

@@ -1,8 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 
 <head>
   <!-- Google tag (gtag.js) -->
+  <!-- TODO: G-NWPM86JM40 は旧Auditiveのプロパティ。FarEdge Labs用の新規GA4プロパティ作成後に
+       下2箇所の測定ID(G-XXXXXXXXXX)へ差し替える。
+       ▼あわせてCSP対応:
+       下のインライン初期化コード(dataLayer/gtag設定)を外部ファイル(例: public/gtag-init.js)へ切り出し、
+       <script src="/gtag-init.js"> として読み込む。
+       これによりインラインスクリプトが無くなるため、CSPの script-src から 'unsafe-inline' を削除でき、
+       SonarQube Web:S7039 の script-src 側の指摘は解消される。
+       (googletagmanager.com の外部scriptはホスト許可のみでOK。'unsafe-inline'は元々インライン初期化のため) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-NWPM86JM40"></script>
   <script>
     globalThis.dataLayer = globalThis.dataLayer || [];
@@ -15,7 +23,8 @@
   <link rel="icon" href="/favicon.ico" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#000000" />
-  <meta name="description" content="Web site created using create-react-app" />
+  <!-- style-src の 'unsafe-inline' は mermaid が実行時にSVGへ付与するインラインstyle属性のため必須
+       (nonce/hashはstyle属性に効かないため回避不可)。意図的な許容。SonarQube Web:S7039 は Won't Fix 想定。 -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self'; 
           script-src 'self' https://www.googletagmanager.com 'unsafe-inline'; 
@@ -31,11 +40,11 @@
   <link rel="apple-touch-icon" href="/logo192.png" />
   <link rel="manifest" href="/manifest.json" />
   <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
-  <title>AUDITIVE</title>
+  <title>FarEdge Labs</title>
   <!-- SEO Meta Tags -->
-  <meta name="keywords" content="Tokyo Drum&Bass, Japan Drum&Bass, Minimal, Dark, Experimental, Bass Heavy" />
+  <meta name="keywords" content="FarEdge Labs, エッジテクノロジー, エッジコンピューティング, IT, ソフトウェア開発, クラウド" />
   <meta name="description"
-    content="Discover the best of Tokyo Drum&Bass, Japan Drum&Bass, Minimal, Dark, Experimental, and Bass Heavy music." />
+    content="FarEdge Labs株式会社 — 最先端を、さらに先へ。エッジテクノロジーとソフトウェアで課題を解決するITカンパニーです。" />
 </head>
 
 <body>

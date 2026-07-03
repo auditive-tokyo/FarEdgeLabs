@@ -3,6 +3,7 @@ import Contact from "./Contact/Contact";
 const CreateContent = lazy(() => import("./CreateContent/CreateContent"));
 const ShowContent = lazy(() => import("./ShowContent/ShowContent"));
 import { VALID_MENU_OPTIONS } from "../Menu/Menu";
+import { useT } from "@/i18n";
 
 interface ContentProps {
   activeMenu: string;
@@ -10,10 +11,11 @@ interface ContentProps {
 }
 
 const Content: React.FC<ContentProps> = ({ activeMenu, onContentNotFound }) => {
+  const t = useT();
   const renderContent = () => {
     // activeMenuが空の場合はローディング表示
     if (!activeMenu) {
-      return <div>Loading...</div>;
+      return <div>{t("common.loading")}</div>;
     }
 
     const staticMenus = VALID_MENU_OPTIONS.filter((menu) => menu !== "login");
@@ -35,7 +37,7 @@ const Content: React.FC<ContentProps> = ({ activeMenu, onContentNotFound }) => {
   return (
     <div className="content-container">
       <div className="content-wrapper">
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div>{t("common.loading")}</div>}>
           {renderContent()}
         </Suspense>
       </div>

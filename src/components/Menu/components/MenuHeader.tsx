@@ -1,4 +1,5 @@
 import React from "react";
+import { useT } from "@/i18n";
 
 interface MenuHeaderProps {
   onClose: () => void;
@@ -13,13 +14,14 @@ export const MenuHeader: React.FC<MenuHeaderProps> = ({
   toggleReorderMode,
   isAuthenticated,
 }) => {
+  const t = useT();
   return (
     <>
       {/* Close button */}
       <button
         onClick={onClose}
         className="absolute top-6 right-6 p-2 hover:opacity-70 transition-opacity"
-        aria-label="Close menu"
+        aria-label={t("menu.close")}
       >
         <div className="w-8 h-[4px] bg-gray-400 rounded-full rotate-45 absolute"></div>
         <div className="w-8 h-[4px] bg-gray-400 rounded-full -rotate-45 absolute"></div>
@@ -33,7 +35,7 @@ export const MenuHeader: React.FC<MenuHeaderProps> = ({
             isReorderMode ? "bg-amber-500" : "bg-gray-700 text-white"
           }`}
         >
-          {isReorderMode ? "Exit Reorder Mode" : "Reorder Menu"}
+          {isReorderMode ? t("menu.exitReorder") : t("menu.reorder")}
         </button>
       )}
     </>

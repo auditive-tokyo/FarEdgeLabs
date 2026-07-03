@@ -1,8 +1,10 @@
 import React, { useState } from "react";
+import { useT } from "../../../i18n";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const Contact: React.FC = () => {
+  const t = useT();
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [message, setMessage] = useState<string>("");
@@ -21,13 +23,13 @@ const Contact: React.FC = () => {
 
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
 
-      alert("Message sent successfully!");
+      alert(t("contact.success"));
       setName("");
       setEmail("");
       setMessage("");
     } catch (error) {
       console.error("Error:", error);
-      alert("An error occurred. Please try again later.");
+      alert(t("contact.error"));
     } finally {
       setIsLoading(false);
     }
@@ -37,14 +39,12 @@ const Contact: React.FC = () => {
     <div className="p-5 rounded-lg">
       {" "}
       {/* 背景色を削除 */}
-      <h1 className="mb-4">Contact</h1>
-      <p className="text-lg text-gray-300 mb-6">
-        Contact us for collab, booking, or just to say hi!
-      </p>
+      <h1 className="mb-4">{t("contact.title")}</h1>
+      <p className="text-lg text-gray-300 mb-6">{t("contact.intro")}</p>
       <form onSubmit={handleSubmit} className="flex flex-col">
         <div className="mb-4">
           <label htmlFor="name" className="block mb-1 text-white">
-            Name:
+            {t("contact.name")}
           </label>
           <input
             type="text"
@@ -58,7 +58,7 @@ const Contact: React.FC = () => {
         </div>
         <div className="mb-4">
           <label htmlFor="email" className="block mb-1 text-white">
-            Email:
+            {t("contact.email")}
           </label>
           <input
             type="email"
@@ -72,7 +72,7 @@ const Contact: React.FC = () => {
         </div>
         <div className="mb-4">
           <label htmlFor="message" className="block mb-1 text-white">
-            Message:
+            {t("contact.message")}
           </label>
           <textarea
             id="message"
@@ -88,7 +88,7 @@ const Contact: React.FC = () => {
           disabled={isLoading}
           className="flex items-center justify-center min-w-[120px] mx-auto py-3 px-5 bg-cyan-600 text-white rounded-md text-base transition-colors hover:bg-cyan-500 disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed"
         >
-          {isLoading ? "Sending..." : "Send"}
+          {isLoading ? t("contact.sending") : t("contact.send")}
           {isLoading && (
             <span className="w-5 h-5 border-2 border-white border-t-2 border-t-transparent animate-spin ml-2"></span>
           )}
