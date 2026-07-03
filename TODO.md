@@ -49,7 +49,7 @@ Auditive（旧・音楽サイト）から FarEdge Labs（IT企業コーポレー
   - CORS: `https://auditive-tokyo.github.io`（実ホストのため**維持**）、`https://auditive.tokyo`（旧ドメイン・**削除**）
   - 注意: DynamoDB/S3 は RETAIN。旧auditiveリソースが別途残る場合は手動削除を検討（新規は faredgelabs で作成される）
 - [ ] （任意）プロジェクト名を単一定数化して各所へ渡すリファクタ（現状は各ファイルに直書き。CDK/Lambda/YAMLで実行環境が異なるため共通化は限定的）
-- [ ] `.vscode/settings.json` の SonarLint プロジェクトキー（`auditive-tokyo_auditive`）の扱い
+- [x] `.vscode/settings.json`: SonarLint projectKey を `auditive-tokyo_FarEdgeLabs` に更新、Kiroで未認識だった `python.analysis.exclude`（Pylance用）を削除
 
 ## 5. デプロイ / ドメイン
 
