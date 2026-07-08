@@ -8,6 +8,7 @@ import {
 } from "@/api/Content";
 import { getAllContents } from "@/api/public";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useT } from "@/i18n";
 import { MenuItem } from "../types";
 
 // 親メニューかどうかを検証するヘルパー関数
@@ -35,6 +36,7 @@ const parseParentMenuContent = (
 
 export const useMenuItems = (isAuthenticated: boolean, isAuthLoading: boolean = false) => {
   const [dynamicPages, setDynamicPages] = useState<MenuItem[]>([]);
+  const t = useT();
 
   // サイト設定フックを使用
   const {
@@ -163,7 +165,7 @@ export const useMenuItems = (isAuthenticated: boolean, isAuthLoading: boolean = 
   const menuItems = useMemo(
     () => [
       ...orderedPublishedPages,
-      { name: "contact", label: "Contact" },
+      { name: "contact", label: t("contact.title") },
       ...(isAuthenticated
         ? [
             { name: "create", label: "Create Page" },
@@ -181,7 +183,7 @@ export const useMenuItems = (isAuthenticated: boolean, isAuthLoading: boolean = 
           ]
         : []),
     ],
-    [orderedPublishedPages, draftPages, isAuthenticated],
+    [orderedPublishedPages, draftPages, isAuthenticated, t],
   );
 
   // Function to update custom order
