@@ -49,18 +49,6 @@ class LambdaStack(Stack):
         # Preserve logical ID from existing SAM stack to avoid resource replacement
         rate_limit_table.node.default_child.override_logical_id("RateLimitTable")  # type: ignore[union-attr]
 
-        # Contact Submissions DynamoDB Table
-        contact_table = dynamodb.Table(
-            self, "ContactTable",
-            table_name="faredgelabs-contact-submissions",
-            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
-            partition_key=dynamodb.Attribute(
-                name="id",
-                type=dynamodb.AttributeType.STRING,
-            ),
-            removal_policy=RemovalPolicy.RETAIN,
-        )
-
         # CloudWatch Log Group
         log_group = logs.LogGroup(
             self, "ContactFormLogGroup",
@@ -84,14 +72,12 @@ class LambdaStack(Stack):
                 "RECEIVER_EMAIL": receiver_email.value_as_string,
                 "APP_PASSWORD": zoho_app_password.value_as_string,
                 "RATE_LIMIT_TABLE": rate_limit_table.table_name,
-                "CONTACT_TABLE": contact_table.table_name,
             },
         )
         fn.node.default_child.override_logical_id("ContactFormFunction")  # type: ignore[union-attr]
 
         # Grant Lambda read/write access to DynamoDB
         rate_limit_table.grant_read_write_data(fn)
-        contact_table.grant_read_write_data(fn)
 
         # Output Lambda ARN
         CfnOutput(
