@@ -31,3 +31,14 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Python
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.pytest_cache/
+.venv/
+
+# direnv (per-repo GitHub account pin)
+.envrc
+.direnv/

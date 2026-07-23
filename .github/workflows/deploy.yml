@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # CDK Deploy (Lambda + AppSync)
+  # CDK Deploy (Lambda + API Gateway)
   deploy-infrastructure:
     runs-on: ubuntu-latest
     steps:
@@ -54,18 +54,35 @@ jobs:
           source .venv/bin/activate
           cdk deploy --all --require-approval never \
             --no-fail-on-empty-changeset \
-            --parameters auditive-lambda:SenderEmail="$CONTACT_EMAIL" \
-            --parameters auditive-lambda:ReceiverEmail="$CONTACT_EMAIL" \
-            --parameters auditive-lambda:ZohoAppPassword="$ZOHO_PASSWORD"
+            --parameters faredgelabs-lambda:SenderEmail="$CONTACT_EMAIL" \
+            --parameters faredgelabs-lambda:ReceiverEmail="$CONTACT_EMAIL" \
+            --parameters faredgelabs-lambda:ZohoAppPassword="$ZOHO_PASSWORD"
 
       - name: Get API GW outputs
         run: |
-          API_URL=$(aws cloudformation describe-stacks --stack-name auditive-apigw --query "Stacks[0].Outputs[?OutputKey=='ApiEndpoint'].OutputValue" --output text)
-          USER_POOL_ID=$(aws cloudformation describe-stacks --stack-name auditive-apigw --query "Stacks[0].Outputs[?OutputKey=='UserPoolId'].OutputValue" --output text)
-          USER_POOL_CLIENT_ID=$(aws cloudformation describe-stacks --stack-name auditive-apigw --query "Stacks[0].Outputs[?OutputKey=='UserPoolClientId'].OutputValue" --output text)
+          API_URL=$(aws cloudformation describe-stacks --stack-name faredgelabs-apigw --query "Stacks[0].Outputs[?OutputKey=='ApiEndpoint'].OutputValue" --output text)
+          USER_POOL_ID=$(aws cloudformation describe-stacks --stack-name faredgelabs-apigw --query "Stacks[0].Outputs[?OutputKey=='UserPoolId'].OutputValue" --output text)
+          USER_POOL_CLIENT_ID=$(aws cloudformation describe-stacks --stack-name faredgelabs-apigw --query "Stacks[0].Outputs[?OutputKey=='UserPoolClientId'].OutputValue" --output text)
           echo "API_URL=${API_URL}" > apigw-outputs.env
           echo "USER_POOL_ID=${USER_POOL_ID}" >> apigw-outputs.env
           echo "USER_POOL_CLIENT_ID=${USER_POOL_CLIENT_ID}" >> apigw-outputs.env
+
+      - name: Ensure admin Cognito user
+        env:
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          source apigw-outputs.env
+          # admin ユーザーが無ければ作成（メール送信は抑止）。既存なら無視。
+          aws cognito-idp admin-create-user \
+            --user-pool-id "$USER_POOL_ID" \
+            --username admin \
+            --message-action SUPPRESS >/dev/null 2>&1 || true
+          # 恒久パスワードを設定（CfnParameter を使わずシークレットから直接。テンプレートに残らない）
+          aws cognito-idp admin-set-user-password \
+            --user-pool-id "$USER_POOL_ID" \
+            --username admin \
+            --password "$ADMIN_PASSWORD" \
+            --permanent
 
       - name: Upload API GW outputs
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -104,7 +121,6 @@ jobs:
           VITE_COGNITO_USER_POOL_ID: ${{ env.USER_POOL_ID }}
           VITE_COGNITO_USER_POOL_CLIENT_ID: ${{ env.USER_POOL_CLIENT_ID }}
           VITE_AWS_REGION: ${{ secrets.AWS_REGION }}
-          VITE_ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         run: npm run build
 
       - name: Deploy

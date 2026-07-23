@@ -1,7 +1,6 @@
 import os
 import json
 import time
-import uuid
 import smtplib
 import boto3
 from botocore.config import Config
@@ -21,7 +20,6 @@ RATE_LIMIT_WINDOW = 60  # 60秒
 
 ALLOWED_ORIGINS = [
     'https://auditive-tokyo.github.io',
-    'https://auditive.tokyo',
     'http://localhost:5173',
 ]
 _DEFAULT_ORIGIN = ALLOWED_ORIGINS[0]
@@ -70,25 +68,6 @@ def check_rate_limit(ip):
         print(f"Rate limit check error: {e}")
         return True  # エラー時は許可
 
-def save_contact_submission(name, email, message, ip):
-    """Save contact form submission to DynamoDB for record keeping."""
-    table_name = os.environ.get('CONTACT_TABLE')
-    if not table_name:
-        return
-    table = dynamodb.Table(table_name)
-    try:
-        table.put_item(Item={
-            'id': str(uuid.uuid4()),
-            'name': name,
-            'email': email,
-            'message': message,
-            'ip': ip,
-            'submittedAt': int(time.time()),
-        })
-    except Exception as e:
-        print(f"Failed to save contact submission: {e}")
-
-
 def lambda_handler(event, context):
     global _request_origin
     _request_origin = _get_allowed_origin(event)
@@ -132,8 +111,6 @@ def lambda_handler(event, context):
             'headers': _cors_headers(),
             'body': json.dumps({'success': False, 'message': 'Missing required fields'}),
         }
-
-    save_contact_submission(name, email, message, ip)
 
     sender_email = os.environ['SENDER_EMAIL']
     receiver_email = os.environ['RECEIVER_EMAIL']

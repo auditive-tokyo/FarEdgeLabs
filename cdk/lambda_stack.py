@@ -37,7 +37,7 @@ class LambdaStack(Stack):
         # Rate Limit DynamoDB Table
         rate_limit_table = dynamodb.Table(
             self, "RateLimitTable",
-            table_name="auditive-rate-limit",
+            table_name="faredgelabs-rate-limit",
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             partition_key=dynamodb.Attribute(
                 name="ip",
@@ -49,22 +49,10 @@ class LambdaStack(Stack):
         # Preserve logical ID from existing SAM stack to avoid resource replacement
         rate_limit_table.node.default_child.override_logical_id("RateLimitTable")  # type: ignore[union-attr]
 
-        # Contact Submissions DynamoDB Table
-        contact_table = dynamodb.Table(
-            self, "ContactTable",
-            table_name="auditive-contact-submissions",
-            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
-            partition_key=dynamodb.Attribute(
-                name="id",
-                type=dynamodb.AttributeType.STRING,
-            ),
-            removal_policy=RemovalPolicy.RETAIN,
-        )
-
         # CloudWatch Log Group
         log_group = logs.LogGroup(
             self, "ContactFormLogGroup",
-            log_group_name="/aws/lambda/auditive-contact-form",
+            log_group_name="/aws/lambda/faredgelabs-contact-form",
             retention=logs.RetentionDays.ONE_MONTH,
             removal_policy=RemovalPolicy.RETAIN,
         )
@@ -73,7 +61,7 @@ class LambdaStack(Stack):
         # Lambda Function
         fn = aws_lambda.Function(
             self, "ContactFormFunction",
-            function_name="auditive-contact-form",
+            function_name="faredgelabs-contact-form",
             runtime=aws_lambda.Runtime.PYTHON_3_13,
             handler="app.lambda_handler",
             code=aws_lambda.Code.from_asset("../lambda_functions/contact_form"),
@@ -84,21 +72,19 @@ class LambdaStack(Stack):
                 "RECEIVER_EMAIL": receiver_email.value_as_string,
                 "APP_PASSWORD": zoho_app_password.value_as_string,
                 "RATE_LIMIT_TABLE": rate_limit_table.table_name,
-                "CONTACT_TABLE": contact_table.table_name,
             },
         )
         fn.node.default_child.override_logical_id("ContactFormFunction")  # type: ignore[union-attr]
 
         # Grant Lambda read/write access to DynamoDB
         rate_limit_table.grant_read_write_data(fn)
-        contact_table.grant_read_write_data(fn)
 
         # Output Lambda ARN
         CfnOutput(
             self, "ContactFormFunctionArn",
             value=fn.function_arn,
             description="Contact Form Lambda Function ARN",
-            export_name="AuditiveContactFormFunctionArn",
+            export_name="FarEdgeLabsContactFormFunctionArn",
         )
 
         # Expose for cross-stack reference
@@ -107,31 +93,31 @@ class LambdaStack(Stack):
         # ── Content CRUD Lambda ──────────────────────────────────────────────
         content_crud_fn = aws_lambda.Function(
             self, "ContentCrudFunction",
-            function_name="auditive-content-crud",
+            function_name="faredgelabs-content-crud",
             runtime=aws_lambda.Runtime.PYTHON_3_13,
             handler="app.lambda_handler",
             code=aws_lambda.Code.from_asset("../lambda_functions/content_crud"),
             timeout=Duration.seconds(30),
             environment={
-                "CONTENT_TABLE": "auditive-content-table",
-                "SITE_CONFIG_TABLE": "auditive-site-config",
-                "CONTENT_BUCKET": "auditive-content-md",
+                "CONTENT_TABLE": "faredgelabs-content-table",
+                "SITE_CONFIG_TABLE": "faredgelabs-site-config",
+                "CONTENT_BUCKET": "faredgelabs-content-md",
             },
         )
 
         # Grant DynamoDB access (tables are defined in ApiGwStack)
         content_table_ref = dynamodb.Table.from_table_name(
-            self, "ContentTableRef", "auditive-content-table"
+            self, "ContentTableRef", "faredgelabs-content-table"
         )
         site_config_table_ref = dynamodb.Table.from_table_name(
-            self, "SiteConfigTableRef", "auditive-site-config"
+            self, "SiteConfigTableRef", "faredgelabs-site-config"
         )
         content_table_ref.grant_read_write_data(content_crud_fn)
         site_config_table_ref.grant_read_write_data(content_crud_fn)
 
         # Grant S3 access (bucket is defined in ApiGwStack)
         content_bucket_ref = s3.Bucket.from_bucket_name(
-            self, "ContentBucketRef", "auditive-content-md"
+            self, "ContentBucketRef", "faredgelabs-content-md"
         )
         content_bucket_ref.grant_read_write(content_crud_fn)
 
@@ -139,7 +125,7 @@ class LambdaStack(Stack):
             self, "ContentCrudFunctionArn",
             value=content_crud_fn.function_arn,
             description="Content CRUD Lambda Function ARN",
-            export_name="AuditiveContentCrudFunctionArn",
+            export_name="FarEdgeLabsContentCrudFunctionArn",
         )
 
         self.content_crud_fn = content_crud_fn
