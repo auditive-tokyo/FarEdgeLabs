@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The three ms-icon-*.png files this points at did not exist until the brand
+     assets were generated: the starter shipped the config without the tiles, so
+     every Windows pin fetched three 404s. Regenerate with
+     `node scripts/generate-brand-assets.mjs`. TileColor mirrors --background. -->
+<browserconfig>
+  <msapplication>
+    <tile>
+      <square70x70logo src="/ms-icon-70x70.png"/>
+      <square150x150logo src="/ms-icon-150x150.png"/>
+      <square310x310logo src="/ms-icon-310x310.png"/>
+      <TileColor>#f0f3f4</TileColor>
+    </tile>
+  </msapplication>
+</browserconfig>

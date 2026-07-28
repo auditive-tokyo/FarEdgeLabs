@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+:root {
+  /* Figma "Get Layers" 681:256. The frame's own backdrop is #f0f2fa, but the
+     halftone covers the viewport, so --halftone-bg is what a visitor actually
+     reads as the background; these match so no seam shows if the field is ever
+     inset or unsupported. */
+  --background: #f0f3f4;
+  --foreground: #000000;
+
+  /* Brand green. One value: pills, the headline highlight, and the ring on the
+     highlighted stat cards are all the same #0f9 in the design. */
+  --accent: #00ff99;
+  /* Card / pill fill — a hair off white, and deliberately not --background:
+     the cards must separate from the field behind them. */
+  --surface: #fdffff;
+  /* The design's only border colour. */
+  --hairline: rgba(0, 0, 0, 0.1);
+  /* The nav's separator dots — the same black at a different alpha. */
+  --hairline-strong: rgba(0, 0, 0, 0.2);
+
+  /* Preloader — Figma 682:837 / 682:886. The two curtains and the dial's
+     sweep. `--preloader-veil` is the brand green: the second curtain is the
+     accent, not a colour of its own. The dial sweeps from that same green round
+     to a teal, so the seam lands on the accent. */
+  --preloader-ground: #000000;
+  --preloader-veil: var(--accent);
+  --preloader-dial-from: var(--accent);
+  --preloader-dial-to: #48c7c9;
+
+  /* Halftone video field — see obsidian/frontend/components/common.md. The
+     three inks are a ramp interpolated across the frame, not three independent
+     choices: light -> mid -> deep must climb in that order or the field stops
+     reading as one surface. The hue travels across them (lime -> green -> deep
+     green) so the field carries a range of shades instead of one colour getting
+     darker.
+
+     The field sets its own off-white rather than tracking --background: it
+     covers the viewport, so this is the page's real backdrop and --background
+     only shows if WebGL2 is missing and the raw video takes over. */
+  --halftone-bg: #f0f3f4;
+  --halftone-ink-light: #aeff00;
+  --halftone-ink-mid: #00bd71;
+  --halftone-ink-deep: #007548;
+
+  /* Type scale — the mobile end. The roles are bound in @theme below; these are
+     the values they resolve to until the grid range starts (see @layer base).
+
+     Two values per role rather than a `text-display-mobile` twin: a role token
+     means "the headline's size", and which size that is depends on the range.
+     Every `text-display` in the app then reads the right one with no `lg:`
+     prefix to forget. The desktop half lives in the media query underneath. */
+  --size-display: 2.5rem; /* 40px */
+  --size-stat: 1.5rem; /* 24px */
+  --size-lead: 1.25rem; /* 20px */
+  --size-body: 1rem; /* 16px */
+
+  /* The mobile menu's links. One value and no desktop twin: the menu it belongs
+     to does not exist above the breakpoint — there the nav is a pill in the
+     header at --text-body. */
+  --size-menu: 2rem; /* 32px */
+}
+
+/* The Figma frame's own type scale — see grid.config.ts GRID_MIN_WIDTH. Below
+   this the layout reflows and the root font-size is the browser's, so the frame's
+   80px headline would be 80 real pixels on a phone. */
+@media (min-width: 1024px) {
+  :root {
+    --size-display: 5rem; /* 80px */
+    --size-stat: 2rem; /* 32px */
+    --size-lead: 1.5rem; /* 24px */
+    --size-body: 1rem; /* 16px */
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
+  --color-surface: var(--surface);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+  --color-halftone-bg: var(--halftone-bg);
+  --color-preloader-ground: var(--preloader-ground);
+  --color-preloader-veil: var(--preloader-veil);
+
+  --font-sans: var(--font-general-sans);
+  --font-mulish: var(--font-mulish);
+
+  /* Type scale. Named by role rather than size so the design can retune a step
+     without renaming every usage — and so one name can carry a different size
+     per range. Each resolves to a `--size-*` above, which the 1024px media
+     query re-points at the Figma frame's values. */
+  --text-display: var(--size-display); /* the headline */
+  --text-stat: var(--size-stat); /* stat values */
+  --text-lead: var(--size-lead); /* the section lead */
+  --text-body: var(--size-body); /* body, nav, labels, buttons */
+  --text-menu: var(--size-menu); /* the mobile menu's links */
+
+  /* Every pill in the design has a radius larger than half its height, so it
+     resolves to a full round; only the stat cards have a real corner. */
+  --radius-card: 1rem; /* 16px */
+}
+
+/* No `prefers-color-scheme: dark` override: the site is deliberately light —
+   the halftone field is built to read as ink on white paper, and inverting the
+   page under it would strand the ink on a dark ground. */
+
+/* The family comes from the `font-sans` utility on <body>, not from here:
+   `@theme inline` resolves --font-sans into utilities instead of emitting it as
+   a custom property, and next/font defines --font-general-sans on <body>
+   itself. A `font-family: var(--font-sans)` here would resolve to nothing. */
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+@layer base {
+  /* Adaptive scaling grid — scales the root font-size with the viewport so the
+     rem-based layout keeps the design's proportions:
+       font-size: min(FONT_BASE * 100 / baseWidth  vw,
+                      FONT_BASE * 100 / baseHeight vh)
+     Keep in sync with src/components/common/grid/grid.config.ts.
+
+     One rule, because there is one design (the 1440x800 Figma frame). A second
+     breakpoint would assert that a frame exists at its base width; with only
+     this artwork, a range based at 1920 would render it at 75% and crossing
+     1440 would visibly jump. Unbounded, so the scale stays continuous and
+     nothing has to hand over above the largest breakpoint.
+
+     The `vh` half is what keeps the page from scrolling: on width alone the
+     composition is `width / 1.8` tall, and most windows are wider than 1.8:1,
+     so it would always outgrow the viewport. Whichever axis is tighter wins,
+     so the frame fits whole; slack on the other axis opens up between the
+     edge-anchored pieces rather than pushing anything off screen.
+
+     Scoped to GRID_MIN_WIDTH and up, because scaling a 1440-wide frame to fit a
+     phone is not an adaptation — it is a miniature. Unscoped, a 375px viewport
+     resolved to a 4.17px root and 4px body copy: the whole design, legible only
+     to an ant. Below the range there is no frame to keep proportional, so the
+     root font-size is deliberately left alone — the browser's default applies,
+     which is the one number on the page the *user* is allowed to set. */
+  @media (min-width: 1024px) {
+    html {
+      font-size: min(1.111111vw, 2vh); /* 16 * 100 / 1440, 16 * 100 / 800 */
+    }
+  }
+}
+
+@layer utilities {
+}
+
+@layer components {
+}
