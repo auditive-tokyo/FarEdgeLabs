@@ -98,17 +98,18 @@ Per the [[component-conventions]]:
 
 ## Server / external data flow
 
-External APIs are reached **only** through server code — the browser never
-calls a third party directly or holds a secret.
+This site is a **static export on GitHub Pages** — there is no server runtime,
+so there are no Route Handlers and no server-side place to hold a secret. The
+browser talks to the AWS backend directly.
 
 ```
-Server Component         →  reads data at render time (no client request)
-Client Component         →  apiFetch('/api/…')  →  app/api/**/route.ts  →  upstream
-app/api/**/route.ts      →  validates (zod) → does the work → { data } | { error }
+Server Component  →  reads data at build time (baked into the static output)
+Client Component  →  fetch()  →  API Gateway  →  Lambda  →  DynamoDB / S3
 ```
 
-Secrets live in unprefixed env vars, read via `getServerEnv()` inside route
-handlers. Full convention: [[api-architecture]].
+Because every request leaves the browser, the backend owns what the frontend
+cannot: input validation, authorization, rate limiting, and any credentials.
+Never ship a secret in this project — see [[environment-variables]].
 
 ## Hash-link scrolling
 

@@ -285,8 +285,19 @@ project wants anyway. This **amends ADR-0004**: design *tokens* still go in
 
 ## ADR-0011 — API layer: `app/api` route handlers, secrets server-side
 
-- **Status:** Accepted
+- **Status:** ~~Accepted~~ **Superseded (2026-07-24)**
 - **Date:** 2026-05-22
+
+> [!warning] Superseded — kept for history
+> This ADR assumed a Vercel deployment with a Node server runtime. FarEdgeLabs
+> ships the frontend as a **static export to GitHub Pages**, which has no server
+> runtime: Route Handlers cannot run and there is no server-side place to hold a
+> secret. The `app/api` layer, `src/lib/api/`, `src/lib/api-client.ts` and
+> `getServerEnv()` were removed. The backend is AWS API Gateway + Lambda
+> (`cdk/`, `lambda_functions/`). The transferable parts of this decision —
+> `zod` input validation, a consistent `{ data }` / `{ error }` envelope, and
+> never leaking upstream internals — now apply to the Lambda handlers instead.
+> See [[data-flow]].
 
 **Context.** The starter had no API layer. It needs a convention for reaching
 external services that keeps secret keys off the client and gives endpoints a
@@ -310,7 +321,7 @@ consistent shape.
 - Codified as **AGENTS.md hard rule #9**.
 
 **Consequences.** A clear, secret-safe API convention (full note:
-[[api-architecture]]). Server Actions were considered for mutations but
+note removed with the layer). Server Actions were considered for mutations but
 deferred — for now everything goes through `app/api`. The choice can be
 revisited if forms need progressive enhancement. First server dependency
 (`zod`) and first server-only env var (`CONTACT_ENDPOINT`) now exist.

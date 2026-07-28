@@ -11,7 +11,9 @@ updated: 2026-07-15
 marketing and landing pages. It ships with a complete spring-animation system, smooth
 scrolling, SEO scaffolding, and cookie consent — ready to drop a design into.
 
-There is **no backend, database, or auth** yet. See [[backend/README]].
+The frontend is a **static export on GitHub Pages** and holds no server code.
+The backend is separate: AWS API Gateway + Lambda, defined in `cdk/` and
+`lambda_functions/`. See [[data-flow]].
 
 ## Mental model
 

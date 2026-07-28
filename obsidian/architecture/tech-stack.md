@@ -48,7 +48,7 @@ No `framer-motion`, no CSS transitions/keyframes. See [[animation-system]] and
 | `lenis` | `^1.3.19` | Smooth scrolling |
 | `zustand` | `^5.0.12` | Lightweight global state (scroll store) |
 | `resize-observer-polyfill` | `^1.5.1` | ResizeObserver fallback for animation hooks |
-| `zod` | `^4.4.3` | Schema validation — env (`src/env.ts`) + API payloads. See [[api-architecture]] |
+| `zod` | `^4.4.3` | Schema validation — env (`src/env.ts`) and any client-side form input. See [[environment-variables]] |
 
 See [[smooth-scroll]] and [[data-flow]].
 

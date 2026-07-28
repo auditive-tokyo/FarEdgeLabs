@@ -54,7 +54,7 @@ is a leaf waiting to be extracted**, not a reason to move the boundary up.
 | `error.tsx` | Route-segment error boundary (Client Component) |
 | `not-found.tsx` | 404 page — served with a 404 status |
 | `robots.ts` / `sitemap.ts` | Generate `/robots.txt` and `/sitemap.xml` — see [[seo-metadata]] |
-| `api/<resource>/route.ts` | API endpoints (Route Handlers) — see [[api-architecture]] |
+| — | No Route Handlers: static export has no server runtime. API calls go straight to AWS, see [[data-flow]] |
 
 ## Adding a route
 

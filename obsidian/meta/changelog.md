@@ -557,7 +557,7 @@ This is a human-curated log — not a mirror of `git log`.
   (`handle` wrapper + `ApiError` + `{ data }`/`{ error }` envelope);
   `src/lib/api-client.ts` (typed same-origin fetch); example
   `app/api/contact/route.ts`. Codified as AGENTS.md hard rule #9. See
-  [[decisions-log]] ADR-0011 and [[api-architecture]].
+  [[decisions-log]] ADR-0011 (since superseded).
 
 ## 2026-05-21
 

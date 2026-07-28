@@ -50,8 +50,10 @@ humans and AI agents (Claude Code, Cursor).
 - [[utils]] — utility functions catalog
 
 ### 03 — Backend
-- [[backend/README|Backend overview]] — API layer; no DB/auth yet
-- [[api-architecture]] — `app/api` route-handler convention & secret handling
+The backend is **not part of this Next.js app** — it is AWS serverless
+(API Gateway + Lambda), defined in `cdk/` and `lambda_functions/` at the repo
+root. The frontend is a static export and calls it over the network.
+See [[data-flow]] and the root `AGENTS.md`.
 
 ### 04 — Workflows
 - [[new-page]] — playbook for implementing a new page/section

@@ -1,8 +1,36 @@
 import type { NextConfig } from "next";
 
+/**
+ * Sub-path prefix for GitHub Pages project sites.
+ *
+ * Served from `https://<org>.github.io/<repo>/`, every asset URL needs the
+ * `/<repo>` prefix. Set `NEXT_PUBLIC_BASE_PATH=/FarEdgeLabs` in the deploy
+ * workflow for that case; leave it empty when the site is served from a domain
+ * root (custom domain / CNAME). Unlike Vite's `base: "./"`, Next.js has no
+ * relative-path mode — the prefix must be known at build time.
+ */
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 const nextConfig: NextConfig = {
-  // Drop the `X-Powered-By: Next.js` response header.
-  poweredByHeader: false,
+  // Static HTML export — GitHub Pages serves files only, there is no Node
+  // runtime. This disables Route Handlers, middleware, ISR, and on-demand
+  // image optimisation by design; the backend is AWS (API Gateway + Lambda).
+  output: "export",
+
+  basePath: basePath || undefined,
+  assetPrefix: basePath || undefined,
+
+  // Emit `about/index.html` instead of `about.html` so GitHub Pages resolves
+  // nested paths (and their relative assets) without a redirect.
+  trailingSlash: true,
+
+  images: {
+    // The optimizer is a server feature and cannot run on Pages. Without this
+    // the build fails as soon as a `next/image` is exported. Images ship at
+    // their source resolution, so keep the files in `public/` small — there is
+    // no automatic AVIF/WebP conversion or srcset generation anymore.
+    unoptimized: true,
+  },
 
   // Hide the dev-tools badge. It defaults to the bottom-left corner, which is
   // where this design puts the request form — so it sits on top of the UI it is
@@ -17,16 +45,6 @@ const nextConfig: NextConfig = {
       process.env.NODE_ENV === "production"
         ? { exclude: ["error", "warn"] }
         : false,
-  },
-
-  images: {
-    // Modern formats — smaller than JPEG/PNG; the browser picks what it supports.
-    formats: ["image/avif", "image/webp"],
-    // Breakpoints `next/image` uses to build `srcset`. `deviceSizes` covers
-    // full-width images (aligned with the adaptive-grid breakpoints + retina);
-    // `imageSizes` covers smaller, fixed-width images and icons.
-    deviceSizes: [360, 640, 768, 1024, 1280, 1440, 1920, 2560],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
 
   // React Compiler (automatic memoisation) is an opt-in performance win.

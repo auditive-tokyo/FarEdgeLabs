@@ -33,12 +33,12 @@ documentation workflow automatically — also see [[ai-agent-guide]].
 
 ```
 src/
-├── env.ts                  # zod-validated env (public + server-only split)
+├── env.ts                  # zod-validated public env (NEXT_PUBLIC_*, build-time)
 │
 ├── app/                    # Next.js routes — keep lean, routing only
 │   ├── layout.tsx          # Root layout — provider tree lives here
 │   ├── page.tsx            # Route → delegates to a view
-│   ├── api/<resource>/route.ts  # API endpoints — see [[api-architecture]]
+│   │                       #   (no api/ — static export has no server runtime)
 │   ├── loading.tsx         # Suspense fallback (enables streaming)
 │   ├── error.tsx           # Route-segment error boundary
 │   ├── not-found.tsx       # 404 page
@@ -73,8 +73,6 @@ src/
 │
 ├── lib/                    # Third-party client init / global config
 │   ├── animation/ticker.ts # Shared app-wide requestAnimationFrame loop
-│   ├── api/                # API route-handler helpers (handle, ApiError)
-│   ├── api-client.ts       # Typed same-origin /api fetch wrapper (client)
 │   ├── site.ts             # Site-wide SEO config (single source of truth)
 │   └── springs/config.ts   # Global animation config
 │
@@ -113,7 +111,7 @@ public/
 | I am adding… | It goes in… |
 |--------------|-------------|
 | A route | `app/<route>/page.tsx` — 3 lines, delegates to a view |
-| An API endpoint | `app/api/<resource>/route.ts` — see [[api-architecture]] |
+| An API endpoint | Not here — the backend is AWS (API Gateway + Lambda), see [[data-flow]] |
 | A page's UI | `views/<page-name>.tsx` — see [[new-page]] |
 | A section of that page | `views/<page-name>/<section>.tsx` — next to the feature, **not** `components/` |
 | A self-hosted font file | `app/fonts/` — loaded by `next/font/local` in the root layout |
