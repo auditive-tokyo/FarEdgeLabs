@@ -55,7 +55,8 @@ export function generateMetadata({
       // it was promised falls back to cropping. Regenerate both together with
       // `node scripts/generate-brand-assets.mjs`.
       images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
-      locale: "en_US",
+      // Must match `<html lang>` in the root layout — move the two together.
+      locale: "ja_JP",
       type: "website",
     },
     twitter: {

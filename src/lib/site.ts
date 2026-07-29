@@ -8,14 +8,15 @@ import { publicEnv } from "@/env";
 
 export const siteConfig = {
   /** The brand, not the page title — this is `siteName` and the JSON-LD Organization. */
-  name: "Stack.Side",
+  name: "FarEdge Labs",
   /**
-   * ~155 characters: past that Google truncates it mid-sentence. Drawn from the
-   * hero's own lead and body (`src/data/mocks/home.ts`) — the page and its
-   * search result should not describe the product differently.
+   * ~155 characters: past that Google truncates it mid-sentence. The page and
+   * its search result should not describe the company differently, so this has
+   * to move together with the hero copy in `src/data/mocks/home.ts` — which is
+   * still the template's English placeholder text.
    */
   description:
-    "StackSide connects every account, card and tool your team runs, turning scattered transactions into clear next moves — one source of truth for every dollar.",
+    "FarEdge Labs株式会社 — 最先端を、さらに先へ。エッジテクノロジーとソフトウェアで課題を解決するITカンパニーです。",
   /**
    * Public origin, no trailing slash. Drives canonical URLs, OG tags, the
    * sitemap, and JSON-LD. Set `NEXT_PUBLIC_SITE_URL` in production — until it
@@ -32,7 +33,7 @@ export const siteConfig = {
    * metadata generator omits the tags rather than invent them.
    */
   twitterHandle: undefined,
-  author: "Stack.Side",
+  author: "FarEdge Labs",
   /**
    * Browser theme-colour (address bar / PWA). Mirrors `--background` /
    * `--halftone-bg` in `globals.css` — the page's real ground. It cannot read

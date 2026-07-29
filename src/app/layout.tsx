@@ -47,7 +47,7 @@ const mulish = Mulish({
  * stays the bare brand (see `siteConfig`).
  */
 export const metadata: Metadata = generateMetadata({
-  title: "Stack.Side — Turn money into foresight",
+  title: "FarEdge Labs — 最先端を、さらに先へ",
 });
 export const viewport: Viewport = generateViewport();
 
@@ -57,7 +57,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ja">
       <body
         className={`${generalSans.variable} ${mulish.variable} font-sans antialiased`}
       >

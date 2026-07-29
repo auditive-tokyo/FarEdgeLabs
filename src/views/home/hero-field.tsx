@@ -15,6 +15,11 @@ export interface HeroFieldProps {
  * flag and grows its dots when told. Joining the two is this view's business,
  * and this leaf is where the join happens, so `home.tsx` stays a Server
  * Component.
+ *
+ * Scrub and tilt are on for every pointer, touch included: `<HalftoneVideo>`
+ * aims from `pointerdown` as well as `pointermove`, so a tap sets the mark a
+ * mouse would have hovered over. Untouched, the spring rests at `progress` 0.5
+ * — the middle of the clip, where the face looks straight ahead.
  */
 export const HeroField = ({ src }: HeroFieldProps) => {
   const isRevealed = useIntroRevealed();

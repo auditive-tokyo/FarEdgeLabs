@@ -6,6 +6,7 @@ import { useSpring } from "@react-spring/web";
 import { useEffect, useRef, useState } from "react";
 
 import { useLoop } from "@/hooks/animation/use-render-loop";
+import { useCoarsePointer } from "@/hooks/use-coarse-pointer";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { useWindowSize } from "@/hooks/use-window-size";
 import { readCssColor, type Rgb } from "@/utils/color";
@@ -22,6 +23,12 @@ const MAX_DPR = 2;
 
 /** Trails the pointer — loose enough to glide, tight enough to feel connected. */
 const POINTER_SPRING = { tension: 120, friction: 26 } as const;
+
+/**
+ * Don't chase a seek closer than half a frame — the decoder would never settle
+ * and the picture would sit permanently one seek behind.
+ */
+const SEEK_EPSILON = 1 / 60;
 
 /**
  * Heavily overdamped (ζ ≈ 2.1) — the wave takes some 2.5s to climb the screen.
@@ -150,7 +157,24 @@ export const HalftoneVideo = ({
 
   const [isSupported, setIsSupported] = useState(true);
   const prefersReducedMotion = usePrefersReducedMotion();
+  const isCoarsePointer = useCoarsePointer();
   const { width, height } = useWindowSize();
+
+  /**
+   * Two ways to scrub, because the two pointers can afford different things.
+   *
+   * A mouse moves continuously, so it needs a new picture every ~16ms — far
+   * faster than a seek settles (~25–65ms). That path pre-decodes the clip into
+   * stills and scrubbing becomes an array lookup.
+   *
+   * A finger only aims when it taps. Seeking the `<video>` itself is slower but
+   * good enough for a discrete target, and it avoids `createImageBitmap` on a
+   * paused video — 120 decodes that WebKit is not reliable at, on the platform
+   * where every iOS browser is WebKit. Fewer moving parts on the platform that
+   * has fewer guarantees.
+   */
+  const frameScrub = pointerScrub && !isCoarsePointer;
+  const seekScrub = pointerScrub && isCoarsePointer;
 
   // Spring-smoothed so the clip glides to the pointer instead of stepping to
   // it. Starts centred and flat, which is where an untouched page sits.
@@ -231,14 +255,20 @@ export const HalftoneVideo = ({
     // Set imperatively too: a muted video is the only kind allowed to autoplay,
     // and the attribute alone isn't always honoured on first mount.
     video.muted = true;
-    // Scrubbing reads decoded stills, so playback has to stay parked.
-    if (pointerScrub || prefersReducedMotion) {
+    if (prefersReducedMotion) {
       video.pause();
       return;
     }
+    // Playback starts even when the clip is only going to be scrubbed. iOS
+    // ignores `preload` and will not buffer a *paused* video, so parking it
+    // before a frame exists means `loadeddata` never fires, `readyState` never
+    // reaches HAVE_CURRENT_DATA, and neither the stills nor the live-video
+    // fallback have anything to draw — the hero comes up blank on a phone while
+    // looking fine on a desktop. The capture effect parks it once it has data.
+    //
     // Rejected autoplay leaves the first frame up — nothing to recover from.
     void video.play().catch(() => {});
-  }, [pointerScrub, prefersReducedMotion]);
+  }, [prefersReducedMotion]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -261,6 +291,14 @@ export const HalftoneVideo = ({
         });
       }
       if (cancelled) return;
+
+      // Parked only now that a frame exists: seeking a playing video fights the
+      // decoder, but pausing any earlier is what stops a phone from buffering
+      // at all (see the playback effect above).
+      video.pause();
+
+      // Seek-scrubbing reads the `<video>` live, so there is nothing to decode.
+      if (!frameScrub) return;
 
       try {
         await captureFrames({
@@ -288,14 +326,14 @@ export const HalftoneVideo = ({
       framesRef.current = [];
       frames.forEach((frame) => frame.close());
     };
-  }, [pointerScrub, scrubFrames, src]);
+  }, [pointerScrub, frameScrub, scrubFrames, src]);
 
   const tracksPointer = pointerScrub || tilt !== 0;
 
   useEffect(() => {
     if (!tracksPointer) return;
 
-    const handleMove = (event: PointerEvent) =>
+    const aimAt = (event: PointerEvent) =>
       pointerApi.start({
         progress: transformRange(event.clientX, 0, window.innerWidth, 0, 1),
         tiltX: transformRange(event.clientX, 0, window.innerWidth, -1, 1),
@@ -304,8 +342,20 @@ export const HalftoneVideo = ({
 
     // Bound to the window, not the canvas: as a background it sits under the
     // page content and would never receive the events itself.
-    window.addEventListener("pointermove", handleMove, { passive: true });
-    return () => window.removeEventListener("pointermove", handleMove);
+    //
+    // Two events for two kinds of pointer. A mouse hovers, so `pointermove`
+    // alone tracks it. A finger only exists while it touches, so a touch screen
+    // emits nothing until it lands: `pointerdown` gives the tap its own aim, and
+    // `pointermove` then follows a drag. Both feed the same spring, which glides
+    // the clip from wherever it is to the new mark rather than cutting — so a
+    // tap left of centre turns the head left, a tap right turns it right, and
+    // how far out you tap decides how far it travels.
+    window.addEventListener("pointerdown", aimAt, { passive: true });
+    window.addEventListener("pointermove", aimAt, { passive: true });
+    return () => {
+      window.removeEventListener("pointerdown", aimAt);
+      window.removeEventListener("pointermove", aimAt);
+    };
   }, [tracksPointer, pointerApi]);
 
   useEffect(() => {
@@ -337,8 +387,21 @@ export const HalftoneVideo = ({
         ...colorsRef.current,
       };
 
+      // Aim the parked clip at the spring. Skipped while a seek is in flight —
+      // `video.seeking` is the decoder saying it is busy, and queueing another
+      // target on top only throws away the one it is working on. The result is
+      // a head turn at whatever rate the decoder can manage rather than a
+      // stalled one, and it needs no decoded stills to do it.
+      if (seekScrub && !video.seeking && Number.isFinite(video.duration)) {
+        const target =
+          progress.get() * Math.max(video.duration - SEEK_EPSILON, 0);
+        if (Math.abs(video.currentTime - target) > SEEK_EPSILON) {
+          video.currentTime = target;
+        }
+      }
+
       const frames = framesRef.current;
-      if (pointerScrub && frames.length) {
+      if (frameScrub && frames.length) {
         // Clamp into what has decoded so far, not the eventual count.
         const index = Math.max(
           Math.min(

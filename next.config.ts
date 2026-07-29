@@ -11,11 +11,27 @@ import type { NextConfig } from "next";
  */
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
+/** LAN hosts allowed to hit the dev server — see `allowedDevOrigins` below. */
+const devOrigins = (process.env.NEXT_DEV_ORIGIN ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 const nextConfig: NextConfig = {
   // Static HTML export — GitHub Pages serves files only, there is no Node
   // runtime. This disables Route Handlers, middleware, ISR, and on-demand
   // image optimisation by design; the backend is AWS (API Gateway + Lambda).
   output: "export",
+
+  // Hosts allowed to request `/_next/*` from the dev server. Without the LAN
+  // address listed, `next dev` refuses HMR and dev chunks from a phone on the
+  // same network, and the page stalls on the preloader's first frame — the
+  // server-rendered markup paints, no client JS boots, so the dial never leaves
+  // 0%. Read from `.env` (`NEXT_DEV_ORIGIN=192.168.1.4`, comma-separated for
+  // several devices) rather than hardcoded: the address changes with DHCP, and
+  // the local network layout does not belong in the repo. Dev-only —
+  // `output: "export"` ships plain files, so it never reaches the deployed site.
+  allowedDevOrigins: devOrigins.length > 0 ? devOrigins : undefined,
 
   basePath: basePath || undefined,
   assetPrefix: basePath || undefined,
