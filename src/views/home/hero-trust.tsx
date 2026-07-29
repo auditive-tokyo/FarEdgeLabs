@@ -4,12 +4,12 @@ import Image from "next/image";
 
 import { Inview } from "@/components/animation/springs/in-view";
 import { useIntroRevealed } from "@/components/common/preloader";
-import { homeContent } from "@/data/mocks/home";
+import type { HomeContent } from "@/data/mocks/home";
 
 import { LIFT_IN, LIFT_OUT, REVEAL_DELAY, REVEAL_SPRING } from "./reveal";
 
 export interface HeroTrustProps {
-  trust: typeof homeContent.hero.trust;
+  trust: HomeContent["hero"]["trust"];
 }
 
 /**

@@ -6,13 +6,23 @@
  * Render the output inside a `<script type="application/ld+json">` tag.
  */
 
-import { siteConfig } from "@/lib/site";
+import { getSiteMeta, siteConfig } from "@/lib/site";
+import { localeHref, type Locale } from "@/locales";
 
 /**
- * Organization + WebSite schema for the site root. Emit once, in the root
- * layout. The two nodes are linked by `@id` so crawlers treat them as related.
+ * Organization + WebSite schema for a locale's home page. Emit once, in that
+ * locale's root layout. The two nodes are linked by `@id` so crawlers treat them
+ * as related.
+ *
+ * The Organization is one entity across the whole site, so its `@id` stays
+ * origin-scoped and unversioned by locale. The WebSite node is per locale: it
+ * carries the translated description and declares `inLanguage`, which is what
+ * tells a crawler these are two renderings of one site rather than two sites.
  */
-export function getSiteStructuredData() {
+export function getSiteStructuredData(locale: Locale) {
+  const { description } = getSiteMeta(locale);
+  const url = `${siteConfig.url}${localeHref(locale)}`;
+
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -25,10 +35,11 @@ export function getSiteStructuredData() {
       },
       {
         "@type": "WebSite",
-        "@id": `${siteConfig.url}/#website`,
+        "@id": `${url}#website`,
         name: siteConfig.name,
-        description: siteConfig.description,
-        url: siteConfig.url,
+        description,
+        url,
+        inLanguage: locale,
         publisher: { "@id": `${siteConfig.url}/#organization` },
       },
     ],

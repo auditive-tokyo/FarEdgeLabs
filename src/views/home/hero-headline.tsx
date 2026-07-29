@@ -16,6 +16,8 @@ import {
 export interface HeroHeadlineProps {
   headline: string;
   headlineAccent: string;
+  /** See `<Hero italicAccent>` — off for languages with no italic cut. */
+  italicAccent?: boolean;
 }
 
 /**
@@ -38,7 +40,11 @@ export interface HeroHeadlineProps {
  * heading in the markup, so the `<h1>` still has an accessible name while its
  * letters sit at `opacity: 0`.
  */
-export const HeroHeadline = ({ headline, headlineAccent }: HeroHeadlineProps) => {
+export const HeroHeadline = ({
+  headline,
+  headlineAccent,
+  italicAccent = true,
+}: HeroHeadlineProps) => {
   const isRevealed = useIntroRevealed();
 
   return (
@@ -80,7 +86,8 @@ export const HeroHeadline = ({ headline, headlineAccent }: HeroHeadlineProps) =>
         letterStagger={LETTER_STAGGER}
         letterConfig={REVEAL_SPRING}
       >
-        {headline} <i>{headlineAccent}</i>
+        {headline}{" "}
+        {italicAccent ? <i>{headlineAccent}</i> : <span>{headlineAccent}</span>}
       </TextEngine>
     </div>
   );

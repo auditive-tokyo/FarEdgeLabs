@@ -14,6 +14,8 @@ import {
 
 export interface HeroRequestProps {
   cta: string;
+  /** Field names, which are both the visible placeholder and the hidden label. */
+  labels: { name: string; email: string };
 }
 
 /**
@@ -30,7 +32,7 @@ export interface HeroRequestProps {
  * a button across 375px. The radius steps from `full` to the stat cards' corner
  * — a tall stack with fully round ends reads as a lozenge, not a form.
  */
-export const HeroRequest = ({ cta }: HeroRequestProps) => {
+export const HeroRequest = ({ cta, labels }: HeroRequestProps) => {
   const isRevealed = useIntroRevealed();
 
   return (
@@ -46,26 +48,26 @@ export const HeroRequest = ({ cta }: HeroRequestProps) => {
       enabled={isRevealed}
     >
       <label htmlFor="request-name" className="sr-only">
-        Name
+        {labels.name}
       </label>
       <input
         id="request-name"
         name="name"
         type="text"
         autoComplete="name"
-        placeholder="Name"
+        placeholder={labels.name}
         className="w-full bg-transparent text-body leading-[1.2] text-surface placeholder:text-surface focus-visible:outline-none lg:w-[9.375rem]"
       />
 
       <label htmlFor="request-email" className="sr-only">
-        Email
+        {labels.email}
       </label>
       <input
         id="request-email"
         name="email"
         type="email"
         autoComplete="email"
-        placeholder="Email"
+        placeholder={labels.email}
         className="w-full bg-transparent text-body leading-[1.2] text-surface placeholder:text-surface focus-visible:outline-none lg:w-[9.375rem]"
       />
 

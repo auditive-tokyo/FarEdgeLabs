@@ -2,12 +2,12 @@
 
 import { Inview } from "@/components/animation/springs/in-view";
 import { useIntroRevealed } from "@/components/common/preloader";
-import { homeContent } from "@/data/mocks/home";
+import type { HomeContent } from "@/data/mocks/home";
 
 import { LIFT_IN, LIFT_OUT, REVEAL_DELAY, REVEAL_SPRING } from "./reveal";
 
 export interface HeroStatsProps {
-  stats: typeof homeContent.hero.stats;
+  stats: HomeContent["hero"]["stats"];
 }
 
 /**

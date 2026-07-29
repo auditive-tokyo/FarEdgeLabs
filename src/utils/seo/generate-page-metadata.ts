@@ -12,9 +12,18 @@
 
 import { Metadata, Viewport } from "next";
 
-import { siteConfig } from "@/lib/site";
+import { getSiteMeta, siteConfig } from "@/lib/site";
+import {
+  DEFAULT_LOCALE,
+  localeHref,
+  locales,
+  ogLocale,
+  type Locale,
+} from "@/locales";
 
 interface MetadataProps {
+  /** Decides the language of every string below, plus `og:locale` and hreflang. */
+  locale: Locale;
   title?: string;
   description?: string;
   /** Canonical path (e.g. `/about`) or absolute URL for this page. */
@@ -26,48 +35,84 @@ interface MetadataProps {
   siteName?: string;
 }
 
+/**
+ * Every locale's version of the current page, for `hreflang`.
+ *
+ * Only correct while each locale has exactly one page. Once there are real
+ * routes, this has to map the current path into each locale rather than always
+ * pointing at their home pages — otherwise every `/en/about` claims `/` is its
+ * Japanese equivalent.
+ *
+ * `x-default` names the page a crawler should serve when it cannot match any
+ * language, which is the same page the root serves.
+ */
+const languageAlternates = () => ({
+  ...Object.fromEntries(
+    locales.map((locale) => [locale, localeHref(locale)]),
+  ),
+  "x-default": localeHref(DEFAULT_LOCALE),
+});
+
 export function generateMetadata({
-  title = siteConfig.name,
-  description = siteConfig.description,
-  url = "/",
-  ogImage = siteConfig.ogImage,
+  locale,
+  title,
+  description,
+  url,
+  ogImage,
   twitterHandle = siteConfig.twitterHandle,
   author = siteConfig.author,
   siteName = siteConfig.name,
-}: MetadataProps = {}): Metadata {
+}: MetadataProps): Metadata {
+  const meta = getSiteMeta(locale);
+  const resolved = {
+    title: title ?? meta.title,
+    description: description ?? meta.description,
+    url: url ?? meta.path,
+    ogImage: ogImage ?? meta.ogImage,
+  };
+
   return {
     // Resolves every relative URL below to an absolute one.
     metadataBase: new URL(siteConfig.url),
-    title,
-    description,
+    title: resolved.title,
+    description: resolved.description,
     authors: [{ name: author }],
     creator: author,
     publisher: author,
     alternates: {
-      canonical: url,
+      canonical: resolved.url,
+      languages: languageAlternates(),
     },
     openGraph: {
-      title,
-      description,
-      url,
+      title: resolved.title,
+      description: resolved.description,
+      url: resolved.url,
       siteName,
       // Must match the real asset — a scraper that finds a different size than
       // it was promised falls back to cropping. Regenerate both together with
       // `node scripts/generate-brand-assets.mjs`.
-      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
-      // Must match `<html lang>` in the root layout — move the two together.
-      locale: "ja_JP",
+      images: [
+        {
+          url: resolved.ogImage,
+          width: 1200,
+          height: 630,
+          alt: resolved.title,
+        },
+      ],
+      // Paired with `<html lang>` through `src/locales/index.ts`, so the two
+      // cannot drift.
+      locale: ogLocale(locale),
       type: "website",
     },
     twitter: {
       card: "summary_large_image",
-      title,
-      description,
+      title: resolved.title,
+      description: resolved.description,
       // Only when there is a real handle: `site`/`creator` assert who owns this
       // site, so a guessed one credits a stranger. The card renders fine
       // without them.
       ...(twitterHandle ? { site: twitterHandle, creator: twitterHandle } : {}),
-      images: [ogImage],
+      images: [resolved.ogImage],
     },
     icons: {
       icon: [

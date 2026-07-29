@@ -40,6 +40,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# personal documents — this repository is public
+履歴書.txt
+resume*
+cv*
+
 # python (cdk / lambda_functions)
 __pycache__/
 *.py[cod]

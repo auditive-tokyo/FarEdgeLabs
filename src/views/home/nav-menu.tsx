@@ -5,13 +5,14 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { GRID_MIN_WIDTH } from "@/components/common/grid/grid.config";
-import { homeContent } from "@/data/mocks/home";
+import type { HomeContent } from "@/data/mocks/home";
 import { useScroll } from "@/hooks/smooth-scroll/use-scroll";
 import { useWindowWidth } from "@/hooks/use-window-size";
 
 export interface NavMenuProps {
-  nav: typeof homeContent.nav;
-  cta: string;
+  nav: HomeContent["nav"];
+  languageSwitch: HomeContent["languageSwitch"];
+  languageHref: string;
 }
 
 /**
@@ -32,7 +33,11 @@ const CURTAIN_SPRING = { tension: 110, friction: 24, clamp: true } as const;
  * Above `GRID_MIN_WIDTH` this component renders nothing visible: the header's
  * pill takes over.
  */
-export const NavMenu = ({ nav, cta }: NavMenuProps) => {
+export const NavMenu = ({
+  nav,
+  languageSwitch,
+  languageHref,
+}: NavMenuProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const panelId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -140,15 +145,17 @@ export const NavMenu = ({ nav, cta }: NavMenuProps) => {
                 </ul>
               </nav>
 
-              {/* The header's CTA does not fit beside a logo and a burger, so it
-                  lives here — the one place on a phone where there is room for
-                  it to be the size it is in the design. */}
+              {/* The header's pill does not fit beside a logo and a burger, so
+                  it lives here — the one place on a phone where there is room
+                  for it to be the size it is in the design. */}
               <Link
-                href="#request"
+                href={languageHref}
                 onClick={close}
+                hrefLang={languageSwitch.label.toLowerCase()}
+                aria-label={languageSwitch.ariaLabel}
                 className="flex h-[3.125rem] items-center justify-center rounded-full border border-hairline bg-accent text-body leading-[1.2]"
               >
-                {cta}
+                {languageSwitch.label}
               </Link>
             </animated.div>
           ),

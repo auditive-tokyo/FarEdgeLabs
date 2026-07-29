@@ -1,22 +1,36 @@
 {
-  "_readme": "Every user-facing string for the home page. JSON rather than TS on purpose: scripts/generate-brand-assets.mjs runs in plain Node and reads this same file, so the Open Graph card and the page cannot drift apart. Asset paths and layout live in src/data/mocks/home.ts. Add a sibling (ja.json) to translate; keys must match.",
+  "_readme": "Every user-facing string in English. JSON rather than TS on purpose: scripts/generate-brand-assets.mjs runs in plain Node and reads this same file, so the Open Graph card and the page cannot drift apart. Keys must match ja.json — src/locales/index.ts types both as one shape. Asset paths and layout live in src/data/mocks/home.ts.",
+  "_stats_readme": "hero.stats labels must stay unique: <HeroStats> keys its cards by label. The values are placeholders awaiting real figures — fill them in or drop the section rather than inventing numbers.",
+  "meta": {
+    "title": "FarEdge Labs — Beyond the leading edge",
+    "description": "Serverless on AWS and GCP: AI agents, distributed data pipelines and feature engineering, inference model quantisation. From proof of concept to production.",
+    "_ogImage_readme": "Regenerate with `npm run brand` after changing the brand or hero copy — the card renders from this file.",
+    "ogImage": "/open-graph.png"
+  },
   "brand": {
     "name": "FarEdge ",
     "nameAccent": "Labs"
   },
   "nav": [
-    { "label": "Home", "href": "/" },
-    { "label": "Services", "href": "/services" },
-    { "label": "Works", "href": "/works" },
-    { "label": "About", "href": "/about" }
+    { "label": "Home", "href": "/en/" },
+    { "label": "Services", "href": "/en/services" },
+    { "label": "Works", "href": "/en/works" },
+    { "label": "About", "href": "/en/about" }
   ],
   "cta": "Send Request",
-  "_stats_readme": "hero.stats labels must stay unique: <HeroStats> keys its cards by label. The values are placeholders awaiting real figures — fill them in or drop the section rather than inventing numbers.",
+  "languageSwitch": {
+    "label": "JA",
+    "ariaLabel": "日本語に切り替える"
+  },
   "hero": {
     "headline": "Beyond the leading",
     "headlineAccent": "edge",
-    "lead": "Edge technology, put to work",
-    "body": "FarEdge Labs builds software where the network runs out — edge devices, serverless backends, and the pipelines between them. We take the part of the problem that has no obvious answer yet.",
+    "lead": "From proof of concept to production",
+    "body": "Serverless on AWS and GCP: AI agents, distributed data pipelines and feature engineering, and inference models quantised to fit their hardware budget. Requirements without precedent, delivered as working systems.",
+    "form": {
+      "name": "Name",
+      "email": "Email"
+    },
     "stats": [
       { "value": "—", "label": "Projects", "accented": true },
       { "value": "—", "label": "Clients", "accented": false },

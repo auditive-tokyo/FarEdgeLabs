@@ -1,10 +1,15 @@
 import type { MetadataRoute } from "next";
 
 import { siteConfig } from "@/lib/site";
+import { localeHref, locales } from "@/locales";
 
 /**
- * Generates `/sitemap.xml`. Currently lists only the home route — add an entry
- * per public route as the site grows (ideally derived from a routes manifest).
+ * Generates `/sitemap.xml` — one entry per locale's home page.
+ *
+ * Both locales are listed as equals rather than one being a variant of the
+ * other: they are separate URLs serving separate content, and the `hreflang`
+ * tags in the pages themselves are what relate them. Add an entry per public
+ * route as the site grows (ideally derived from a routes manifest).
  */
 
 // Required by `output: "export"` — metadata routes have no server to run on,
@@ -12,12 +17,12 @@ import { siteConfig } from "@/lib/site";
 // the build time, not the request time.
 export const dynamic = "force-static";
 export default function sitemap(): MetadataRoute.Sitemap {
-  return [
-    {
-      url: siteConfig.url,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 1,
-    },
-  ];
+  const lastModified = new Date();
+
+  return locales.map((locale) => ({
+    url: `${siteConfig.url}${localeHref(locale)}`,
+    lastModified,
+    changeFrequency: "monthly",
+    priority: 1,
+  }));
 }

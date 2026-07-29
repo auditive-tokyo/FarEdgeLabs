@@ -1,4 +1,4 @@
-import { homeContent } from "@/data/mocks/home";
+import type { HomeContent } from "@/data/mocks/home";
 
 import { HeroCopy } from "./hero-copy";
 import { HeroHeadline } from "./hero-headline";
@@ -7,8 +7,15 @@ import { HeroStats } from "./hero-stats";
 import { HeroTrust } from "./hero-trust";
 
 export interface HeroProps {
-  hero: typeof homeContent.hero;
+  hero: HomeContent["hero"];
   cta: string;
+  /**
+   * Italics on the accent word. Off for Japanese: the CJK fonts a browser falls
+   * back to carry no italic cut, so the engine shears the glyphs instead —
+   * which reads as a rendering fault, not as emphasis. The accent bar carries
+   * the emphasis on its own there.
+   */
+  italicAccent?: boolean;
 }
 
 /**
@@ -31,7 +38,7 @@ export interface HeroProps {
  * frame's absolute coordinates. Source order is therefore also the mobile
  * reading order — keep them in the order they should be read.
  */
-export const Hero = ({ hero, cta }: HeroProps) => {
+export const Hero = ({ hero, cta, italicAccent = true }: HeroProps) => {
   return (
     <section
       aria-labelledby="hero-title"
@@ -49,11 +56,12 @@ export const Hero = ({ hero, cta }: HeroProps) => {
       <HeroHeadline
         headline={hero.headline}
         headlineAccent={hero.headlineAccent}
+        italicAccent={italicAccent}
       />
       <HeroCopy lead={hero.lead} body={hero.body} />
 
       <HeroStats stats={hero.stats} />
-      <HeroRequest cta={cta} />
+      <HeroRequest cta={cta} labels={hero.form} />
       <HeroTrust trust={hero.trust} />
     </section>
   );

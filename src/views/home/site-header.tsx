@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Hover } from "@/components/animation/springs/hover";
 import { Inview } from "@/components/animation/springs/in-view";
 import { useIntroRevealed } from "@/components/common/preloader";
-import { homeContent } from "@/data/mocks/home";
+import type { HomeContent } from "@/data/mocks/home";
 
 import { NavMenu } from "./nav-menu";
 import {
@@ -18,9 +18,11 @@ import {
 } from "./reveal";
 
 export interface SiteHeaderProps {
-  brand: typeof homeContent.brand;
-  nav: typeof homeContent.nav;
-  cta: string;
+  brand: HomeContent["brand"];
+  nav: HomeContent["nav"];
+  languageSwitch: HomeContent["languageSwitch"];
+  /** Root-relative path of this page in the other locale. */
+  languageHref: string;
 }
 
 /** Drops from above — the header enters from the edge it is pinned to. */
@@ -45,7 +47,12 @@ const DROP_OUT = { opacity: 0, y: "-0.75rem" } as const;
  * identical there, but the phone page does, and a burger that scrolls out of
  * reach is a burger you cannot press.
  */
-export const SiteHeader = ({ brand, nav, cta }: SiteHeaderProps) => {
+export const SiteHeader = ({
+  brand,
+  nav,
+  languageSwitch,
+  languageHref,
+}: SiteHeaderProps) => {
   const isRevealed = useIntroRevealed();
 
   return (
@@ -107,9 +114,20 @@ export const SiteHeader = ({ brand, nav, cta }: SiteHeaderProps) => {
         </Inview>
       </nav>
 
-      <NavMenu nav={nav} cta={cta} />
+      <NavMenu
+        nav={nav}
+        languageSwitch={languageSwitch}
+        languageHref={languageHref}
+      />
 
-      {/* The pill and its arrow twin read as one control, so they hover as one:
+      {/* Where the design put a "Send Request" pill. That CTA was a link to the
+          hero's own form, sitting a screen's width away from it and submitting
+          nothing — two identical buttons, one of which did not do what it said.
+          The language switch takes the slot instead: on a bilingual site it is
+          the one control that belongs in the header on every page, and it keeps
+          the design's pill-and-arrow pair intact.
+
+          The pill and its arrow twin read as one control, so they hover as one:
           scaling them separately would pull the seam between them open. */}
       <Inview
         tag="div"
@@ -129,12 +147,19 @@ export const SiteHeader = ({ brand, nav, cta }: SiteHeaderProps) => {
           config={HOVER_SPRING}
         >
           <Link
-            href="#request"
+            href={languageHref}
+            // The label is the language being switched *to*, written in that
+            // language, so it reads to someone who cannot read the current one.
+            // `hrefLang` tells a crawler this is a translation rather than a
+            // navigation link; `aria-label` spells out the action, since "EN"
+            // alone is not one.
+            hrefLang={languageSwitch.label.toLowerCase()}
+            aria-label={languageSwitch.ariaLabel}
             className="flex h-[3.125rem] w-[9.1875rem] items-center justify-center rounded-full border border-hairline bg-accent text-body leading-[1.2]"
           >
-            {cta}
+            {languageSwitch.label}
           </Link>
-          {/* Decorative twin of the CTA: same link, arrow only. */}
+          {/* Decorative twin of the pill: same destination, arrow only. */}
           <span
             aria-hidden="true"
             className="grid size-[3.125rem] place-items-center rounded-full border border-hairline bg-accent"

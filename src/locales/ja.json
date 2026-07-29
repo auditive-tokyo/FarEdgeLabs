@@ -1,0 +1,44 @@
+{
+  "_readme": "日本語のユーザー向け文字列。scripts/generate-brand-assets.mjs も同じファイルを読むため、TS ではなく JSON。キー構造は en.json と一致させること（src/locales/index.ts が両方を同じ型として扱う）。アセットのパスとレイアウトは src/data/mocks/home.ts。",
+  "_stats_readme": "hero.stats の label は一意にすること: <HeroStats> がカードの key に label を使う。value は実数が決まるまでのプレースホルダー。数字をでっち上げるより、埋めるかセクションごと落とす。",
+  "meta": {
+    "title": "FarEdge Labs — 常識の外側を、形にする",
+    "description": "AWS / GCP のサーバーレス構成を軸に、AI エージェント、大規模データの分散処理と特徴量設計、推論モデルの量子化まで。検証から本番まで、前例のない要件を動くシステムにします。",
+    "_ogImage_readme": "日本語のカードはまだ英語版を流用している。日本語版を作るには src/app/fonts に日本語グリフを持つフォント（使用文字だけのサブセットで足りる）を追加し、BRAND_LOCALE=ja npm run brand を実行する。General Sans は Latin のみで、satori はシステムフォントにフォールバックしない。",
+    "ogImage": "/open-graph.png"
+  },
+  "brand": {
+    "name": "FarEdge ",
+    "nameAccent": "Labs"
+  },
+  "nav": [
+    { "label": "ホーム", "href": "/" },
+    { "label": "サービス", "href": "/services" },
+    { "label": "実績", "href": "/works" },
+    { "label": "会社概要", "href": "/about" }
+  ],
+  "cta": "送信する",
+  "languageSwitch": {
+    "label": "EN",
+    "ariaLabel": "Switch to English"
+  },
+  "hero": {
+    "headline": "常識の外側を、",
+    "headlineAccent": "形にする",
+    "lead": "検証から、本番まで",
+    "body": "AWS / GCP のサーバーレス構成を軸に、AI エージェント、大規模データの分散処理と特徴量設計、推論モデルの量子化まで。前例のない要件を、動くシステムにして納めます。",
+    "form": {
+      "name": "お名前",
+      "email": "メールアドレス"
+    },
+    "stats": [
+      { "value": "—", "label": "案件数", "accented": true },
+      { "value": "—", "label": "クライアント", "accented": false },
+      { "value": "—", "label": "稼働率", "accented": false },
+      { "value": "—", "label": "評価", "accented": true }
+    ],
+    "trust": {
+      "label": "プレースホルダー — 差し替えるか削除する"
+    }
+  }
+}
