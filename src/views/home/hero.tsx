@@ -4,7 +4,6 @@ import { HeroCopy } from "./hero-copy";
 import { HeroHeadline } from "./hero-headline";
 import { HeroRequest } from "./hero-request";
 import { HeroStats } from "./hero-stats";
-import { HeroTrust } from "./hero-trust";
 
 export interface HeroProps {
   hero: HomeContent["hero"];
@@ -62,7 +61,6 @@ export const Hero = ({ hero, cta, italicAccent = true }: HeroProps) => {
 
       <HeroStats stats={hero.stats} />
       <HeroRequest cta={cta} labels={hero.form} />
-      <HeroTrust trust={hero.trust} />
     </section>
   );
 };

@@ -9,12 +9,14 @@
  * Node and cannot import TypeScript, and it renders the Open Graph card from the
  * same headline the page shows. One file means the card and the page cannot say
  * different things. What stays here is what is not language: file paths for the
- * mark, the clip and the avatars.
+ * mark and the clip.
  *
  * > [!note] Placeholder figures
- * > `hero.stats` and `hero.trust` are still the template's slots with their
- * > numbers removed. Fill them with real figures or drop the sections before
- * > this goes to production — inventing metrics is worse than having none.
+ * > `hero.stats` is still the template's slots with their numbers removed. Fill
+ * > them with real figures or drop the section before this goes to production —
+ * > inventing metrics is worse than having none. The social-proof pill that sat
+ * > beside it is gone for the same reason: it claimed trust the site cannot
+ * > evidence, and its three faces were stock decoration.
  */
 
 import { getCopy, type Locale } from "@/locales";
@@ -39,14 +41,6 @@ export const getHomeContent = (locale: Locale) => {
        * clip's timeline *is* the head's rotation.
        */
       backgroundVideoSrc: "/assets/hero/man.mp4",
-      trust: {
-        ...copy.hero.trust,
-        avatars: [
-          { src: "/assets/hero/avatar-1.png", alt: "" },
-          { src: "/assets/hero/avatar-2.png", alt: "" },
-          { src: "/assets/hero/avatar-3.png", alt: "" },
-        ],
-      },
     },
   };
 };

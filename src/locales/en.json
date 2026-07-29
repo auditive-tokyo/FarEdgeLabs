@@ -36,9 +36,6 @@
       { "value": "—", "label": "Clients", "accented": false },
       { "value": "—", "label": "Uptime", "accented": false },
       { "value": "—", "label": "Rating", "accented": true }
-    ],
-    "trust": {
-      "label": "Placeholder — replace or remove"
-    }
+    ]
   }
 }

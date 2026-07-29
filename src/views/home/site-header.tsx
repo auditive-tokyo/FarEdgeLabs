@@ -9,13 +9,7 @@ import { useIntroRevealed } from "@/components/common/preloader";
 import type { HomeContent } from "@/data/mocks/home";
 
 import { NavMenu } from "./nav-menu";
-import {
-  HOVER_SPRING,
-  LIFT_IN,
-  LIFT_OUT,
-  REVEAL_DELAY,
-  REVEAL_SPRING,
-} from "./reveal";
+import { HOVER_SPRING, LIFT_IN, REVEAL_DELAY, REVEAL_SPRING } from "./reveal";
 
 export interface SiteHeaderProps {
   brand: HomeContent["brand"];

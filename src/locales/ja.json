@@ -36,9 +36,6 @@
       { "value": "—", "label": "クライアント", "accented": false },
       { "value": "—", "label": "稼働率", "accented": false },
       { "value": "—", "label": "評価", "accented": true }
-    ],
-    "trust": {
-      "label": "プレースホルダー — 差し替えるか削除する"
-    }
+    ]
   }
 }

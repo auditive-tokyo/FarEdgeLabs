@@ -41,7 +41,6 @@ export const REVEAL_DELAY = {
   statStep: 80,
   body: 620,
   request: 760,
-  trust: 840,
   /** Late on purpose: the bar arrives under a word that has already landed. */
   headlineBar: 1100,
 } as const;
