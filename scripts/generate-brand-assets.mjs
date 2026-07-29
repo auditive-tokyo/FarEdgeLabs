@@ -44,6 +44,52 @@ import sharp from "sharp";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PUBLIC = path.join(ROOT, "public");
 const FONTS = path.join(ROOT, "src", "app", "fonts");
+const LOCALES = path.join(ROOT, "src", "locales");
+
+/**
+ * Which locale's copy the card is rendered from.
+ *
+ * The card is a build artefact of the words, so it reads the same
+ * `src/locales/*.json` the page does rather than keeping its own copy — those
+ * two drifting apart is how a share card ends up advertising last year's
+ * headline. To add a locale, write its JSON and render a card per locale into
+ * `open-graph.<locale>.png`, then point `siteConfig.ogImage` at the right one.
+ */
+const LOCALE = process.env.BRAND_LOCALE ?? "en";
+
+/**
+ * How far the accent bar overhangs the word it sits under, px each side, and
+ * how thick it is. The bar itself is sized by the word rather than by a number:
+ * see `renderOpenGraph`.
+ */
+const ACCENT_BAR_OVERHANG = 10;
+const ACCENT_BAR_HEIGHT = 36;
+/** Bar's gap from the bottom of the 80px accent line — tuned to the render. */
+const ACCENT_BAR_BOTTOM = 8;
+
+/** Spaces that survive flex layout, for text split across flex items. */
+const hardenSpaces = (text) => text.replaceAll(" ", "\u00A0");
+
+/**
+ * The bundled General Sans covers Latin only — no kana, no kanji (verified
+ * against the fonts' `cmap`). satori does not fall back to a system font: it
+ * draws what the fonts it was handed can draw and silently skips the rest, so
+ * Japanese copy would produce a card with an empty headline that still exits 0.
+ * Fail loudly instead.
+ */
+const assertRenderable = (strings) => {
+  const unsupported = [
+    ...new Set(strings.join("").match(/[^\u0000-\u024F\u2000-\u206F]/gu) ?? []),
+  ];
+  if (unsupported.length > 0) {
+    throw new Error(
+      `Cannot render ${unsupported.join(" ")} — the bundled General Sans is ` +
+        `Latin-only and satori has no system-font fallback. Add a font that ` +
+        `covers these glyphs (a subset of the characters used here is enough) ` +
+        `to src/app/fonts/ and register it in renderOpenGraph's \`fonts\`.`,
+    );
+  }
+};
 
 /** Keep in sync with `--accent` / `--preloader-dial-to` in globals.css. */
 const SWEEP_FROM = [0x00, 0xff, 0x99];
@@ -148,7 +194,16 @@ const buildIco = (pngs) => {
 };
 
 /** The share card — the hero's own composition, cropped to 1200×630. */
-const renderOpenGraph = async (markPng) => {
+const renderOpenGraph = async (markPng, copy) => {
+  const { brand, hero } = copy;
+  assertRenderable([
+    brand.name,
+    brand.nameAccent,
+    hero.headline,
+    hero.headlineAccent,
+    hero.lead,
+  ]);
+
   const [light, italic, regular] = await Promise.all([
     readFile(path.join(FONTS, "GeneralSans-Light.otf")),
     readFile(path.join(FONTS, "GeneralSans-LightItalic.otf")),
@@ -188,12 +243,19 @@ const renderOpenGraph = async (markPng) => {
                   props: {
                     style: { display: "flex", fontSize: 30, fontWeight: 400 },
                     children: [
-                      { type: "span", props: { children: "Stack." } },
+                      // Non-breaking: these are two flex items, and a flex item
+                      // trims its own trailing whitespace, so "FarEdge " + "Labs"
+                      // would collapse into "FarEdgeLabs". The browser header
+                      // keeps the gap because there it is inline text, not flex.
+                      {
+                        type: "span",
+                        props: { children: hardenSpaces(brand.name) },
+                      },
                       {
                         type: "span",
                         props: {
                           style: { fontStyle: "italic" },
-                          children: "Side",
+                          children: brand.nameAccent,
                         },
                       },
                     ],
@@ -204,49 +266,63 @@ const renderOpenGraph = async (markPng) => {
           },
 
           // The headline, with the bar the design hangs under the accent word.
-          // Declared before the copy so the copy paints over it — satori has no
-          // z-index, it paints in order.
           {
             type: "div",
             props: {
-              style: { display: "flex", flexDirection: "column", position: "relative" },
+              style: { display: "flex", flexDirection: "column" },
               children: [
                 {
                   type: "div",
                   props: {
-                    style: {
-                      // The frame puts this at `top: 140` under an 80px line.
-                      // Satori sits the glyphs lower in the line box than a
-                      // browser does, so matching the design's number lands the
-                      // bar under the word instead of across its foot — this is
-                      // tuned to the render, not to the spec.
-                      position: "absolute",
-                      left: -10,
-                      top: 116,
-                      width: 322,
-                      height: 36,
-                      borderRadius: 18,
-                      background: ACCENT,
-                    },
-                  },
-                },
-                {
-                  type: "div",
-                  props: {
                     style: { fontSize: 80, fontWeight: 300, lineHeight: 1 },
-                    children: "Turn money into",
+                    children: hero.headline,
                   },
                 },
+                // The accent word and its bar. This wrapper shrink-wraps the
+                // word — `alignSelf: flex-start` stops it stretching to the
+                // column's width — and the bar is pinned to *its* edges rather
+                // than given a width. So the bar measures the word for us, which
+                // is the only way to get it right without knowing the font's
+                // metrics: the design's fixed 322px was tuned to "foresight",
+                // and any other headline would over- or undershoot it.
                 {
                   type: "div",
                   props: {
                     style: {
-                      fontSize: 80,
-                      fontWeight: 300,
-                      fontStyle: "italic",
-                      lineHeight: 1,
+                      display: "flex",
+                      position: "relative",
+                      alignSelf: "flex-start",
                     },
-                    children: "foresight",
+                    children: [
+                      // Declared before the word so the word paints over it —
+                      // satori has no z-index, it paints in order.
+                      {
+                        type: "div",
+                        props: {
+                          style: {
+                            position: "absolute",
+                            left: -ACCENT_BAR_OVERHANG,
+                            right: -ACCENT_BAR_OVERHANG,
+                            bottom: ACCENT_BAR_BOTTOM,
+                            height: ACCENT_BAR_HEIGHT,
+                            borderRadius: ACCENT_BAR_HEIGHT / 2,
+                            background: ACCENT,
+                          },
+                        },
+                      },
+                      {
+                        type: "div",
+                        props: {
+                          style: {
+                            fontSize: 80,
+                            fontWeight: 300,
+                            fontStyle: "italic",
+                            lineHeight: 1,
+                          },
+                          children: hero.headlineAccent,
+                        },
+                      },
+                    ],
                   },
                 },
               ],
@@ -257,7 +333,7 @@ const renderOpenGraph = async (markPng) => {
             type: "div",
             props: {
               style: { fontSize: 26, fontWeight: 400 },
-              children: "Clarity and control to act",
+              children: hero.lead,
             },
           },
         ],
@@ -279,6 +355,10 @@ const renderOpenGraph = async (markPng) => {
 };
 
 const main = async () => {
+  const copy = JSON.parse(
+    await readFile(path.join(LOCALES, `${LOCALE}.json`), "utf8"),
+  );
+
   await mkdir(PUBLIC, { recursive: true });
   const written = [];
   const write = async (name, data) => {
@@ -313,8 +393,12 @@ const main = async () => {
     await write(`ms-icon-${size}x${size}.png`, await renderTile(size));
   }
 
-  await write("open-graph.png", await renderOpenGraph(await renderMark(256)));
+  await write(
+    "open-graph.png",
+    await renderOpenGraph(await renderMark(256), copy),
+  );
 
+  console.log(`Locale: ${LOCALE}`);
   console.log("Wrote:\n  " + written.join("\n  "));
 };
 
