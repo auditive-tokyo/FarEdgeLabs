@@ -12,7 +12,7 @@ Rules for writing and placing components. This note is canonical.
 | Folder | What goes here |
 |--------|----------------|
 | `components/ui/` | Design-system primitives — stateless, no provider deps (Button, Input, Card) |
-| `components/common/` | Shared infrastructure — may depend on providers (Cookie, Skeletons) |
+| `components/common/` | Shared infrastructure — may depend on providers (Preloader, Skeletons) |
 | `components/animation/springs/` | Animation engine — `#do-not-modify` |
 | `views/` | Page-level components — one file per route |
 | next to the feature | Feature-specific components — **not** in `components/` |

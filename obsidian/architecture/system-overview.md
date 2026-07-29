@@ -28,7 +28,6 @@ app/layout.tsx ──────────────► RootLayout
    │     │
    │     ├─ <Preloader/>  ◄── full-screen intro; unmounts itself once lifted
    │     │
-   │     ├─ <LazyCookie/> ◄── cookie consent banner + modal (client, dynamic, no SSR)
    │     │
    │     └─ {children}
    │           │
@@ -54,7 +53,7 @@ Rendered page — Server Components by default; "use client" only at animation l
 ## Request lifecycle
 
 1. Next.js resolves the route under `app/`.
-2. `RootLayout` wraps the page in `<ScrollLayout>` → `<LazyCookie/>` → `{children}`.
+2. `RootLayout` wraps the page in `<ScrollLayout>` → `{children}`.
    The provider order is fixed — see [[data-flow]].
 3. The route file renders its **View** component.
 4. The View composes animation primitives. These are all `"use client"`.

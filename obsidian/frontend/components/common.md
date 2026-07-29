@@ -8,42 +8,26 @@ updated: 2026-07-15
 Files in `src/components/common/` — shared infrastructure that may depend on
 providers. Conventions: [[component-conventions]].
 
-## Cookie — `Cookie/`
+## Cookie consent — removed
 
-Self-contained cookie consent system — a bottom-right **banner** plus a full
-category **preferences modal**. No third-party library (the old
-`react-cookie-consent` dependency was removed). Lives in `src/components/common/Cookie/`.
+There is no consent banner. The template shipped a self-contained one (banner,
+category preferences modal, Zustand store persisting to `localStorage`), and it
+was deleted along with `src/components/common/Cookie/`.
 
-| File | Role |
-|------|------|
-| `Cookie.tsx` | Mount component — hydrates the store, renders banner + modal |
-| `LazyCookie.tsx` | `next/dynamic` `ssr:false` wrapper — keeps cookie JS out of first-load |
-| `CookieBanner.tsx` | Bottom-right consent banner |
-| `CookiePreferencesModal.tsx` | Category preferences dialog with per-category toggles |
-| `CookieButton.tsx` | Local button primitive — `primary` / `secondary` variants |
-| `cookieStore.ts` | Zustand store + `localStorage` persistence |
-| `index.ts` | Barrel exports — `Cookie`, `LazyCookie`, `useCookieStore`, `CookieConsent` |
+The reason is that it had nothing to consent to. It set no cookies -- the store
+wrote to `localStorage`, nothing read the result, and no analytics or third-party
+tag existed to gate. Asking a visitor to approve storage that never happens is
+noise, and the banner also shipped a bug: `acceptAll` saved `analytics: false`,
+so "Accept all" and "Reject all" persisted the same thing.
 
-**Mounting** — the root layout renders `<LazyCookie />` inside `ScrollLayout`:
-```tsx
-import { LazyCookie } from "@/components/common/Cookie";
-```
+Analytics is **Cloudflare Web Analytics**, which is cookieless and uses no
+client-side state, so no consent is required for it.
 
-**State** — `useCookieStore` (Zustand). `consent` is `null` until the user decides;
-the banner shows only after hydration confirms `consent === null`. Persisted to
-`localStorage` under key `cookie-consent-v1`. Three categories: `necessary`
-(always on), `analytics`, `marketing`.
-
-**Styling & motion** — ported to the project stack: Tailwind v4 with the
-`background` / `foreground` design tokens (dark-mode adaptive, no hardcoded hex),
-and `@react-spring/web` for all motion — `useTransition` drives the banner and
-modal mount/unmount, `useSpring` drives the toggle knob. No CSS transitions.
-The modal locks scroll through the Lenis [[smooth-scroll|scroll store]]
-(`useScroll.stop()`), not `body` overflow.
-
-> [!note] `#todo`
-> The privacy-policy link points to `/privacy-policy` — that route does not exist
-> yet. Placeholder consent copy should be reviewed before launch.
+> [!warning] Reinstate this before adding GA4
+> GA4 writes `_ga` / `_ga_<id>` cookies, which are not strictly necessary, and
+> Google requires consent signals for EEA visitors (Consent Mode v2). Adding it
+> means bringing back a banner *and* wiring the consent state into the tag --
+> the old component only ever did the first half. See [[decisions-log]] ADR-0018.
 
 ## Grid — adaptive scaling (`grid/`)
 

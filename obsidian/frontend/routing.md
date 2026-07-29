@@ -66,7 +66,7 @@ is a leaf waiting to be extracted**, not a reason to move the boundary up.
 ## Layouts
 
 - `src/app/layout.tsx` — the **root layout**. Holds the provider tree
-  (`ScrollLayout` → `ReducedMotion` / `Preloader` / `Cookie` → children —
+  (`ScrollLayout` → `ReducedMotion` / `Preloader` → children —
   `AdaptiveGrid` is deliberately absent, see [[decisions-log]] ADR-0015),
   loads the fonts (General Sans + Mulish — see [[design-system]]) and
   `globals.css`, exports `metadata` + `viewport`, and renders the JSON-LD

@@ -16,7 +16,6 @@ The root layout (`src/app/layout.tsx`) wraps everything in this exact order.
 ```
 <html> <body>
   <ScrollLayout>        ← Lenis smooth scroll + scroll state store
-    <LazyCookie />      ← cookie consent banner + preferences modal
     {children}          ← the routed page
   </ScrollLayout>
 </body> </html>

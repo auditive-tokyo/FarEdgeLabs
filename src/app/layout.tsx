@@ -8,7 +8,6 @@ import {
 } from "@/utils/seo/generate-page-metadata";
 import { getSiteStructuredData } from "@/utils/seo/structured-data";
 
-import { LazyCookie } from "@/components/common/Cookie";
 import { Preloader } from "@/components/common/preloader";
 import { ReducedMotion } from "@/components/common/reduced-motion";
 import { ScrollLayout } from "@/layouts/scroll-layout";
@@ -75,7 +74,11 @@ export default function RootLayout({
         <ScrollLayout>
           <ReducedMotion />
           <Preloader />
-          <LazyCookie />
+          {/* No consent banner: the site stores nothing on the visitor's device
+              beyond what it needs to render. Analytics is Cloudflare Web
+              Analytics, which is cookieless, so there is no non-essential
+              storage to ask about. Reinstate one before adding GA4 or any other
+              tag that writes a cookie — see decisions-log ADR-0018. */}
           {children}
         </ScrollLayout>
       </body>

@@ -54,8 +54,8 @@ See [[smooth-scroll]] and [[data-flow]].
 
 ## Misc
 
-No miscellaneous runtime dependencies. Cookie consent is an in-house component
-(`src/components/common/Cookie/`) built on Zustand + `@react-spring/web` — the
+No miscellaneous runtime dependencies. There is no cookie-consent component: the
+template's was removed with nothing to consent to (see [[components/common]]) — the
 former `react-cookie-consent` package was removed. See [[components/common]].
 
 ## Tooling

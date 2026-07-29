@@ -10,6 +10,51 @@ consequences. Use [[templates/adr-note]] for new entries. Newest first.
 
 ---
 
+## ADR-0018 — Cookieless analytics, and therefore no consent banner
+
+- **Status:** Accepted
+- **Date:** 2026-07-24
+
+**Context.** The template shipped a consent system — banner, category
+preferences modal, Zustand store persisting to `localStorage` — mounted in the
+root layout via `<LazyCookie />`. Reading it end to end, it was connected to
+nothing: no `document.cookie` write anywhere in the tree, no analytics or
+third-party tag, and no code outside the component read the stored consent. It
+also had a defect that would only surface later — `acceptAll` persisted
+`analytics: false`, making "Accept all" and "Reject all" identical.
+
+The real question was not whether to keep the component but which analytics to
+run, since that is what decides whether consent is needed at all. Consent is
+required for storing non-essential data on a visitor's device; it has nothing to
+do with whether the site sells anything.
+
+**Decision.** Use **Cloudflare Web Analytics**, which is cookieless and keeps no
+client-side state, and delete the consent system.
+
+- Nothing non-essential is stored, so there is nothing to ask permission for.
+- The DNS is already on Cloudflare, so this adds no new vendor.
+- Cookieless measurement is not blocked by ad blockers, so the numbers are
+  closer to reality than GA4's would be.
+- Removing the component takes ~3.7 kB gz off the client and deletes a
+  known-broken flow rather than shipping it.
+
+**Rejected: GA4 with Consent Mode v2.** GA4 writes `_ga` / `_ga_<id>`, which are
+not strictly necessary, and Google requires EEA consent signals to be passed to
+its tags. That means a banner, a correct `acceptAll`, a `denied` default, and a
+`gtag('consent', 'update')` on decision — four moving parts to maintain for
+features (user-level paths, Ads attribution) this site has no use for. A `.com`
+with English copy gets EEA visitors, so the requirement is not avoidable by
+being a small company site.
+
+**Consequences.** No per-user journeys or conversion attribution; page-level
+traffic only. Adding GA4 later means reinstating a banner *and* wiring consent
+into the tag — the deleted component only ever did the first half, so treat it as
+a rewrite, not a revert (it is in git history at `1aeaabe`). The legal question
+of what Japanese law requires of a corporate site is out of scope here and should
+be confirmed with a professional before launch.
+
+---
+
 ## ADR-0017 — Below the frame, reflow — do not scale
 
 - **Status:** Accepted — extends [[decisions-log|ADR-0015]]
