@@ -30,12 +30,19 @@ export const siteConfig = {
   twitterHandle: undefined,
   author: "FarEdge Labs",
   /**
-   * Browser theme-colour (address bar / PWA). Mirrors `--background` /
-   * `--halftone-bg` in `globals.css` — the page's real ground. It cannot read
-   * the token (Next needs a literal at build time), so the two move together by
-   * hand.
+   * Browser theme-colour (address bar / PWA), one per colour scheme. Mirrors
+   * `--background` / `--halftone-bg` in `globals.css` — the page's real ground.
+   * It cannot read the tokens (Next needs literals at build time), so these move
+   * with them by hand.
+   *
+   * Both are declared because the site follows the OS: a single value would
+   * leave a phone's address bar pale above a dark page for the half of the day
+   * the scheme is dark.
    */
-  themeColor: "#f0f3f4",
+  themeColor: {
+    light: "#f0f3f4",
+    dark: "#0b0e0d",
+  },
 } as const;
 
 /**

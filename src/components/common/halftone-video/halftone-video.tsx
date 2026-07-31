@@ -195,32 +195,47 @@ export const HalftoneVideo = ({
     config: REVEAL_SPRING,
   });
 
-  // Read once, not per frame: a `getComputedStyle` on every draw would force a
-  // style flush 60 times a second to catch four values that never move. Nothing
-  // rewrites the `--halftone-*` tokens at runtime, so there is nothing to watch
-  // for — retuning the field is an edit to `globals.css`.
+  // Sampled into a ref, not read per frame: a `getComputedStyle` on every draw
+  // would force a style flush 60 times a second to catch four values that hold
+  // still almost always.
+  //
+  // "Almost" is the colour scheme. The `--halftone-*` tokens have a
+  // `prefers-color-scheme: dark` set, so they change when the OS does — at dusk,
+  // unprompted, with the page open. CSS repaints itself; a value copied into a
+  // ref does not, and the field would keep painting yesterday's ink on today's
+  // ground. So the sample is a function, and the media query is what calls it
+  // again. Nothing else moves these: retuning the field is still an edit to
+  // `globals.css` plus a reload.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    colorsRef.current = {
-      bg: readCssColor(canvas, "--halftone-bg", FALLBACK_COLORS.bg),
-      inkLight: readCssColor(
-        canvas,
-        "--halftone-ink-light",
-        FALLBACK_COLORS.inkLight,
-      ),
-      inkMid: readCssColor(
-        canvas,
-        "--halftone-ink-mid",
-        FALLBACK_COLORS.inkMid,
-      ),
-      inkDeep: readCssColor(
-        canvas,
-        "--halftone-ink-deep",
-        FALLBACK_COLORS.inkDeep,
-      ),
+    const sampleColors = () => {
+      colorsRef.current = {
+        bg: readCssColor(canvas, "--halftone-bg", FALLBACK_COLORS.bg),
+        inkLight: readCssColor(
+          canvas,
+          "--halftone-ink-light",
+          FALLBACK_COLORS.inkLight,
+        ),
+        inkMid: readCssColor(
+          canvas,
+          "--halftone-ink-mid",
+          FALLBACK_COLORS.inkMid,
+        ),
+        inkDeep: readCssColor(
+          canvas,
+          "--halftone-ink-deep",
+          FALLBACK_COLORS.inkDeep,
+        ),
+      };
     };
+
+    sampleColors();
+
+    const scheme = window.matchMedia("(prefers-color-scheme: dark)");
+    scheme.addEventListener("change", sampleColors);
+    return () => scheme.removeEventListener("change", sampleColors);
   }, []);
 
   useEffect(() => {

@@ -134,7 +134,18 @@ export function generateMetadata({
 
 export function generateViewport(): Viewport {
   return {
-    themeColor: siteConfig.themeColor,
+    // Two `<meta name="theme-color">` tags, each with its own media query. The
+    // browser picks; nothing here has to know which scheme is active.
+    themeColor: [
+      {
+        media: "(prefers-color-scheme: light)",
+        color: siteConfig.themeColor.light,
+      },
+      {
+        media: "(prefers-color-scheme: dark)",
+        color: siteConfig.themeColor.dark,
+      },
+    ],
     width: "device-width",
     initialScale: 1,
   };

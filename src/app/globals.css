@@ -1,6 +1,11 @@
 @import "tailwindcss";
 
 :root {
+  /* Tells the browser both schemes are handled, so it themes the things CSS
+     cannot reach: scrollbars, form controls, and the canvas behind the page
+     before any paint. Without it those stay light while everything else turns. */
+  color-scheme: light dark;
+
   /* Figma "Get Layers" 681:256. The frame's own backdrop is #f0f2fa, but the
      halftone covers the viewport, so --halftone-bg is what a visitor actually
      reads as the background; these match so no seam shows if the field is ever
@@ -99,9 +104,42 @@
   --radius-card: 1rem; /* 16px */
 }
 
-/* No `prefers-color-scheme: dark` override: the site is deliberately light —
-   the halftone field is built to read as ink on white paper, and inverting the
-   page under it would strand the ink on a dark ground. */
+/* Dark scheme. The template shipped light-only, on the argument that the
+   halftone reads as ink on paper and inverting the page would strand the ink on
+   a dark ground. That is a real problem, and it is why this is not an inversion:
+   the ink ramp is *reversed* rather than darkened, so density still reads as
+   "more light" the way it read as "more ink" before. Dense areas glow instead of
+   deepening; the field stays one surface, lit from the other side.
+
+   No toggle, and no stored preference: this follows the OS. That keeps the
+   header free of another control, and — because it is only CSS — there is no
+   theme to hydrate, so no chance of the first paint disagreeing with the markup.
+
+   Note `<HalftoneVideo>` samples these tokens into a ref rather than reading
+   them per frame, so it subscribes to this media query to resample. A new token
+   used by the shader has to be added there too, or it will keep its light value
+   until the page reloads. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Not pure black: a hair of green ties the ground to the accent, and true
+       black next to a bright field reads as a hole rather than a surface. */
+    --background: #0b0e0d;
+    --foreground: #f0f3f4;
+    /* Same job as in light — cards have to separate from the field — but the
+       other way round: lighter than the ground rather than brighter than it. */
+    --surface: #161a19;
+    --hairline: rgba(255, 255, 255, 0.12);
+    --hairline-strong: rgba(255, 255, 255, 0.24);
+
+    --halftone-bg: #0b0e0d;
+    /* Reversed: light -> deep now climbs *up* in luminance. The shader maps the
+       source's own light to this ramp, so the subject's highlights land on the
+       accent-adjacent lime and the shadows sink toward the ground. */
+    --halftone-ink-light: #00563a;
+    --halftone-ink-mid: #00bd71;
+    --halftone-ink-deep: #aeff00;
+  }
+}
 
 /* The family comes from the `font-sans` utility on <body>, not from here:
    `@theme inline` resolves --font-sans into utilities instead of emitting it as
