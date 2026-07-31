@@ -28,7 +28,7 @@ export interface HeroProps {
  * The halftone field is a separate fixed background — the design bakes it in as
  * flattened images, which are skipped here in favour of the live shader.
  *
- * Every piece holds still until the preloader lifts and then enters on the
+ * Every piece holds still until the intro signal fires and then enters on the
  * timings in `./reveal.ts`. This stays a Server Component: the animation is
  * isolated in the leaves below (hard rule #6).
  *

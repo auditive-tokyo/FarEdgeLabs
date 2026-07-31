@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { Hover } from "@/components/animation/springs/hover";
 import { Inview } from "@/components/animation/springs/in-view";
-import { useIntroRevealed } from "@/components/common/preloader";
+import { useIntroRevealed } from "@/components/common/intro";
 import type { HomeContent } from "@/data/mocks/home";
 
 import { NavMenu } from "./nav-menu";

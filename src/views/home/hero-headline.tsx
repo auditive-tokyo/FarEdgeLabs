@@ -3,7 +3,7 @@
 import TextEngine from "spring-text-engine";
 
 import { Inview } from "@/components/animation/springs/in-view";
-import { useIntroRevealed } from "@/components/common/preloader";
+import { useIntroRevealed } from "@/components/common/intro";
 
 import {
   LETTER_IN,
@@ -25,7 +25,7 @@ export interface HeroHeadlineProps {
  *
  * Letters arrive one after another from the left, unblurring as they land.
  * `<TextEngine>` gives each its own spring and holds them all at `LETTER_OUT`
- * until the preloader lifts (hard rule #1 — no CSS keyframes anywhere).
+ * until the intro signal fires (hard rule #1 — no CSS keyframes anywhere).
  *
  * > [!note] No `<br>` between the lines
  * > `<TextEngine>` lays its words out in a wrapping flex row, where a `<br>` is

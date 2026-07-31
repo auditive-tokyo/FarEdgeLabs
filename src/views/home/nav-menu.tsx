@@ -16,9 +16,9 @@ export interface NavMenuProps {
 }
 
 /**
- * The same spring as the preloader's curtains, for the same reason: this panel
- * is one too. `clamp` matters — a curtain that overshoots swings back and
- * flashes its edge across the page.
+ * A curtain spring: `clamp` matters — a curtain that overshoots swings back and
+ * flashes its edge across the page. Inherited from the intro loader this project
+ * no longer has, and kept because the panel is the last curtain left.
  */
 const CURTAIN_SPRING = { tension: 110, friction: 24, clamp: true } as const;
 
@@ -28,7 +28,8 @@ const CURTAIN_SPRING = { tension: 110, friction: 24, clamp: true } as const;
  * Nothing in Figma describes this: the frame is 1440 wide and its four links sit
  * in a centre pill that will not survive 375px. The panel borrows the page's own
  * vocabulary rather than inventing one — it drops from the top like the
- * preloader's curtain, and it is black with white type like the request form.
+ * vocabulary rather than inventing one — it drops from the top like a curtain,
+ * and it is black with white type like the request form.
  *
  * Above `GRID_MIN_WIDTH` this component renders nothing visible: the header's
  * pill takes over.

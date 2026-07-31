@@ -1,7 +1,7 @@
 "use client";
 
 import { Inview } from "@/components/animation/springs/in-view";
-import { useIntroRevealed } from "@/components/common/preloader";
+import { useIntroRevealed } from "@/components/common/intro";
 import type { HomeContent } from "@/data/mocks/home";
 
 import { LIFT_IN, LIFT_OUT, REVEAL_DELAY, REVEAL_SPRING } from "./reveal";

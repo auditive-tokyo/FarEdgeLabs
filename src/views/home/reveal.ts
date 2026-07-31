@@ -2,15 +2,16 @@
  * The hero's entrance — one place for the whole choreography.
  *
  * Every section holds at its resting state until `useIntroRevealed()` flips
- * (see `src/components/common/preloader/intro-state.ts`), then leans on the
- * delays below to space itself out. Timings are relative to that signal, which
- * fires the moment the preloader's curtains **begin** to lift.
+ * (see `src/components/common/intro/intro-state.ts`), then leans on the delays
+ * below to space itself out.
  *
- * So `0` is not the first visible frame — it is about 650ms before it, which is
- * the point. The curtains take that long to clear, and a page that waits for
- * them sits there blank while they do. Everything here is deliberately already
- * in motion by the time it is uncovered; keep the budget small enough that the
- * *ends* of these animations land on a page someone is looking at.
+ * `0` is now the first visible frame. It used to be roughly 650ms before it: the
+ * signal fired when a full-screen loader's curtains *began* to lift, so the
+ * early delays were spent behind them. That loader is gone (decisions-log
+ * ADR-0019) and the signal fires on mount, which means every millisecond here is
+ * a millisecond the visitor spends watching. The whole sequence now runs about
+ * 1.1s — long for a page someone came to read. Treat these as a budget to spend
+ * down rather than one to fill.
  *
  * The order is the reading order: the headline first, then the frame around it,
  * then the copy, then the panels along the bottom.

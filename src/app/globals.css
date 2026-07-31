@@ -19,14 +19,13 @@
   /* The nav's separator dots — the same black at a different alpha. */
   --hairline-strong: rgba(0, 0, 0, 0.2);
 
-  /* Preloader — Figma 682:837 / 682:886. The two curtains and the dial's
-     sweep. `--preloader-veil` is the brand green: the second curtain is the
-     accent, not a colour of its own. The dial sweeps from that same green round
-     to a teal, so the seam lands on the accent. */
-  --preloader-ground: #000000;
-  --preloader-veil: var(--accent);
-  --preloader-dial-from: var(--accent);
-  --preloader-dial-to: #48c7c9;
+  /* The brand mark's conic sweep: from the accent green round to a teal, so the
+     seam lands on the accent. Kept after the preloader that introduced it was
+     removed, because the mark still uses the pair — `scripts/generate-brand-assets.mjs`
+     redraws every icon and the Open Graph card from these two values, and its
+     `SWEEP_FROM` / `SWEEP_TO` have to match them. */
+  --mark-sweep-from: var(--accent);
+  --mark-sweep-to: #48c7c9;
 
   /* Halftone video field — see obsidian/frontend/components/common.md. The
      three inks are a ramp interpolated across the frame, not three independent
@@ -81,8 +80,6 @@
   --color-hairline: var(--hairline);
   --color-hairline-strong: var(--hairline-strong);
   --color-halftone-bg: var(--halftone-bg);
-  --color-preloader-ground: var(--preloader-ground);
-  --color-preloader-veil: var(--preloader-veil);
 
   --font-sans: var(--font-general-sans);
   --font-mulish: var(--font-mulish);

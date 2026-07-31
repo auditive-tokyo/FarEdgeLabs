@@ -1,7 +1,7 @@
 import { htmlLang, type Locale } from "@/locales";
 import { getSiteStructuredData } from "@/utils/seo/structured-data";
 
-import { Preloader } from "@/components/common/preloader";
+import { IntroReveal } from "@/components/common/intro";
 import { ReducedMotion } from "@/components/common/reduced-motion";
 import { ScrollLayout } from "@/layouts/scroll-layout";
 
@@ -44,7 +44,11 @@ export const LayoutShell = ({
             See obsidian/meta/decisions-log.md ADR-0015. */}
         <ScrollLayout>
           <ReducedMotion />
-          <Preloader />
+          {/* Renders nothing — it starts the entrance. The template's
+              full-screen loader is gone: it counted a fixed 2200ms without
+              measuring a single byte, and the page it was hiding was already
+              there. See decisions-log ADR-0019. */}
+          <IntroReveal />
           {/* No consent banner: the site stores nothing on the visitor's device
               beyond what it needs to render. Analytics is Cloudflare Web
               Analytics, which is cookieless, so there is no non-essential

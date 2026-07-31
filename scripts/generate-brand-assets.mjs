@@ -13,7 +13,8 @@
  * upscaled: it is a conic gradient clipped to a circle, and gradients are a
  * formula. Sampled off the real PNG, the formula is exactly
  * `conic-gradient(from 180deg, #00ff99, #48c7c9)` — the same sweep, from the
- * same two tokens, that `<PreloaderDial>` draws (see design-system.md):
+ * same two tokens `--mark-sweep-from` / `--mark-sweep-to` name (see
+ * design-system.md):
  *
  *   |  direction        | expected | in the PNG |
  *   |  9 o'clock (25%)  | #12f1a5  | #12f1a5    |
@@ -91,7 +92,7 @@ const assertRenderable = (strings) => {
   }
 };
 
-/** Keep in sync with `--accent` / `--preloader-dial-to` in globals.css. */
+/** Keep in sync with `--mark-sweep-from` / `--mark-sweep-to` in globals.css. */
 const SWEEP_FROM = [0x00, 0xff, 0x99];
 const SWEEP_TO = [0x48, 0xc7, 0xc9];
 /** `--halftone-bg` — what a visitor actually reads as the page's ground. */
