@@ -120,8 +120,16 @@ Two consumers do not follow the scheme and have to be remembered:
   token used by the shader must be added to that subscription or it keeps its old
   value until reload.
 - **`scripts/generate-brand-assets.mjs`** bakes `SWEEP_FROM` / `SWEEP_TO` as
-  literals. Keep them in step with the tokens, and remember the favicons, PWA
-  icons and OG card can only hold one scheme's palette.
+  literals. Keep them in step with the tokens.
+
+Only the tab icon can follow the scheme, and only because `<link rel="icon">`
+accepts `media` — the script emits `favicon-{16,32}x{16,32}-{light,dark}.png` and
+`icons` in `generate-page-metadata.ts` pairs each with a `prefers-color-scheme`
+query. Everything else is referenced by bare URL and is baked **light**: the PWA
+tiles, the OG card, and `favicon.ico`. The `.ico` is deliberately the one icon
+link without `media`, since it exists for clients that ignore those links and
+request `/favicon.ico` directly. A single-palette `.ico` is a format limit, not an
+oversight — do not file it as a bug.
 
 ## What the page is made of
 
@@ -138,9 +146,46 @@ The hero's entrance is sequenced by one signal: `<IntroReveal>` fires
 **every millisecond in `reveal.ts` is one the visitor waits**; treat the budget as
 something to spend down.
 
-`hero.stats` still carries placeholder `—` values. Fill them with real figures or
-drop the section. Do not invent metrics — the social-proof pill and its stock
-avatars were deleted for exactly that reason.
+> [!important] `hero.stats` needs rethinking, not filling in
+> The 2×2 grid is the template's, and so are its four slots — Projects, Clients,
+> Uptime, Rating. They describe an established agency. This company was just
+> founded: there is no track record to count, the first client engagement is in
+> progress, and nothing has been rated by anyone. The values are `—` placeholders
+> and **the labels are the actual problem**.
+>
+> So this is not a "fill in the numbers" task. Either find four things that are
+> true today and worth saying, or drop the section — the hero survives without it,
+> and the bottom half of the frame is already empty since the request form and the
+> social-proof pill went. Do not invent metrics; the pill and its stock avatars
+> were deleted for exactly that reason.
+>
+> Candidates that are true without a track record: years of engineering
+> experience, the stack's breadth, the domains worked in (space, medical,
+> automotive, metaverse — see the CV), or something not numeric at all. Ask before
+> choosing.
+
+> [!important] The blank hero on old browsers is a decision, not a bug
+> `<HalftoneVideo>` needs **WebGL2** and **`createImageBitmap`**, both of which
+> Safari only shipped by default in 15 (2021). Without them the field draws
+> nothing, and because pointer-scrubbing parks the clip there is no visible
+> `<video>` behind it either: on those browsers the hero background is simply
+> empty.
+>
+> This is accepted. Everything that carries meaning — headline, copy, stats, nav,
+> language switch — is text and renders fine, so what is lost is decoration. A
+> fallback would mean shipping and maintaining a second asset plus a branch in the
+> component, for visitors who are already reading the whole page.
+>
+> **Do not add a bare `<video>` fallback.** A paused, un-halftoned clip is not
+> the design. If this is ever revisited, the shape to use is a still frame of the
+> subject facing forward — the same thing `progress: 0.5` shows — as a `poster`,
+> so the composition still reads. Until someone decides that is worth an extra
+> asset, empty is the intended result.
+>
+> The field's cost is tuned by two constants in `halftone-video.tsx`: `MAX_DPR`
+> (per-frame, the one that makes an old GPU struggle) and `scrubFrames` (startup
+> seeks and memory). They were halved from the template's values; both have notes
+> explaining what each buys.
 
 ## Deploying
 
@@ -158,7 +203,17 @@ directory is pushed to `gh-pages`.
 - Do not delete `.next` while `npm run dev` is running — Turbopack's cache is in
   there and the server does not recover
 
+DNS lives at Cloudflare and **must stay "DNS only"** — proxying breaks GitHub's
+certificate renewal for the apex and `www` (next renewal 2026-10-29). That is also
+why there is no HSTS: the first `http://` hit reads "not secure" for the moment
+before GitHub's 301, which is accepted rather than worked around.
+
 ## Documentation
+
+`.kiro/steering/todo.md` is the outstanding-work list — decided or deliberately
+deferred items, with links to the decision behind each. It is `inclusion: manual`,
+so pull it in with `#todo` rather than expecting it in context. Delete an entry when
+it lands.
 
 `obsidian/` is an Obsidian vault of longer-form notes, inherited from the template
 and partly retargeted. It is **reference, not law** — this file is the contract,

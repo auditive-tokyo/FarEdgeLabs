@@ -124,14 +124,40 @@ export function generateMetadata({
       images: [resolved.ogImage],
     },
     icons: {
-      // One set, not one per colour scheme. `media` does pass through here — Next
-      // renders it on the `<link>` — but the generated icons are all baked from
-      // one palette by `scripts/generate-brand-assets.mjs`, so there is no second
-      // set to point at yet. Worth doing when the mark stops being a placeholder.
+      // One favicon per colour scheme. The mark's sweep is pink on light and
+      // green on dark (ADR-0020), and a `<link rel="icon">` accepts `media` — so
+      // unlike the PWA tiles and the OG card, which are referenced by bare URL,
+      // the tab icon *can* follow the scheme. Both sets come out of
+      // `scripts/generate-brand-assets.mjs`.
+      //
+      // The `.ico` carries no `media` on purpose: it is the fallback for clients
+      // that ignore these links and simply request `/favicon.ico`.
       icon: [
         { url: "/favicon.ico" },
-        { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-        { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+        {
+          url: "/favicon-16x16-light.png",
+          sizes: "16x16",
+          type: "image/png",
+          media: "(prefers-color-scheme: light)",
+        },
+        {
+          url: "/favicon-32x32-light.png",
+          sizes: "32x32",
+          type: "image/png",
+          media: "(prefers-color-scheme: light)",
+        },
+        {
+          url: "/favicon-16x16-dark.png",
+          sizes: "16x16",
+          type: "image/png",
+          media: "(prefers-color-scheme: dark)",
+        },
+        {
+          url: "/favicon-32x32-dark.png",
+          sizes: "32x32",
+          type: "image/png",
+          media: "(prefers-color-scheme: dark)",
+        },
       ],
       apple: [
         { url: "/apple-icon-180x180.png", sizes: "180x180", type: "image/png" },

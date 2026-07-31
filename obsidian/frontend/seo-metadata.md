@@ -64,13 +64,34 @@ with separate content, and the `hreflang` tags are what relate them.
 
 ## Open Graph card, per locale
 
-`meta.ogImage` is a locale key, so each language can point at its own card. Only
-one has been rendered so far: **the Japanese page currently serves the English
-card**, because the bundled General Sans has no kana or kanji and satori does not
-fall back to a system font. `scripts/generate-brand-assets.mjs` throws rather than
-emitting a card with an empty headline — add a font covering the glyphs (a subset of
-the characters used is enough) to `src/app/fonts/`, then run
-`BRAND_LOCALE=ja npm run brand`.
+One card per language — `open-graph.en.png` and `open-graph.ja.png` — because the
+headline on the card has to match the page it previews. `meta.ogImage` in each
+locale file points at its own, and the script renders whichever `BRAND_LOCALE`
+names:
+
+```sh
+npm run brand                  # en
+BRAND_LOCALE=ja npm run brand  # ja
+```
+
+**Fonts.** General Sans is Latin-only, so the Japanese card needs Noto Sans JP —
+`src/app/fonts/NotoSansJP-{Light,Regular}.subset.ttf`, ~100 kB each, fetched by
+`scripts/fetch-jp-subset.py` from the Google Fonts API. That endpoint serves woff2
+to modern browsers and **TrueType to anything without a `User-Agent`**, which is
+what the script exploits: satori cannot read woff2.
+
+The subsets carry kana, CJK punctuation, and exactly the kanji the copy used when
+they were built. Reword in kana freely; a new kanji means re-running the fetch. The
+generator reads the fonts' own `cmap` and **refuses to render** rather than dropping
+glyphs silently, naming the characters and the command to fix it.
+
+satori walks the `fonts` array per character, so Latin keeps General Sans and only
+what it cannot draw falls through to Noto.
+
+**No italics on Japanese.** CJK faces have no italic design and the shear a
+renderer synthesises reads as a fault, so the accent word is upright when it is
+non-Latin — the highlight bar carries the emphasis instead. The page makes the same
+call through `<Hero italicAccent>`.
 
 ## Metadata generator
 
@@ -137,8 +158,9 @@ PageSpeed, HeadlessChrome, GTmetrix, Pingdom, Bingbot, Yandexbot.
 
 ## Static assets — all generated, none drawn
 
-The `public/` **root** holds meta/PWA/SEO assets — favicons, Android/Apple/MS
-icons, `manifest.json`, `browserconfig.xml`, `open-graph.png`. Site **content**
+The `public/` **root** holds meta/PWA/SEO assets — favicons (one pair per colour
+scheme, plus a single `.ico`), Android/Apple/MS icons, `manifest.json`,
+`browserconfig.xml`, `open-graph.<locale>.png`. Site **content**
 assets (images, videos) go under `public/assets/<section>/` — see
 [[folder-structure]].
 
@@ -170,13 +192,20 @@ Run it locally and commit the PNGs.
 tiles get the `--background` ground**, because Android and iOS put the icon on a
 surface of their choosing and a transparent green sweep can land on black.
 
-> [!warning] `#todo` The generated icons cannot follow the colour scheme
-> `SWEEP_FROM` / `SWEEP_TO` are literals in the script, so `favicon.*`, the PWA
-> tiles and `open-graph.png` all hold **one** scheme's palette — currently the dark
-> scheme's green, which means a light-mode visitor gets a green tab icon beside a
-> pink page. `media` does pass through Next's `icons` metadata onto the `<link>`, so
-> per-scheme favicons are available as soon as there is a second set to point at.
-> Worth doing when the mark stops being a placeholder.
+### Which asset gets which palette
+
+The mark's sweep differs by colour scheme — pink on light, green on dark
+([[decisions-log]] ADR-0020) — and the generated assets cannot all follow.
+
+| Asset | Palette | Why |
+|-------|---------|-----|
+| `favicon-{16,32}x{16,32}-{light,dark}.png` | **both** | Declared through `<link rel="icon">`, which accepts `media`, so the browser picks. The only assets rendered twice. |
+| `favicon.ico` | light | Fallback for clients that ignore those links and request `/favicon.ico` directly. One palette only; light is what a first visit is usually in. |
+| `apple-icon-*`, `android-icon-*`, `ms-icon-*` | light | Referenced by bare URL from `manifest.json` / `browserconfig.xml`. They also bake in a light `GROUND`, so the mark has to suit it. |
+| `open-graph.png` | light | Also drawn on `GROUND`, and rendered by whichever service unfurls the link — it cannot know the reader's scheme. |
+
+`SWEEPS` in the script holds both palettes and has to stay in step with
+`--mark-sweep-from` / `--mark-sweep-to` in `globals.css`.
 
 The **OG card** (1200×630) is rendered by `next/og` with the real General Sans
 files, so it is the hero's own composition rather than a lookalike. Its size is

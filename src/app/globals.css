@@ -33,14 +33,16 @@
   /* The nav's separator dots — the same black at a different alpha. */
   --hairline-strong: rgba(0, 0, 0, 0.2);
 
-  /* The phone menu's curtain. Its own pair rather than `--foreground` /
-     `--surface`, which is what it used to borrow to mean "black with white
-     type": those two swap when the scheme does, so the curtain came down *light*
-     in dark mode and the menu looked like it had missed the memo. What the panel
-     actually wants is to be dark in both schemes — it is a curtain, and a
-     curtain is meant to read as one. */
-  --menu-panel: #000000;
-  --menu-ink: #fdffff;
+  /* The phone menu's curtain — a surface, and it follows the scheme like every
+     other surface here.
+     Its own pair rather than reusing `--surface` / `--foreground` because the
+     panel needs to sit a step away from the page's own ground so the drop reads
+     as something arriving; a token of its own is where that step is tuned.
+     It spent a while black in both schemes, on the theory that a curtain should
+     read as one. That was wrong: opening a menu on a light page and getting a
+     black screen is not drama, it is the site contradicting itself. */
+  --menu-panel: #fdffff;
+  --menu-ink: #000000;
 
   /* The brand mark's conic sweep: from the accent green round to a teal, so the
      seam lands on the accent. Kept after the preloader that introduced it was
@@ -152,9 +154,9 @@
     --hairline: rgba(255, 255, 255, 0.12);
     --hairline-strong: rgba(255, 255, 255, 0.24);
 
-    /* A shade above the page rather than the light theme's flat black: against a
-       near-black ground, black-on-black would hide the drop the curtain is
-       animating. It still reads as dark — just dark enough to be seen arriving. */
+    /* A shade above the ground rather than flat black: against a near-black page,
+       black-on-black would hide the drop the curtain is animating. Dark enough to
+       read as dark, light enough to be seen arriving. */
     --menu-panel: #161a19;
     --menu-ink: #f0f3f4;
 

@@ -4,8 +4,8 @@
   "meta": {
     "title": "FarEdge Labs — 常識の外側を、形にする",
     "description": "AWS / GCP のサーバーレス構成を軸に、AI エージェント、大規模データの分散処理と特徴量設計、推論モデルの量子化まで。検証から本番まで、前例のない要件を動くシステムにします。",
-    "_ogImage_readme": "日本語のカードはまだ英語版を流用している。日本語版を作るには src/app/fonts に日本語グリフを持つフォント（使用文字だけのサブセットで足りる）を追加し、BRAND_LOCALE=ja npm run brand を実行する。General Sans は Latin のみで、satori はシステムフォントにフォールバックしない。",
-    "ogImage": "/open-graph.png"
+    "_ogImage_readme": "BRAND_LOCALE=ja npm run brand で生成する。見出しを変えたら再生成が必要。新しい漢字を使った場合は scripts/fetch-jp-subset.py を先に実行してサブセットを取り直す（スクリプトが不足を検出して止まる）。",
+    "ogImage": "/open-graph.ja.png"
   },
   "brand": {
     "name": "FarEdge ",
