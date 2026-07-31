@@ -142,6 +142,29 @@ something to spend down.
 drop the section. Do not invent metrics — the social-proof pill and its stock
 avatars were deleted for exactly that reason.
 
+> [!important] The blank hero on old browsers is a decision, not a bug
+> `<HalftoneVideo>` needs **WebGL2** and **`createImageBitmap`**, both of which
+> Safari only shipped by default in 15 (2021). Without them the field draws
+> nothing, and because pointer-scrubbing parks the clip there is no visible
+> `<video>` behind it either: on those browsers the hero background is simply
+> empty.
+>
+> This is accepted. Everything that carries meaning — headline, copy, stats, nav,
+> language switch — is text and renders fine, so what is lost is decoration. A
+> fallback would mean shipping and maintaining a second asset plus a branch in the
+> component, for visitors who are already reading the whole page.
+>
+> **Do not add a bare `<video>` fallback.** A paused, un-halftoned clip is not
+> the design. If this is ever revisited, the shape to use is a still frame of the
+> subject facing forward — the same thing `progress: 0.5` shows — as a `poster`,
+> so the composition still reads. Until someone decides that is worth an extra
+> asset, empty is the intended result.
+>
+> The field's cost is tuned by two constants in `halftone-video.tsx`: `MAX_DPR`
+> (per-frame, the one that makes an old GPU struggle) and `scrubFrames` (startup
+> seeks and memory). They were halved from the template's values; both have notes
+> explaining what each buys.
+
 ## Deploying
 
 `main` → an auto-created release PR → merge to `production` → build → the `out/`
