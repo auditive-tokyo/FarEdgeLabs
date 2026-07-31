@@ -4,8 +4,8 @@
   "meta": {
     "title": "FarEdge Labs — Beyond the leading edge",
     "description": "Serverless on AWS and GCP: AI agents, distributed data pipelines and feature engineering, inference model quantisation. From proof of concept to production.",
-    "_ogImage_readme": "Regenerate with `npm run brand` after changing the brand or hero copy — the card renders from this file.",
-    "ogImage": "/open-graph.png"
+    "_ogImage_readme": "Regenerate with `npm run brand` after changing the brand or hero copy — the card renders from this file. One card per locale; this is the `en` one.",
+    "ogImage": "/open-graph.en.png"
   },
   "brand": {
     "name": "FarEdge ",

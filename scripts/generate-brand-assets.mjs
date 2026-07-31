@@ -72,22 +72,81 @@ const ACCENT_BAR_BOTTOM = 8;
 const hardenSpaces = (text) => text.replaceAll(" ", "\u00A0");
 
 /**
- * The bundled General Sans covers Latin only — no kana, no kanji (verified
- * against the fonts' `cmap`). satori does not fall back to a system font: it
- * draws what the fonts it was handed can draw and silently skips the rest, so
- * Japanese copy would produce a card with an empty headline that still exits 0.
- * Fail loudly instead.
+ * Every code point a TrueType/OpenType file can draw, read from its `cmap`.
+ *
+ * Only formats 4 (BMP) and 12 (full range) are handled, which is what these
+ * fonts use. Enough to answer one question: can this file draw this character?
  */
-const assertRenderable = (strings) => {
-  const unsupported = [
-    ...new Set(strings.join("").match(/[^\u0000-\u024F\u2000-\u206F]/gu) ?? []),
+const coveredCodePoints = (font) => {
+  const covered = new Set();
+  const tableCount = font.readUInt16BE(4);
+
+  for (let i = 0; i < tableCount; i += 1) {
+    const record = 12 + i * 16;
+    if (font.subarray(record, record + 4).toString("latin1") !== "cmap") continue;
+
+    const cmap = font.readUInt32BE(record + 8);
+    const subtableCount = font.readUInt16BE(cmap + 2);
+
+    for (let s = 0; s < subtableCount; s += 1) {
+      const sub = cmap + font.readUInt32BE(cmap + 4 + s * 8 + 4);
+      const format = font.readUInt16BE(sub);
+
+      if (format === 4) {
+        const segments = font.readUInt16BE(sub + 6) / 2;
+        const ends = sub + 14;
+        const starts = ends + segments * 2 + 2;
+        for (let seg = 0; seg < segments; seg += 1) {
+          const end = font.readUInt16BE(ends + seg * 2);
+          const start = font.readUInt16BE(starts + seg * 2);
+          if (end === 0xffff) continue;
+          for (let cp = start; cp <= end; cp += 1) covered.add(cp);
+        }
+      } else if (format === 12) {
+        const groups = font.readUInt32BE(sub + 12);
+        for (let g = 0; g < groups; g += 1) {
+          const base = sub + 16 + g * 12;
+          const start = font.readUInt32BE(base);
+          const end = font.readUInt32BE(base + 4);
+          for (let cp = start; cp <= end; cp += 1) covered.add(cp);
+        }
+      }
+    }
+  }
+
+  return covered;
+};
+
+/**
+ * satori has no system-font fallback: it draws what the fonts it was handed can
+ * draw and silently skips the rest, so an uncovered character produces a card
+ * with a hole in it that still exits 0.
+ *
+ * So the guard asks the fonts themselves rather than assuming a script range.
+ * General Sans is Latin-only; the Noto subsets carry kana, CJK punctuation, and
+ * exactly the kanji the copy used when they were fetched. Reword in kana freely —
+ * a *new kanji* lands here, with the command to fix it.
+ */
+const assertRenderable = (strings, fonts) => {
+  const covered = new Set();
+  for (const font of fonts) {
+    for (const cp of coveredCodePoints(font)) covered.add(cp);
+  }
+
+  const missing = [
+    ...new Set(
+      [...strings.join("")].filter(
+        (char) => char !== " " && !covered.has(char.codePointAt(0)),
+      ),
+    ),
   ];
-  if (unsupported.length > 0) {
+
+  if (missing.length > 0) {
     throw new Error(
-      `Cannot render ${unsupported.join(" ")} — the bundled General Sans is ` +
-        `Latin-only and satori has no system-font fallback. Add a font that ` +
-        `covers these glyphs (a subset of the characters used here is enough) ` +
-        `to src/app/fonts/ and register it in renderOpenGraph's \`fonts\`.`,
+      `No registered font can draw ${missing.join(" ")}. The Noto subsets in ` +
+        `src/app/fonts/ only carry the kanji the copy used when they were built. ` +
+        `Re-run \`python3 scripts/fetch-jp-subset.py\` to pick up the new ` +
+        `characters, then generate the card again.`,
     );
   }
 };
@@ -210,21 +269,36 @@ const buildIco = (pngs) => {
 /** The share card — the hero's own composition, cropped to 1200×630. */
 const renderOpenGraph = async (markPng, copy) => {
   const { brand, hero } = copy;
-  assertRenderable([
-    brand.name,
-    brand.nameAccent,
-    hero.headline,
-    hero.headlineAccent,
-    hero.lead,
-  ]);
 
-  const [light, italic, regular] = await Promise.all([
+  const [light, italic, regular, jpLight, jpRegular] = await Promise.all([
     readFile(path.join(FONTS, "GeneralSans-Light.otf")),
     readFile(path.join(FONTS, "GeneralSans-LightItalic.otf")),
     readFile(path.join(FONTS, "GeneralSans-Regular.otf")),
+    readFile(path.join(FONTS, "NotoSansJP-Light.subset.ttf")),
+    readFile(path.join(FONTS, "NotoSansJP-Regular.subset.ttf")),
   ]);
 
+  // Exactly what the card draws — the lead is not on it, so a new kanji there
+  // must not block a render that would never have shown it.
+  assertRenderable(
+    [brand.name, brand.nameAccent, hero.headline, hero.headlineAccent],
+    [light, italic, regular, jpLight, jpRegular],
+  );
+
   const markUri = `data:image/png;base64,${markPng.toString("base64")}`;
+
+  /**
+   * Italics on the accent word, but only where an italic cut exists.
+   *
+   * The Noto subsets are upright only, and CJK faces have no italic design —
+   * asking for one gets a mechanical shear that reads as a rendering fault. The
+   * page makes the same call through `<Hero italicAccent>`; this keeps the card
+   * agreeing with it. `fontStyle: "normal"` still gets the highlight bar, which
+   * is what carries the emphasis there.
+   */
+  const accentStyle = /[^\u0000-\u024F]/u.test(hero.headlineAccent)
+    ? "normal"
+    : "italic";
 
   const image = new ImageResponse(
     {
@@ -235,11 +309,12 @@ const renderOpenGraph = async (markPng, copy) => {
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "space-between",
           background: GROUND,
           color: INK,
           padding: "56px 64px",
-          fontFamily: "General Sans",
+          // Both families, in order: the fallback is declared here as well as by
+          // the `fonts` array, so a Japanese glyph has somewhere to go.
+          fontFamily: "General Sans, Noto Sans JP",
         },
         children: [
           // Brand lockup — the header's, at the card's scale.
@@ -280,10 +355,22 @@ const renderOpenGraph = async (markPng, copy) => {
           },
 
           // The headline, with the bar the design hangs under the accent word.
+          //
+          // `flexGrow: 1` + `justifyContent: center` rather than the root's old
+          // `space-between`: the card used to have a third row (the hero's lead)
+          // holding the bottom edge, and with that gone `space-between` dropped
+          // the headline onto the floor. Centring it in whatever is left below the
+          // brand needs no tuned number and survives a headline that wraps to
+          // three lines.
           {
             type: "div",
             props: {
-              style: { display: "flex", flexDirection: "column" },
+              style: {
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                flexGrow: 1,
+              },
               children: [
                 {
                   type: "div",
@@ -330,7 +417,7 @@ const renderOpenGraph = async (markPng, copy) => {
                           style: {
                             fontSize: 80,
                             fontWeight: 300,
-                            fontStyle: "italic",
+                            fontStyle: accentStyle,
                             lineHeight: 1,
                           },
                           children: hero.headlineAccent,
@@ -343,24 +430,22 @@ const renderOpenGraph = async (markPng, copy) => {
             },
           },
 
-          {
-            type: "div",
-            props: {
-              style: { fontSize: 26, fontWeight: 400 },
-              children: hero.lead,
-            },
-          },
         ],
       },
     },
     {
       width: 1200,
       height: 630,
+      // General Sans first, Noto after: satori walks the list per character, so
+      // Latin keeps the brand's face and only what it cannot draw falls through
+      // to the Japanese subset. No italic cut for Noto — see `accentStyle`.
       fonts: [
         { name: "General Sans", data: light, weight: 300, style: "normal" },
         { name: "General Sans", data: italic, weight: 300, style: "italic" },
         { name: "General Sans", data: regular, weight: 400, style: "normal" },
         { name: "General Sans", data: italic, weight: 400, style: "italic" },
+        { name: "Noto Sans JP", data: jpLight, weight: 300, style: "normal" },
+        { name: "Noto Sans JP", data: jpRegular, weight: 400, style: "normal" },
       ],
     },
   );
@@ -422,11 +507,15 @@ const main = async () => {
     await write(`ms-icon-${size}x${size}.png`, await renderTile(size));
   }
 
+  // One card per locale, named for it, because the headline on the card has to
+  // match the one on the page it previews. `meta.ogImage` in each locale file
+  // points at its own; run this once per locale (`BRAND_LOCALE=ja npm run brand`).
+  //
   // Light palette, like the tiles: the card is drawn on `GROUND`, and a share
   // preview is rendered by whichever service unfurls the link — it has no idea
   // what scheme the reader is in.
   await write(
-    "open-graph.png",
+    `open-graph.${LOCALE}.png`,
     await renderOpenGraph(await renderMark(256, "light"), copy),
   );
 

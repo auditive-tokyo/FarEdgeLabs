@@ -120,8 +120,16 @@ Two consumers do not follow the scheme and have to be remembered:
   token used by the shader must be added to that subscription or it keeps its old
   value until reload.
 - **`scripts/generate-brand-assets.mjs`** bakes `SWEEP_FROM` / `SWEEP_TO` as
-  literals. Keep them in step with the tokens, and remember the favicons, PWA
-  icons and OG card can only hold one scheme's palette.
+  literals. Keep them in step with the tokens.
+
+Only the tab icon can follow the scheme, and only because `<link rel="icon">`
+accepts `media` — the script emits `favicon-{16,32}x{16,32}-{light,dark}.png` and
+`icons` in `generate-page-metadata.ts` pairs each with a `prefers-color-scheme`
+query. Everything else is referenced by bare URL and is baked **light**: the PWA
+tiles, the OG card, and `favicon.ico`. The `.ico` is deliberately the one icon
+link without `media`, since it exists for clients that ignore those links and
+request `/favicon.ico` directly. A single-palette `.ico` is a format limit, not an
+oversight — do not file it as a bug.
 
 ## What the page is made of
 
@@ -195,7 +203,17 @@ directory is pushed to `gh-pages`.
 - Do not delete `.next` while `npm run dev` is running — Turbopack's cache is in
   there and the server does not recover
 
+DNS lives at Cloudflare and **must stay "DNS only"** — proxying breaks GitHub's
+certificate renewal for the apex and `www` (next renewal 2026-10-29). That is also
+why there is no HSTS: the first `http://` hit reads "not secure" for the moment
+before GitHub's 301, which is accepted rather than worked around.
+
 ## Documentation
+
+`.kiro/steering/todo.md` is the outstanding-work list — decided or deliberately
+deferred items, with links to the decision behind each. It is `inclusion: manual`,
+so pull it in with `#todo` rather than expecting it in context. Delete an entry when
+it lands.
 
 `obsidian/` is an Obsidian vault of longer-form notes, inherited from the template
 and partly retargeted. It is **reference, not law** — this file is the contract,

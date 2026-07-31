@@ -64,13 +64,34 @@ with separate content, and the `hreflang` tags are what relate them.
 
 ## Open Graph card, per locale
 
-`meta.ogImage` is a locale key, so each language can point at its own card. Only
-one has been rendered so far: **the Japanese page currently serves the English
-card**, because the bundled General Sans has no kana or kanji and satori does not
-fall back to a system font. `scripts/generate-brand-assets.mjs` throws rather than
-emitting a card with an empty headline — add a font covering the glyphs (a subset of
-the characters used is enough) to `src/app/fonts/`, then run
-`BRAND_LOCALE=ja npm run brand`.
+One card per language — `open-graph.en.png` and `open-graph.ja.png` — because the
+headline on the card has to match the page it previews. `meta.ogImage` in each
+locale file points at its own, and the script renders whichever `BRAND_LOCALE`
+names:
+
+```sh
+npm run brand                  # en
+BRAND_LOCALE=ja npm run brand  # ja
+```
+
+**Fonts.** General Sans is Latin-only, so the Japanese card needs Noto Sans JP —
+`src/app/fonts/NotoSansJP-{Light,Regular}.subset.ttf`, ~100 kB each, fetched by
+`scripts/fetch-jp-subset.py` from the Google Fonts API. That endpoint serves woff2
+to modern browsers and **TrueType to anything without a `User-Agent`**, which is
+what the script exploits: satori cannot read woff2.
+
+The subsets carry kana, CJK punctuation, and exactly the kanji the copy used when
+they were built. Reword in kana freely; a new kanji means re-running the fetch. The
+generator reads the fonts' own `cmap` and **refuses to render** rather than dropping
+glyphs silently, naming the characters and the command to fix it.
+
+satori walks the `fonts` array per character, so Latin keeps General Sans and only
+what it cannot draw falls through to Noto.
+
+**No italics on Japanese.** CJK faces have no italic design and the shear a
+renderer synthesises reads as a fault, so the accent word is upright when it is
+non-Latin — the highlight bar carries the emphasis instead. The page makes the same
+call through `<Hero italicAccent>`.
 
 ## Metadata generator
 
@@ -139,7 +160,7 @@ PageSpeed, HeadlessChrome, GTmetrix, Pingdom, Bingbot, Yandexbot.
 
 The `public/` **root** holds meta/PWA/SEO assets — favicons (one pair per colour
 scheme, plus a single `.ico`), Android/Apple/MS icons, `manifest.json`,
-`browserconfig.xml`, `open-graph.png`. Site **content**
+`browserconfig.xml`, `open-graph.<locale>.png`. Site **content**
 assets (images, videos) go under `public/assets/<section>/` — see
 [[folder-structure]].
 
