@@ -115,6 +115,10 @@ export function generateMetadata({
       images: [resolved.ogImage],
     },
     icons: {
+      // One set, not one per colour scheme. `media` does pass through here — Next
+      // renders it on the `<link>` — but the generated icons are all baked from
+      // one palette by `scripts/generate-brand-assets.mjs`, so there is no second
+      // set to point at yet. Worth doing when the mark stops being a placeholder.
       icon: [
         { url: "/favicon.ico" },
         { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },

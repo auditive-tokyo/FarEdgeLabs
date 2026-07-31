@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 
 import { Hover } from "@/components/animation/springs/hover";
@@ -62,13 +61,19 @@ export const SiteHeader = ({
       >
         <Link href="/" className="flex items-center gap-2.5">
           <span className="relative grid size-[3.125rem] place-items-center rounded-full border border-hairline bg-surface">
-            <Image
-              src={brand.markSrc}
-              alt=""
-              width={28}
-              height={28}
-              className="size-7 rounded-full"
-              priority
+            {/* Drawn in CSS rather than loaded as `brand.markSrc`. The mark is a
+                conic sweep between two tokens, and those tokens now change with
+                the colour scheme — a PNG cannot follow that, and at 28px there is
+                nothing in the file a gradient does not reproduce exactly. It also
+                drops a request from the critical path.
+                The generated icons (favicon, PWA tiles, the OG card) are still
+                baked from `scripts/generate-brand-assets.mjs` and cannot switch,
+                so they hold whichever scheme's colours they were rendered in.
+                That is a real seam, and it is why this only makes sense while the
+                mark is a placeholder. */}
+            <span
+              aria-hidden="true"
+              className="size-7 rounded-full bg-[conic-gradient(from_180deg,var(--mark-sweep-from),var(--mark-sweep-to))]"
             />
           </span>
           <span className="text-body leading-[1.2]">
@@ -149,7 +154,7 @@ export const SiteHeader = ({
             // alone is not one.
             hrefLang={languageSwitch.label.toLowerCase()}
             aria-label={languageSwitch.ariaLabel}
-            className="flex h-[3.125rem] w-[9.1875rem] items-center justify-center rounded-full border border-hairline bg-accent text-body leading-[1.2]"
+            className="flex h-[3.125rem] w-[9.1875rem] items-center justify-center rounded-full border border-hairline bg-accent text-body leading-[1.2] text-on-accent"
           >
             {languageSwitch.label}
           </Link>

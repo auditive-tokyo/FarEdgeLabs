@@ -29,7 +29,8 @@ const CURTAIN_SPRING = { tension: 110, friction: 24, clamp: true } as const;
  * in a centre pill that will not survive 375px. The panel borrows the page's own
  * vocabulary rather than inventing one — it drops from the top like the
  * vocabulary rather than inventing one — it drops from the top like a curtain,
- * and it is black with white type like the request form.
+ * and it is dark with light type in both colour schemes (`--menu-panel` /
+ * `--menu-ink`; see the note on those tokens).
  *
  * Above `GRID_MIN_WIDTH` this component renders nothing visible: the header's
  * pill takes over.
@@ -96,8 +97,10 @@ export const NavMenu = ({
         className="grid size-[3.125rem] place-items-center rounded-full border border-hairline bg-accent lg:hidden"
       >
         <span aria-hidden="true" className="flex w-5 flex-col gap-1.5">
-          <span className="h-px w-full bg-foreground" />
-          <span className="h-px w-full bg-foreground" />
+          {/* On the accent, so `--on-accent` rather than the page's ink — see the
+              token's note in globals.css. */}
+          <span className="h-px w-full bg-on-accent" />
+          <span className="h-px w-full bg-on-accent" />
         </span>
       </button>
 
@@ -110,7 +113,7 @@ export const NavMenu = ({
               aria-modal="true"
               aria-label="Menu"
               style={{ y: style.y }}
-              className="fixed inset-0 z-30 flex flex-col justify-between overflow-hidden bg-foreground px-5 pb-10 pt-24 lg:hidden"
+              className="fixed inset-0 z-30 flex flex-col justify-between overflow-hidden bg-menu-panel px-5 pb-10 pt-24 lg:hidden"
             >
               <button
                 type="button"
@@ -118,7 +121,7 @@ export const NavMenu = ({
                 aria-label="Close menu"
                 /* Lands exactly on the burger it replaces, so the control does
                    not appear to jump as the panel arrives. */
-                className="absolute right-2.5 top-2.5 grid size-[3.125rem] place-items-center rounded-full border border-hairline bg-accent"
+                className="absolute right-2.5 top-2.5 grid size-[3.125rem] place-items-center rounded-full border border-hairline bg-accent text-on-accent"
               >
                 <svg
                   aria-hidden="true"
@@ -137,7 +140,7 @@ export const NavMenu = ({
                       <Link
                         href={item.href}
                         onClick={close}
-                        className="text-menu leading-none text-surface"
+                        className="text-menu leading-none text-menu-ink"
                       >
                         {item.label}
                       </Link>
@@ -154,7 +157,7 @@ export const NavMenu = ({
                 onClick={close}
                 hrefLang={languageSwitch.label.toLowerCase()}
                 aria-label={languageSwitch.ariaLabel}
-                className="flex h-[3.125rem] items-center justify-center rounded-full border border-hairline bg-accent text-body leading-[1.2]"
+                className="flex h-[3.125rem] items-center justify-center rounded-full border border-hairline bg-accent text-body leading-[1.2] text-on-accent"
               >
                 {languageSwitch.label}
               </Link>

@@ -25,11 +25,7 @@ export const getHomeContent = (locale: Locale) => {
   const copy = getCopy(locale);
 
   return {
-    brand: {
-      ...copy.brand,
-      /** The mark is a rendered gradient, so it ships as an asset rather than CSS. */
-      markSrc: "/assets/hero/logo-mark.png",
-    },
+    brand: copy.brand,
     nav: copy.nav,
     languageSwitch: copy.languageSwitch,
     hero: {

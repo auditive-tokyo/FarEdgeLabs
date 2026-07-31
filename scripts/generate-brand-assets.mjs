@@ -8,10 +8,10 @@
  *
  * ## Why a recipe and not a resize
  *
- * `public/assets/hero/logo-mark.png` — the mark the header renders — is 56×56.
- * Upscaling that to a 512px maskable icon is a blur. It does not need to be
- * upscaled: it is a conic gradient clipped to a circle, and gradients are a
- * formula. Sampled off the real PNG, the formula is exactly
+ * `public/assets/hero/logo-mark.png` was the template's 56×56 mark. Upscaling
+ * that to a 512px maskable icon is a blur. It does not need to be upscaled: it
+ * is a conic gradient clipped to a circle, and gradients are a formula. Sampled
+ * off that PNG, the formula is exactly
  * `conic-gradient(from 180deg, #00ff99, #48c7c9)` — the same sweep, from the
  * same two tokens `--mark-sweep-from` / `--mark-sweep-to` name (see
  * design-system.md):
