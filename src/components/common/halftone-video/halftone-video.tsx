@@ -18,8 +18,19 @@ import {
   type HalftoneRenderer,
 } from "./halftone-renderer";
 
-/** Beyond 2x the extra pixels cost far more than they show. */
-const MAX_DPR = 2;
+/**
+ * Cap on the device pixel ratio the field is drawn at.
+ *
+ * This is the whole per-frame cost: a fullscreen canvas at 2× is four times the
+ * pixels of 1×, shaded every frame, for the life of the page. Dropped from 2 to
+ * 1.5 — 44% fewer pixels — after an older Intel Mac made the page feel heavy
+ * while newer machines were fine.
+ *
+ * The picture can afford it. The shader samples one pixel per halftone cell, so
+ * extra resolution only sharpens the *edges* of dots that are deliberately soft;
+ * it is the cheapest quality to give up here and the most expensive to keep.
+ */
+const MAX_DPR = 1.5;
 
 /** Trails the pointer — loose enough to glide, tight enough to feel connected. */
 const POINTER_SPRING = { tension: 120, friction: 26 } as const;
@@ -96,6 +107,11 @@ export interface HalftoneVideoProps {
   /**
    * Stills to decode across the clip for `pointerScrub`. More means finer
    * motion but a longer decode and more memory (each frame is ~300 kB).
+   *
+   * This is a *startup* cost, not a per-frame one: the loop reads whichever
+   * still is nearest and never decodes again. So it buys smoothness of the head
+   * turn, and it is paid once, in seeks — the slowest thing here at ~25–65ms
+   * each.
    */
   scrubFrames?: number;
   /**
@@ -143,7 +159,11 @@ export const HalftoneVideo = ({
   tilt = 0,
   inkSpread = 2.5,
   pointerScrub = false,
-  scrubFrames = 120,
+  // 60, not the 120 this started at: the clip is 4.37s, so 60 stills land one
+  // every ~74ms of its timeline, and the spring gliding between them covers the
+  // gap. Halving it halves the seeks before the field is fully scrubbable, and
+  // halves the ImageBitmaps held for the rest of the session.
+  scrubFrames = 60,
   reveal = true,
   revealBand = 0.28,
   className = "fixed inset-0 -z-10",
