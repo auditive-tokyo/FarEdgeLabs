@@ -10,6 +10,74 @@ consequences. Use [[templates/adr-note]] for new entries. Newest first.
 
 ---
 
+## ADR-0020 — One accent per colour scheme: pink in light, green in dark
+
+- **Status:** Accepted
+- **Date:** 2026-07-30
+
+**Context.** ADR-0019 gave the site a dark scheme, and the design's green read
+well on a near-black ground — better than it ever did on white, where `#00ff99`
+goes pale and the headline's highlight bar stops reading as a highlight. The
+question was whether one hue should serve both grounds.
+
+**Decision.** Let the accent change with the scheme: `#ff4d94` in light,
+`#00ff99` in dark. The halftone ink ramp follows (pink ramp on white, green ramp
+reversed on black), and so does the brand mark's conic sweep.
+
+The mark in the header is now **drawn in CSS** from `--mark-sweep-from` /
+`--mark-sweep-to` instead of loading `logo-mark.png`. A raster file cannot follow
+a token, and at 28px a conic gradient reproduces it exactly. `markSrc` is gone
+from the content model.
+
+A new token, `--on-accent`, carries the ink for anything sitting on the accent. It
+is dark in both schemes, because the accent is bright in both. This is the second
+time inheriting `--foreground` onto a coloured surface produced unreadable type;
+`--menu-panel` / `--menu-ink` exist for the same reason.
+
+**Consequences.** The brand has two faces, which is normally a cost — here it is
+acceptable only because the mark is a placeholder until a real logo exists. The
+generated assets cannot follow: `favicon.*`, the PWA tiles and `open-graph.png`
+are baked from one palette by `scripts/generate-brand-assets.mjs`, so a light-mode
+visitor sees a green tab icon. `media` on `<link rel="icon">` does pass through
+Next's metadata, so per-scheme favicons are available once there is a second set
+to point at. Revisit the whole decision when the logo is designed: a single hue
+may well be the right answer for a brand that intends to be recognised.
+
+---
+
+## ADR-0019 — No preloader; the entrance keeps its starting gun
+
+- **Status:** Accepted
+- **Date:** 2026-07-30
+
+**Context.** The template opened with a full-screen loader: two curtains, a
+gradient dial, a percentage counting up. It measured nothing — a linear spring
+over a hard-coded 2200ms, with a comment claiming a linear count avoids "lying
+about the wait". Nothing in it read `readyState`, a decode, or a font. With the
+curtain lift and the veil's trailing delay, a visitor waited some 2.5s in front of
+a page that had finished loading.
+
+It could not simply be deleted. Its lift was the signal every section waits on:
+six components hold their springs at rest until `useIntroRevealed()` flips, and
+without a publisher they would all sit at `opacity: 0` forever.
+
+**Decision.** Delete the curtains and the dial; keep the signal. `<IntroReveal>`
+replaces `<Preloader>` and does one thing — calls `markIntroRevealed()` in a mount
+effect. The store moved from `components/common/preloader/` to
+`components/common/intro/`, which is what it always was.
+
+**Consequences.** The page is visible immediately and the choreography plays on
+top of it. `reveal.ts`'s delays used to be spent behind the curtains — `0` was
+about 650ms before the first visible frame — and are now spent in front of the
+visitor: about 1.1s from mount to the last element landing. That is a budget to
+reduce, not to fill, and the note in `reveal.ts` says so.
+
+The two `--preloader-*` curtain tokens are gone. The dial's gradient pair
+survived, renamed `--mark-sweep-from` / `--mark-sweep-to`, because the brand mark
+is drawn from the same two colours and `generate-brand-assets.mjs` mirrors them.
+
+---
+
 ## ADR-0018 — Cookieless analytics, and therefore no consent banner
 
 - **Status:** Accepted

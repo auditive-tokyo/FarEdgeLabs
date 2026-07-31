@@ -1,8 +1,19 @@
 ---
-inclusion: always
+inclusion: manual
 ---
 
-These are some guidelines when using the SonarQube MCP server.
+Guidelines for the SonarQube MCP server.
+
+**Loaded on request only.** Reference this file with `#sonarqube-mcp` when you want
+an agent to follow the analysis protocol below; otherwise the SonarQube tools stay
+available but nothing is run automatically. It used to be `inclusion: always`,
+which meant every task — copy edits, documentation, config — carried the
+toggle-analyse-toggle dance whether or not any code was touched.
+
+The filename deliberately has no `.instructions` in it: an editor validates
+`*.instructions.md` against a different schema, one that knows `applyTo` /
+`description` / `name` and flags `inclusion` as unsupported. The attribute is
+Kiro's and is correct here; the warning was the other schema's.
 
 # Important Tool Guidelines
 

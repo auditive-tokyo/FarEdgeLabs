@@ -1,39 +1,76 @@
 ---
 tags: [frontend, seo, stable]
-updated: 2026-07-15
+updated: 2026-07-30
 ---
 
 # SEO & Metadata
 
-## Site config
+## Split in two: what is the same everywhere, and what is language
 
-`src/lib/site.ts` (`siteConfig`) is the **single source of truth** for SEO —
-name, description, origin URL, OG image, Twitter handle, theme colour. The
-metadata generator, `robots.ts`, `sitemap.ts`, and the JSON-LD helper all read
-from it. Filled in for *Stack.Side*; the description is drawn from the hero's own
-lead and body (`data/mocks/home.ts`) — the page and its search result should not
-describe the product differently.
+`src/lib/site.ts` holds only what does not change with the language —
+`name`, `url`, `author`, `twitterHandle`, `themeColor`. Titles and descriptions are
+copy, so they live with the rest of it in `src/locales/<locale>.json` under `meta`
+and are read through **`getSiteMeta(locale)`** from the same file.
 
-`name` is the **brand** ("Stack.Side"), used as `siteName` and the JSON-LD
-Organization — not the page title. The `<title>` is a page concern and is passed
-from the root layout: *"Stack.Side — Turn money into foresight"*. The brand alone
-says who, not what.
+`name` is the **brand** ("FarEdge Labs"), used as `siteName` and the JSON-LD
+Organization — not the page title. The `<title>` is a page concern and comes from
+`meta.title` in the locale file: *"FarEdge Labs — 常識の外側を、形にする"* /
+*"FarEdge Labs — Beyond the leading edge"*. The brand alone says who, not what.
+
+The description has to move together with the hero copy in the same file — the
+page and its search result should not describe the company differently.
 
 `siteConfig.url` comes from `NEXT_PUBLIC_SITE_URL` (see [[environment-variables]]),
-falling back to `http://localhost:3000`.
+falling back to `http://localhost:3000`. It is set in the deploy workflow, not
+committed.
 
-> [!warning] `#todo` Two values are deliberately not filled in
-> - **`NEXT_PUBLIC_SITE_URL` is unset**, so every canonical and `og:url` still
->   points at `localhost`. Social scrapers cannot fetch a localhost card at all —
->   set it before launch or the share preview is simply blank.
-> - **`twitterHandle` is `undefined`, on purpose.** `twitter:site` is a claim
->   about *who owns this site*; a guessed handle credits whichever stranger holds
->   the name. The generator omits both tags when it is absent, and the card
->   renders fine without them. Fill it in once someone confirms the account.
->
-> `themeColor` is a literal (`#f0f3f4`) mirroring `--background` / `--halftone-bg`
-> — Next needs it at build time and cannot read the token, so **the two move
-> together by hand**.
+> [!warning] `twitterHandle` is `undefined`, on purpose
+> `twitter:site` is a claim about *who owns this site*; a guessed handle credits
+> whichever stranger holds the name. The generator omits both tags when it is
+> absent, and the card renders fine without them. Fill it in once someone confirms
+> the account.
+
+`themeColor` is now a **pair** of literals — `{ light: "#f0f3f4", dark: "#0b0e0d" }`
+— mirroring `--background` in each colour scheme, and `generateViewport()` emits one
+`<meta name="theme-color">` per scheme with its own media query. Next needs
+literals at build time and cannot read the tokens, so **these move with them by
+hand**. A single value left a phone's address bar pale above a dark page.
+
+## Two locales
+
+Every page exists twice: `/` in Japanese, `/en/` in English (see [[routing]]).
+`generateMetadata` therefore takes a **`locale`** and resolves title, description,
+OG image and `og:locale` from it — `src/locales/index.ts` pairs the `<html lang>`
+and `og:locale` values so the two cannot drift.
+
+Each page declares the whole set of alternates:
+
+```
+<link rel="canonical"  href="https://faredgelabs.com/" />
+<link rel="alternate" hreflang="ja"        href="https://faredgelabs.com/" />
+<link rel="alternate" hreflang="en"        href="https://faredgelabs.com/en/" />
+<link rel="alternate" hreflang="x-default" href="https://faredgelabs.com/" />
+```
+
+`x-default` names the page to serve when no language matches, which is the same one
+the root serves. `sitemap.ts` lists both locales as equals — they are separate URLs
+with separate content, and the `hreflang` tags are what relate them.
+
+> [!warning] `#todo` The alternates always point at the home pages
+> `languageAlternates()` in the metadata generator maps each locale to its *root*.
+> Correct while every locale has exactly one page; the moment `/en/about` exists it
+> will claim `/` is its Japanese equivalent. The same limitation applies to
+> `languageHref` in `src/views/home.tsx`, which the language switcher uses.
+
+## Open Graph card, per locale
+
+`meta.ogImage` is a locale key, so each language can point at its own card. Only
+one has been rendered so far: **the Japanese page currently serves the English
+card**, because the bundled General Sans has no kana or kanji and satori does not
+fall back to a system font. `scripts/generate-brand-assets.mjs` throws rather than
+emitting a card with an empty headline — add a font covering the glyphs (a subset of
+the characters used is enough) to `src/app/fonts/`, then run
+`BRAND_LOCALE=ja npm run brand`.
 
 ## Metadata generator
 
@@ -45,7 +82,8 @@ import {
   generateViewport,
 } from "@/utils/seo/generate-page-metadata";
 
-export const metadata = generateMetadata({ title: "…", description: "…" });
+// `locale` is required; everything else defaults to that locale's `meta`.
+export const metadata = generateMetadata({ locale: "ja" });
 export const viewport = generateViewport();
 ```
 
@@ -56,22 +94,33 @@ export const viewport = generateViewport();
 - `generateViewport()` → the `Viewport` export. `themeColor` lives here, **not**
   on the metadata object (Next deprecated it there).
 
-Accepted `generateMetadata` options: `title`, `description`, `url`, `ogImage`,
-`twitterHandle`, `author`, `siteName`. (`keywords` and the non-standard `other`
-tags were dropped — no SEO value.)
+Accepted `generateMetadata` options: `locale` (**required**), `title`,
+`description`, `url`, `ogImage`, `twitterHandle`, `author`, `siteName`. The four
+middle ones default to the locale's `meta`, so a page normally passes only
+`locale`. (`keywords` and the non-standard `other` tags were dropped — no SEO
+value.)
 
 ## robots.txt & sitemap.xml
 
 Generated by the Next file conventions:
 - `src/app/robots.ts` → `/robots.txt` — allows all crawlers, points at the sitemap.
-- `src/app/sitemap.ts` → `/sitemap.xml` — lists public routes (home only so far;
-  add an entry per route as the site grows).
+- `src/app/sitemap.ts` → `/sitemap.xml` — one entry per locale's home page (add an
+  entry per route as the site grows).
+
+Both need `export const dynamic = "force-static"`: with `output: "export"` there is
+no server to run a metadata route at request time, so it has to be rendered to a
+file at build. `sitemap.ts`'s `lastModified` is therefore the build time.
 
 ## Structured data (JSON-LD)
 
-`src/utils/seo/structured-data.ts` → `getSiteStructuredData()` builds an
-`Organization` + `WebSite` JSON-LD graph. The root layout renders it once in a
-`<script type="application/ld+json">`.
+`src/utils/seo/structured-data.ts` → `getSiteStructuredData(locale)` builds an
+`Organization` + `WebSite` JSON-LD graph. `layout-shell.tsx` renders it once in a
+`<script type="application/ld+json">`, so each locale's root layout emits its own.
+
+The Organization's `@id` stays origin-scoped — it is one company either way. The
+WebSite node is per locale: it carries the translated description and declares
+`inLanguage`, which is what tells a crawler these are two renderings of one site
+rather than two sites.
 
 ## Bot detection
 
@@ -93,27 +142,41 @@ icons, `manifest.json`, `browserconfig.xml`, `open-graph.png`. Site **content**
 assets (images, videos) go under `public/assets/<section>/` — see
 [[folder-structure]].
 
-Every one of them comes out of **`yarn brand`**
+Every one of them comes out of **`npm run brand`**
 (`scripts/generate-brand-assets.mjs`). Run it when the mark or the two gradient
-tokens change; do not hand-edit the output.
+tokens change; do not hand-edit the output. It is deliberately **not** part of the
+build: the output is deterministic, so running it per deploy would only cost time.
+Run it locally and commit the PNGs.
 
 > [!important] The mark is a recipe, not a file to resize
-> `assets/hero/logo-mark.png` — what the header renders — is **56×56**, so a
-> 512px maskable icon cannot be a resize of it. It does not need to be: the mark
-> is a conic gradient clipped to a circle, and a gradient is a formula. Sampled
-> off the real PNG it is exactly `conic-gradient(from 180deg, #00ff99, #48c7c9)`
-> — the same sweep, from the same two tokens, that `<PreloaderDial>` draws
-> ([[design-system]]). Verified at all four quadrants (9 o'clock `#12f1a5`,
-> 12 `#24e3b2`, 3 `#36d5be`, 6 `#48c7c9`), so the script redraws the mark at any
-> size and the icons follow the tokens.
+> The template's `assets/hero/logo-mark.png` was **56×56**, so a 512px maskable
+> icon could not be a resize of it. It does not need to be: the mark is a conic
+> gradient clipped to a circle, and a gradient is a formula. Sampled off that PNG
+> it was exactly `conic-gradient(from 180deg, #00ff99, #48c7c9)` — verified at all
+> four quadrants (9 o'clock `#12f1a5`, 12 `#24e3b2`, 3 `#36d5be`, 6 `#48c7c9`) — so
+> the script redraws the mark at any size from `--mark-sweep-from` /
+> `--mark-sweep-to`.
 >
 > It is drawn pixel-by-pixel into an RGBA buffer, supersampled 4× and downsampled
 > by sharp: **SVG has no conic gradient**, and neither sharp nor satori will fake
 > one.
+>
+> The **header** no longer loads that PNG. Those two tokens now differ per colour
+> scheme, and a raster file cannot follow a token, so the header draws the mark as a
+> CSS `conic-gradient` instead ([[decisions-log]] ADR-0020). At 28px the two are
+> indistinguishable.
 
 **Favicons stay transparent** (tab chrome comes in every shade); **home-screen
 tiles get the `--background` ground**, because Android and iOS put the icon on a
 surface of their choosing and a transparent green sweep can land on black.
+
+> [!warning] `#todo` The generated icons cannot follow the colour scheme
+> `SWEEP_FROM` / `SWEEP_TO` are literals in the script, so `favicon.*`, the PWA
+> tiles and `open-graph.png` all hold **one** scheme's palette — currently the dark
+> scheme's green, which means a light-mode visitor gets a green tab icon beside a
+> pink page. `media` does pass through Next's `icons` metadata onto the `<link>`, so
+> per-scheme favicons are available as soon as there is a second set to point at.
+> Worth doing when the mark stops being a placeholder.
 
 The **OG card** (1200×630) is rendered by `next/og` with the real General Sans
 files, so it is the hero's own composition rather than a lookalike. Its size is
@@ -130,7 +193,7 @@ crops what it was promised.
 
 > [!note] `browserconfig.xml` pointed at three 404s
 > It referenced `ms-icon-70x70/150x150/310x310.png`, which the starter never
-> shipped. `yarn brand` now generates them. The file is auto-discovered at the
+> shipped. `npm run brand` now generates them. The file is auto-discovered at the
 > root, so it needs no `<meta name="msapplication-config">`.
 
 ## Related

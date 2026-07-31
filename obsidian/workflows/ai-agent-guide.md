@@ -1,11 +1,27 @@
 ---
-tags: [workflow, ai, stable]
-updated: 2026-05-21
+tags: [workflow, ai, superseded]
+updated: 2026-07-30
 ---
 
 # AI Agent Guide
 
-Rules of engagement for AI agents (Claude Code, Cursor) working in this repo.
+> [!warning] Superseded by `AGENTS.md` — read that first
+> This note was the template's rules of engagement, written when the vault was
+> the contract. **`AGENTS.md` at the repo root is now the contract**, and it is
+> the only document loaded into an agent's context automatically. Where the two
+> disagree, `AGENTS.md` wins.
+>
+> What has changed since this was written, and is *not* reflected below: the site
+> is a static export with no server (no Route Handlers, no middleware, no
+> server-only env); it serves two locales from two root layouts in route groups;
+> the colour scheme follows the OS with a different accent per scheme; the cookie
+> banner and the preloader are gone. See `AGENTS.md`, [[decisions-log]] ADR-0018
+> through ADR-0020.
+>
+> Kept because the sections on the animation engine and the vault's own map are
+> still accurate and still useful.
+
+Rules of engagement for AI agents working in this repo.
 
 ## Read this first
 
@@ -25,13 +41,17 @@ Rules of engagement for AI agents (Claude Code, Cursor) working in this repo.
 
 | Layer | Files | Purpose |
 |-------|-------|---------|
-| **This vault** (`obsidian/`) | all of `obsidian/**` | **The single source of truth** — all project documentation, navigable & linked. |
-| **AI entry points** (repo root) | `AGENTS.md`, `CLAUDE.md`, `.cursorrules` | Thin shims — they carry the hard rules and point into the vault. |
+| **The contract** (repo root) | `AGENTS.md` | Auto-loaded into every agent's context. Carries the hard rules and the constraints that shape the project. **Canonical.** |
+| **This vault** (`obsidian/`) | all of `obsidian/**` | Reference. Longer-form notes on the animation engine, the design tokens, and why past decisions were made. Read on demand, not law. |
 
-There are no separate spec files anymore — `project-specs.md` was decomposed into
-the vault's `architecture/` and `frontend/` notes, and `text-engine-docs.md`
-became [[text-engine-reference]]. **The vault is canonical**; keep the root shims
-consistent with it.
+This inverts what the template asserted. The vault called itself the single source
+of truth, which was workable when one person kept all 28 notes current; it stopped
+being true the moment the project diverged from the template. An agent reads
+`AGENTS.md` whether or not anyone asks it to, so that is where a rule has to live
+to be reliable — a rule in a note nobody opened is not a rule.
+
+The vault's lasting value is the part `AGENTS.md` cannot hold: the vendored
+animation engine's specs, and [[decisions-log]]'s record of *why*.
 
 ## Hard rules (never violate)
 
@@ -45,7 +65,9 @@ consistent with it.
 4. **No hardcoded values** — design tokens for styles (see [[design-system]]),
    props/hooks for content (see [[component-conventions]]).
 5. **Routes delegate to views.** `app/**/page.tsx` imports only from `views/`.
-6. **No `any`.** Type everything. Run `yarn lint` before finishing.
+6. **No `any`.** Type everything. Run `npm run lint` **and** `npx tsc --noEmit`
+   before finishing — `no-unused-vars` is off in the ESLint config, so ESLint
+   alone misses dead imports.
 7. **Server Components by default**; `"use client"` only at leaves.
 
 ## Where to look
