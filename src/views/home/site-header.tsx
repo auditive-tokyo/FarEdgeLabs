@@ -113,11 +113,26 @@ export const SiteHeader = ({
         </Inview>
       </nav>
 
-      <NavMenu
-        nav={nav}
-        languageSwitch={languageSwitch}
-        languageHref={languageHref}
-      />
+      {/* The phone's right-hand pair. The language switch sits *beside* the
+          burger rather than inside the panel it opens: switching language is a
+          top-level action, and it was costing two taps and a look at the bottom
+          of a full-screen menu to find. Two 50px circles read as a set — the
+          design already pairs a pill with a circle of exactly this size.
+
+          Not animated, unlike the desktop pill: it is grouped with the burger,
+          which never animated either, and one of the two arriving late would
+          break the pair. */}
+      <div className="flex items-center gap-2 lg:hidden">
+        <Link
+          href={languageHref}
+          hrefLang={languageSwitch.label.toLowerCase()}
+          aria-label={languageSwitch.ariaLabel}
+          className="grid size-[3.125rem] place-items-center rounded-full border border-hairline bg-accent text-body leading-none text-on-accent"
+        >
+          {languageSwitch.label}
+        </Link>
+        <NavMenu nav={nav} />
+      </div>
 
       {/* Where the design put a "Send Request" pill. That CTA was a link to the
           hero's own form, sitting a screen's width away from it and submitting

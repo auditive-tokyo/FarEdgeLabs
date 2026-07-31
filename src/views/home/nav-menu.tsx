@@ -11,8 +11,6 @@ import { useWindowWidth } from "@/hooks/use-window-size";
 
 export interface NavMenuProps {
   nav: HomeContent["nav"];
-  languageSwitch: HomeContent["languageSwitch"];
-  languageHref: string;
 }
 
 /**
@@ -27,19 +25,20 @@ const CURTAIN_SPRING = { tension: 110, friction: 24, clamp: true } as const;
  *
  * Nothing in Figma describes this: the frame is 1440 wide and its four links sit
  * in a centre pill that will not survive 375px. The panel borrows the page's own
- * vocabulary rather than inventing one — it drops from the top like the
  * vocabulary rather than inventing one — it drops from the top like a curtain,
  * and it is dark with light type in both colour schemes (`--menu-panel` /
  * `--menu-ink`; see the note on those tokens).
  *
+ * Links only. The language switch used to sit at the bottom of this panel, which
+ * put a top-level action two taps away behind a control labelled "menu". It now
+ * sits beside the burger in the header. The panel covers the header while open, so
+ * switching language means closing this first — acceptable for a panel whose whole
+ * job is going somewhere else.
+ *
  * Above `GRID_MIN_WIDTH` this component renders nothing visible: the header's
- * pill takes over.
+ * centre pill takes over.
  */
-export const NavMenu = ({
-  nav,
-  languageSwitch,
-  languageHref,
-}: NavMenuProps) => {
+export const NavMenu = ({ nav }: NavMenuProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const panelId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -113,7 +112,7 @@ export const NavMenu = ({
               aria-modal="true"
               aria-label="Menu"
               style={{ y: style.y }}
-              className="fixed inset-0 z-30 flex flex-col justify-between overflow-hidden bg-menu-panel px-5 pb-10 pt-24 lg:hidden"
+              className="fixed inset-0 z-30 flex flex-col overflow-hidden bg-menu-panel px-5 pb-10 pt-24 lg:hidden"
             >
               <button
                 type="button"
@@ -148,19 +147,6 @@ export const NavMenu = ({
                   ))}
                 </ul>
               </nav>
-
-              {/* The header's pill does not fit beside a logo and a burger, so
-                  it lives here — the one place on a phone where there is room
-                  for it to be the size it is in the design. */}
-              <Link
-                href={languageHref}
-                onClick={close}
-                hrefLang={languageSwitch.label.toLowerCase()}
-                aria-label={languageSwitch.ariaLabel}
-                className="flex h-[3.125rem] items-center justify-center rounded-full border border-hairline bg-accent text-body leading-[1.2] text-on-accent"
-              >
-                {languageSwitch.label}
-              </Link>
             </animated.div>
           ),
       )}
