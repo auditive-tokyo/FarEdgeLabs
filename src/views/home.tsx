@@ -40,7 +40,6 @@ export const HomeView = ({ locale }: HomeViewProps) => {
       <main>
         <Hero
           hero={content.hero}
-          cta={content.cta}
           // Japanese has no italic cut to switch to — see `<Hero italicAccent>`.
           italicAccent={locale !== "ja"}
         />

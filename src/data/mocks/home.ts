@@ -31,7 +31,6 @@ export const getHomeContent = (locale: Locale) => {
       markSrc: "/assets/hero/logo-mark.png",
     },
     nav: copy.nav,
-    cta: copy.cta,
     languageSwitch: copy.languageSwitch,
     hero: {
       ...copy.hero,

@@ -2,12 +2,11 @@ import type { HomeContent } from "@/data/mocks/home";
 
 import { HeroCopy } from "./hero-copy";
 import { HeroHeadline } from "./hero-headline";
-import { HeroRequest } from "./hero-request";
+
 import { HeroStats } from "./hero-stats";
 
 export interface HeroProps {
   hero: HomeContent["hero"];
-  cta: string;
   /**
    * Italics on the accent word. Off for Japanese: the CJK fonts a browser falls
    * back to carry no italic cut, so the engine shears the glyphs instead —
@@ -37,7 +36,7 @@ export interface HeroProps {
  * frame's absolute coordinates. Source order is therefore also the mobile
  * reading order — keep them in the order they should be read.
  */
-export const Hero = ({ hero, cta, italicAccent = true }: HeroProps) => {
+export const Hero = ({ hero, italicAccent = true }: HeroProps) => {
   return (
     <section
       aria-labelledby="hero-title"
@@ -60,7 +59,6 @@ export const Hero = ({ hero, cta, italicAccent = true }: HeroProps) => {
       <HeroCopy lead={hero.lead} body={hero.body} />
 
       <HeroStats stats={hero.stats} />
-      <HeroRequest cta={cta} labels={hero.form} />
     </section>
   );
 };

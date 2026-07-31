@@ -17,7 +17,6 @@
     { "label": "実績", "href": "/works" },
     { "label": "会社概要", "href": "/about" }
   ],
-  "cta": "送信する",
   "languageSwitch": {
     "label": "EN",
     "ariaLabel": "Switch to English"
@@ -27,10 +26,6 @@
     "headlineAccent": "形にする",
     "lead": "検証から、本番まで",
     "body": "AWS / GCP のサーバーレス構成を軸に、AI エージェント、大規模データの分散処理と特徴量設計、推論モデルの量子化まで。前例のない要件を、動くシステムにして納めます。",
-    "form": {
-      "name": "お名前",
-      "email": "メールアドレス"
-    },
     "stats": [
       { "value": "—", "label": "案件数", "accented": true },
       { "value": "—", "label": "クライアント", "accented": false },

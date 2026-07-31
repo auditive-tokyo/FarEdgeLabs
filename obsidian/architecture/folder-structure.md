@@ -55,7 +55,7 @@ src/
 │       ├── reveal.ts       # The entrance choreography — delays, springs, targets
 │       ├── site-header.tsx · nav-menu.tsx · hero.tsx · hero-field.tsx
 │       ├── hero-headline.tsx · hero-copy.tsx
-│       └── hero-stats.tsx · hero-request.tsx
+│       └── hero-stats.tsx
 │
 ├── layouts/                # Reusable layout wrappers
 │   └── scroll-layout.tsx   # Lenis smooth-scroll wrapper

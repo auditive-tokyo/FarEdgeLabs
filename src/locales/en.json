@@ -17,7 +17,6 @@
     { "label": "Works", "href": "/en/works" },
     { "label": "About", "href": "/en/about" }
   ],
-  "cta": "Send Request",
   "languageSwitch": {
     "label": "JA",
     "ariaLabel": "日本語に切り替える"
@@ -27,10 +26,6 @@
     "headlineAccent": "edge",
     "lead": "From proof of concept to production",
     "body": "Serverless on AWS and GCP: AI agents, distributed data pipelines and feature engineering, and inference models quantised to fit their hardware budget. Requirements without precedent, delivered as working systems.",
-    "form": {
-      "name": "Name",
-      "email": "Email"
-    },
     "stats": [
       { "value": "—", "label": "Projects", "accented": true },
       { "value": "—", "label": "Clients", "accented": false },
