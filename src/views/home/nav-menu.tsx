@@ -26,8 +26,8 @@ const CURTAIN_SPRING = { tension: 110, friction: 24, clamp: true } as const;
  * Nothing in Figma describes this: the frame is 1440 wide and its four links sit
  * in a centre pill that will not survive 375px. The panel borrows the page's own
  * vocabulary rather than inventing one — it drops from the top like a curtain,
- * and it is dark with light type in both colour schemes (`--menu-panel` /
- * `--menu-ink`; see the note on those tokens).
+ * on `--menu-panel` / `--menu-ink`, which follow the colour scheme like every
+ * other surface (see the note on those tokens).
  *
  * Links only. The language switch used to sit at the bottom of this panel, which
  * put a top-level action two taps away behind a control labelled "menu". It now
