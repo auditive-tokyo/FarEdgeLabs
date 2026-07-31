@@ -40,16 +40,21 @@ export const Hero = ({ hero, italicAccent = true }: HeroProps) => {
   return (
     <section
       aria-labelledby="hero-title"
-      /* Mobile: a column that is as tall as it needs to be. Fitting this much
-         copy, four cards, a form and a pill into one phone screen would mean
-         cutting most of it, so it scrolls — which is what a phone does anyway.
-         `pt-20` clears the fixed header.
+      /* Mobile: at least the viewport, and taller if the copy needs it — so it
+         scrolls when there is more to say and still fills the screen when there
+         is not. `min-h` rather than `h`: the column used to be long enough to
+         fill a phone on its own, but the form and the social-proof pill are gone
+         and three blocks no longer reach the bottom, which left the stats
+         stranded mid-screen. They are pushed down instead of the gaps being
+         stretched (`mt-auto` on the grid), so the headline and copy stay
+         together at the top and read as one block. `pt-20` clears the fixed
+         header.
 
          From `lg`: exactly the viewport, never more. The bottom row is pinned to
          this box's bottom edge, so it lands on the screen's. No floor is needed —
          the grid caps its scale by height (globals.css), so 50rem never exceeds
          the viewport and the pieces can't fold into each other. */
-      className="relative flex flex-col gap-10 px-5 pb-10 pt-20 lg:block lg:h-lvh lg:gap-0 lg:p-0"
+      className="relative flex min-h-lvh flex-col gap-10 px-5 pb-10 pt-20 lg:block lg:h-lvh lg:min-h-0 lg:gap-0 lg:p-0"
     >
       <HeroHeadline
         headline={hero.headline}

@@ -43,7 +43,21 @@ export const HeroCopy = ({ lead, body }: HeroCopyProps) => {
   const isRevealed = useIntroRevealed();
 
   return (
-    <div className="flex gap-4 lg:contents">
+    /* The card is mobile's alone. On the frame this copy sits in the field's
+       quiet left third, but a phone stacks it straight over the subject's face,
+       where body text at `text-body` competes with the halftone's densest dots.
+       A ground of its own is the cheapest fix that keeps the art intact, and it
+       is deliberately short of opaque — the dots still read through it, so the
+       card sits *in* the field rather than punching a hole in it. Below about
+       `/70` the body copy starts losing contrast against the darkest part of the
+       subject, which is the floor to tune against.
+       `lg:contents` removes this box entirely, and an element that generates no
+       box paints no background — so the card disappears at `lg` without a single
+       override.
+       No `backdrop-blur`: the field behind it is a WebGL canvas redrawing every
+       frame, and a backdrop filter would have to re-blur it just as often. A
+       near-opaque ground costs nothing per frame and reads the same. */
+    <div className="flex gap-4 rounded-card bg-surface/75 p-5 lg:contents">
       {/* Drawn downward from the top, so it reads as the copy's spine arriving
           rather than a line fading up. On mobile it stretches to the column it
           sits beside; the frame gives it a fixed length. */}

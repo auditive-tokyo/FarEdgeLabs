@@ -29,7 +29,12 @@ export const HeroStats = ({ stats }: HeroStatsProps) => {
   const isRevealed = useIntroRevealed();
 
   return (
-    <ul className="grid grid-cols-2 gap-2 lg:absolute lg:right-7.5 lg:top-[24.3125rem]">
+    /* `mt-auto` puts the grid on the bottom of the phone's column — see the
+       comment on `<Hero>`'s section. It is the last flex item, so it takes all
+       the slack rather than sharing it, which keeps the headline and copy tight
+       together at the top. Dropped at `lg`, where the grid is positioned against
+       the frame instead. */
+    <ul className="mt-auto grid grid-cols-2 gap-2 lg:absolute lg:right-7.5 lg:top-[24.3125rem] lg:mt-0">
       {stats.map((stat, index) => (
         <Inview
           key={stat.label}
