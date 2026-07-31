@@ -138,11 +138,12 @@ export const SiteHeader = ({
           hero's own form, sitting a screen's width away from it and submitting
           nothing — two identical buttons, one of which did not do what it said.
           The language switch takes the slot instead: on a bilingual site it is
-          the one control that belongs in the header on every page, and it keeps
-          the design's pill-and-arrow pair intact.
+          the one control that belongs in the header on every page.
 
-          The pill and its arrow twin read as one control, so they hover as one:
-          scaling them separately would pull the seam between them open. */}
+          The design's decorative arrow circle went with the CTA. An arrow means
+          "onward", which is what a request button promises; a language switch
+          returns you to the same page in another language, so the arrow was
+          saying something untrue about where the button goes. */}
       <Inview
         tag="div"
         className="hidden lg:block"
@@ -173,21 +174,6 @@ export const SiteHeader = ({
           >
             {languageSwitch.label}
           </Link>
-          {/* Decorative twin of the pill: same destination, arrow only. */}
-          <span
-            aria-hidden="true"
-            className="grid size-[3.125rem] place-items-center rounded-full border border-hairline bg-accent"
-          >
-            <span className="grid size-[1.875rem] place-items-center rounded-full bg-surface">
-              <svg
-                viewBox="0 0 9 7.364"
-                className="w-2 fill-none stroke-current"
-                strokeWidth="1"
-              >
-                <path d="M0.5 3.682h7.5M5.318 0.5l3.182 3.182-3.182 3.182" />
-              </svg>
-            </span>
-          </span>
         </Hover>
       </Inview>
     </header>
