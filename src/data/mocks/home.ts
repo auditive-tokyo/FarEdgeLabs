@@ -19,15 +19,22 @@
  * > evidence, and its three faces were stock decoration.
  */
 
-import { getCopy, type Locale } from "@/locales";
+import { getCopy, localeHref, type Locale } from "@/locales";
 
 export const getHomeContent = (locale: Locale) => {
   const copy = getCopy(locale);
 
   return {
     brand: copy.brand,
-    nav: copy.nav,
+    // The locale files carry a `path` per item, not an `href`: the prefix is the
+    // locale's business, so the URL is assembled here rather than written out
+    // four times per language.
+    nav: copy.nav.map((item) => ({
+      label: item.label,
+      href: localeHref(locale, item.path),
+    })),
     languageSwitch: copy.languageSwitch,
+    underConstruction: copy.underConstruction,
     hero: {
       ...copy.hero,
       /**

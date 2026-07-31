@@ -24,50 +24,59 @@ import {
 interface MetadataProps {
   /** Decides the language of every string below, plus `og:locale` and hreflang. */
   locale: Locale;
+  /**
+   * This page's own segment, the part that does not change with the language:
+   * `"services"`, or `""` for home. Drives the canonical URL and every hreflang.
+   */
+  path?: string;
   title?: string;
   description?: string;
-  /** Canonical path (e.g. `/about`) or absolute URL for this page. */
-  url?: string;
   /** Open Graph / Twitter image — path under `public/` or absolute URL. */
   ogImage?: string;
   twitterHandle?: string;
   author?: string;
   siteName?: string;
+  /**
+   * Keep the page out of the index. For pages that exist but have nothing to say
+   * yet — a placeholder that ranks is worse than one that does not exist, because
+   * it is the answer a searcher gets instead of the real page later.
+   */
+  noindex?: boolean;
 }
 
 /**
- * Every locale's version of the current page, for `hreflang`.
+ * Every locale's version of *this* page, for `hreflang`.
  *
- * Only correct while each locale has exactly one page. Once there are real
- * routes, this has to map the current path into each locale rather than always
- * pointing at their home pages — otherwise every `/en/about` claims `/` is its
- * Japanese equivalent.
+ * Keyed off the page's own segment rather than the locale's home, so
+ * `/en/services/` points at `/services/` and not at `/`. Getting this wrong is
+ * quiet: a crawler simply believes the wrong pages are translations of each other.
  *
  * `x-default` names the page a crawler should serve when it cannot match any
- * language, which is the same page the root serves.
+ * language, which is the default locale's version of the same page.
  */
-const languageAlternates = () => ({
+const languageAlternates = (path: string) => ({
   ...Object.fromEntries(
-    locales.map((locale) => [locale, localeHref(locale)]),
+    locales.map((locale) => [locale, localeHref(locale, path)]),
   ),
-  "x-default": localeHref(DEFAULT_LOCALE),
+  "x-default": localeHref(DEFAULT_LOCALE, path),
 });
 
 export function generateMetadata({
   locale,
+  path = "",
   title,
   description,
-  url,
   ogImage,
   twitterHandle = siteConfig.twitterHandle,
   author = siteConfig.author,
   siteName = siteConfig.name,
+  noindex = false,
 }: MetadataProps): Metadata {
   const meta = getSiteMeta(locale);
   const resolved = {
     title: title ?? meta.title,
     description: description ?? meta.description,
-    url: url ?? meta.path,
+    url: localeHref(locale, path),
     ogImage: ogImage ?? meta.ogImage,
   };
 
@@ -81,7 +90,7 @@ export function generateMetadata({
     publisher: author,
     alternates: {
       canonical: resolved.url,
-      languages: languageAlternates(),
+      languages: languageAlternates(path),
     },
     openGraph: {
       title: resolved.title,
@@ -130,7 +139,9 @@ export function generateMetadata({
     },
     manifest: "/manifest.json",
     robots: {
-      index: true,
+      index: !noindex,
+      // Followed either way: the placeholder pages link back to a real one, and
+      // there is no reason to strand that link.
       follow: true,
     },
   };

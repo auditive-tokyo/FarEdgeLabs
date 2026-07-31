@@ -11,12 +11,18 @@
     "name": "FarEdge ",
     "nameAccent": "Labs"
   },
+  "_nav_readme": "`path` is the page's own segment, with no locale in it. The URL is assembled by localeHref(locale, path) (src/locales/index.ts). Do not write hrefs here — that is how a locale prefix ends up doubled or missing.",
   "nav": [
-    { "label": "Home", "href": "/en/" },
-    { "label": "Services", "href": "/en/services" },
-    { "label": "Works", "href": "/en/works" },
-    { "label": "About", "href": "/en/about" }
+    { "label": "Home", "path": "" },
+    { "label": "Services", "path": "services" },
+    { "label": "Works", "path": "works" },
+    { "label": "About", "path": "about" }
   ],
+  "underConstruction": {
+    "heading": "Under construction",
+    "body": "This page is being built. It will be here shortly.",
+    "backLabel": "Back to home"
+  },
   "languageSwitch": {
     "label": "JA",
     "ariaLabel": "日本語に切り替える"

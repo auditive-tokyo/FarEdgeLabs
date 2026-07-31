@@ -8,8 +8,12 @@ import { localeHref, locales } from "@/locales";
  *
  * Both locales are listed as equals rather than one being a variant of the
  * other: they are separate URLs serving separate content, and the `hreflang`
- * tags in the pages themselves are what relate them. Add an entry per public
- * route as the site grows (ideally derived from a routes manifest).
+ * tags in the pages themselves are what relate them.
+ *
+ * The `/services`, `/works` and `/about` placeholders are **deliberately absent**.
+ * A sitemap is a request to index, and those pages have nothing to index yet —
+ * they also carry `noindex`, so listing them would be asking for something and
+ * refusing it in the same breath. Add each one here when it becomes a real page.
  */
 
 // Required by `output: "export"` — metadata routes have no server to run on,

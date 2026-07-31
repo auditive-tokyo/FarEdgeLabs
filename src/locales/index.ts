@@ -36,9 +36,23 @@ const OG_LOCALE: Record<Locale, string> = { ja: "ja_JP", en: "en_US" };
  */
 export const getCopy = (locale: Locale) => dictionaries[locale];
 
-/** Root-relative path for a locale's home page, with the trailing slash `next.config.ts` enforces. */
-export const localeHref = (locale: Locale): string =>
-  locale === DEFAULT_LOCALE ? "/" : `/${locale}/`;
+/**
+ * Root-relative path for a page in a locale, with the trailing slash
+ * `next.config.ts` enforces.
+ *
+ * `path` is the page's own segment, the part that is the same in every language —
+ * `"services"`, or `""` for home. The locale prefix is this function's business,
+ * and the default locale has none because it is served from the root.
+ *
+ * Everything that has to name a URL goes through here: canonical tags, hreflang,
+ * the sitemap, the language switcher. One definition, so a page cannot end up
+ * claiming a URL that does not exist.
+ */
+export const localeHref = (locale: Locale, path = ""): string => {
+  const segment = path.replace(/^\/+|\/+$/g, "");
+  const prefix = locale === DEFAULT_LOCALE ? "" : `/${locale}`;
+  return segment ? `${prefix}/${segment}/` : `${prefix}/`;
+};
 
 export const htmlLang = (locale: Locale): string => HTML_LANG[locale];
 

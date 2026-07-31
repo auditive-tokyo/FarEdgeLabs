@@ -11,12 +11,18 @@
     "name": "FarEdge ",
     "nameAccent": "Labs"
   },
+  "_nav_readme": "path はロケールを含まない、そのページ自身のセグメント。URL は localeHref(locale, path) が組み立てる（src/locales/index.ts）。href を直接書かないこと — ロケールの接頭辞を二重に付けたり落としたりする原因になる。",
   "nav": [
-    { "label": "ホーム", "href": "/" },
-    { "label": "サービス", "href": "/services" },
-    { "label": "実績", "href": "/works" },
-    { "label": "会社概要", "href": "/about" }
+    { "label": "ホーム", "path": "" },
+    { "label": "サービス", "path": "services" },
+    { "label": "実績", "path": "works" },
+    { "label": "会社概要", "path": "about" }
   ],
+  "underConstruction": {
+    "heading": "準備中",
+    "body": "このページは現在制作中です。公開までしばらくお待ちください。",
+    "backLabel": "ホームに戻る"
+  },
   "languageSwitch": {
     "label": "EN",
     "ariaLabel": "Switch to English"
