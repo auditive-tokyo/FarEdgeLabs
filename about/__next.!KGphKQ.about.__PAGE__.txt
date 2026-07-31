@@ -1,0 +1,8 @@
+1:"$Sreact.fragment"
+2:I[223,["/_next/static/chunks/30wctpncizzdj.js","/_next/static/chunks/09o0nhqj0_xzn.js","/_next/static/chunks/0f0852uhize7p.js","/_next/static/chunks/03s6hh2eenes2.js"],"HeroField"]
+3:I[4170,["/_next/static/chunks/30wctpncizzdj.js","/_next/static/chunks/09o0nhqj0_xzn.js","/_next/static/chunks/0f0852uhize7p.js","/_next/static/chunks/03s6hh2eenes2.js"],"SiteHeader"]
+4:I[52905,["/_next/static/chunks/30wctpncizzdj.js","/_next/static/chunks/09o0nhqj0_xzn.js","/_next/static/chunks/0f0852uhize7p.js","/_next/static/chunks/03s6hh2eenes2.js"],"UnderConstructionBody"]
+5:I[97367,["/_next/static/chunks/05-c3ty_6dwfk.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
+6:"$Sreact.suspense"
+0:{"rsc":["$","$1","c",{"children":[[["$","$L2",null,{"src":"/assets/hero/man.mp4"}],["$","$L3",null,{"brand":{"name":"FarEdge ","nameAccent":"Labs"},"nav":[{"label":"ホーム","href":"/"},{"label":"サービス","href":"/services/"},{"label":"実績","href":"/works/"},{"label":"会社概要","href":"/about/"}],"languageSwitch":{"label":"EN","ariaLabel":"Switch to English"},"languageHref":"/en/about/"}],["$","main",null,{"children":["$","$L4",null,{"title":"会社概要","copy":{"heading":"準備中","body":"このページは現在制作中です。公開までしばらくお待ちください。","backLabel":"ホームに戻る"},"homeHref":"/"}]}]],[["$","script","script-0",{"src":"/_next/static/chunks/0f0852uhize7p.js","async":true}],["$","script","script-1",{"src":"/_next/static/chunks/03s6hh2eenes2.js","async":true}]],["$","$L5",null,{"children":["$","$6",null,{"name":"Next.MetadataOutlet","children":"$@7"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"jX6SwuleIVk3RWSqW-vyZ"}
+7:null

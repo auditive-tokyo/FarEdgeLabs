@@ -1,0 +1,5 @@
+User-Agent: *
+Allow: /
+
+Host: https://faredgelabs.com
+Sitemap: https://faredgelabs.com/sitemap.xml
