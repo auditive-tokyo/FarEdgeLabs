@@ -92,13 +92,23 @@ const assertRenderable = (strings) => {
   }
 };
 
-/** Keep in sync with `--mark-sweep-from` / `--mark-sweep-to` in globals.css. */
-const SWEEP_FROM = [0x00, 0xff, 0x99];
-const SWEEP_TO = [0x48, 0xc7, 0xc9];
+/**
+ * The mark's conic sweep, per colour scheme. Keep in sync with
+ * `--mark-sweep-from` / `--mark-sweep-to` in globals.css (ADR-0020).
+ *
+ * Two palettes because the page has two: pink on a light ground, green on a dark
+ * one. Which asset gets which is not a free choice — see `main()`.
+ */
+const SWEEPS = {
+  light: { from: [0xff, 0x4d, 0x94], to: [0xb1, 0x4f, 0xd8] },
+  dark: { from: [0x00, 0xff, 0x99], to: [0x48, 0xc7, 0xc9] },
+};
+
 /** `--halftone-bg` — what a visitor actually reads as the page's ground. */
 const GROUND = "#f0f3f4";
 const INK = "#000000";
-const ACCENT = "#00ff99";
+/** `--accent` in the light scheme, which is the ground the OG card is drawn on. */
+const ACCENT = "#ff4d94";
 
 /** Drawn this many times over, then downsampled — that is the antialiasing. */
 const SUPERSAMPLE = 4;
@@ -107,7 +117,8 @@ const SUPERSAMPLE = 4;
  * The mark, drawn at `size` px: a conic sweep starting at 6 o'clock and running
  * clockwise, clipped to a circle. Returns a PNG buffer.
  */
-const renderMark = async (size) => {
+const renderMark = async (size, scheme = "light") => {
+  const { from: SWEEP_FROM, to: SWEEP_TO } = SWEEPS[scheme];
   const s = size * SUPERSAMPLE;
   const centre = s / 2;
   const radius = s / 2;
@@ -150,7 +161,9 @@ const renderMark = async (size) => {
  */
 const renderTile = async (size, padding = 0.18) => {
   const inner = Math.round(size * (1 - padding * 2));
-  const mark = await renderMark(inner);
+  // Always the light palette: the tile has a light `GROUND` baked in, and the OS
+  // shows that same tile whatever scheme the device is in.
+  const mark = await renderMark(inner, "light");
 
   return sharp({
     create: {
@@ -369,16 +382,31 @@ const main = async () => {
 
   // Favicons stay transparent — browsers draw them on tab chrome of every
   // shade, and a light square would box the mark in on a dark theme.
-  for (const size of [16, 32]) {
-    await write(`favicon-${size}x${size}.png`, await renderMark(size));
+  //
+  // These are the *only* assets rendered twice. A favicon is declared through a
+  // `<link>`, and a `<link>` can carry `media`, so the browser can be handed one
+  // per scheme and pick — see `icons` in generate-page-metadata.ts. Nothing else
+  // here has that: a PWA tile and an OG card are referenced by URL alone.
+  for (const scheme of ["light", "dark"]) {
+    for (const size of [16, 32]) {
+      await write(
+        `favicon-${size}x${size}-${scheme}.png`,
+        await renderMark(size, scheme),
+      );
+    }
   }
+
+  // The bare `.ico` is the fallback for anything that ignores those links —
+  // older browsers asking for `/favicon.ico` directly, and crawlers. It can only
+  // be one palette, and it is the light one: that is the scheme a first-time
+  // visitor is statistically in, and it matches the tiles and the card below.
   await write(
     "favicon.ico",
     buildIco(
       await Promise.all(
         [16, 32, 48].map(async (size) => ({
           size,
-          data: await renderMark(size),
+          data: await renderMark(size, "light"),
         })),
       ),
     ),
@@ -394,9 +422,12 @@ const main = async () => {
     await write(`ms-icon-${size}x${size}.png`, await renderTile(size));
   }
 
+  // Light palette, like the tiles: the card is drawn on `GROUND`, and a share
+  // preview is rendered by whichever service unfurls the link — it has no idea
+  // what scheme the reader is in.
   await write(
     "open-graph.png",
-    await renderOpenGraph(await renderMark(256), copy),
+    await renderOpenGraph(await renderMark(256, "light"), copy),
   );
 
   console.log(`Locale: ${LOCALE}`);

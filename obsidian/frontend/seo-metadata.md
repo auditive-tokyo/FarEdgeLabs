@@ -137,8 +137,9 @@ PageSpeed, HeadlessChrome, GTmetrix, Pingdom, Bingbot, Yandexbot.
 
 ## Static assets — all generated, none drawn
 
-The `public/` **root** holds meta/PWA/SEO assets — favicons, Android/Apple/MS
-icons, `manifest.json`, `browserconfig.xml`, `open-graph.png`. Site **content**
+The `public/` **root** holds meta/PWA/SEO assets — favicons (one pair per colour
+scheme, plus a single `.ico`), Android/Apple/MS icons, `manifest.json`,
+`browserconfig.xml`, `open-graph.png`. Site **content**
 assets (images, videos) go under `public/assets/<section>/` — see
 [[folder-structure]].
 
@@ -170,13 +171,20 @@ Run it locally and commit the PNGs.
 tiles get the `--background` ground**, because Android and iOS put the icon on a
 surface of their choosing and a transparent green sweep can land on black.
 
-> [!warning] `#todo` The generated icons cannot follow the colour scheme
-> `SWEEP_FROM` / `SWEEP_TO` are literals in the script, so `favicon.*`, the PWA
-> tiles and `open-graph.png` all hold **one** scheme's palette — currently the dark
-> scheme's green, which means a light-mode visitor gets a green tab icon beside a
-> pink page. `media` does pass through Next's `icons` metadata onto the `<link>`, so
-> per-scheme favicons are available as soon as there is a second set to point at.
-> Worth doing when the mark stops being a placeholder.
+### Which asset gets which palette
+
+The mark's sweep differs by colour scheme — pink on light, green on dark
+([[decisions-log]] ADR-0020) — and the generated assets cannot all follow.
+
+| Asset | Palette | Why |
+|-------|---------|-----|
+| `favicon-{16,32}x{16,32}-{light,dark}.png` | **both** | Declared through `<link rel="icon">`, which accepts `media`, so the browser picks. The only assets rendered twice. |
+| `favicon.ico` | light | Fallback for clients that ignore those links and request `/favicon.ico` directly. One palette only; light is what a first visit is usually in. |
+| `apple-icon-*`, `android-icon-*`, `ms-icon-*` | light | Referenced by bare URL from `manifest.json` / `browserconfig.xml`. They also bake in a light `GROUND`, so the mark has to suit it. |
+| `open-graph.png` | light | Also drawn on `GROUND`, and rendered by whichever service unfurls the link — it cannot know the reader's scheme. |
+
+`SWEEPS` in the script holds both palettes and has to stay in step with
+`--mark-sweep-from` / `--mark-sweep-to` in `globals.css`.
 
 The **OG card** (1200×630) is rendered by `next/og` with the real General Sans
 files, so it is the hero's own composition rather than a lookalike. Its size is

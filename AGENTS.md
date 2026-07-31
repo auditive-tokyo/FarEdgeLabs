@@ -138,9 +138,23 @@ The hero's entrance is sequenced by one signal: `<IntroReveal>` fires
 **every millisecond in `reveal.ts` is one the visitor waits**; treat the budget as
 something to spend down.
 
-`hero.stats` still carries placeholder `—` values. Fill them with real figures or
-drop the section. Do not invent metrics — the social-proof pill and its stock
-avatars were deleted for exactly that reason.
+> [!important] `hero.stats` needs rethinking, not filling in
+> The 2×2 grid is the template's, and so are its four slots — Projects, Clients,
+> Uptime, Rating. They describe an established agency. This company was just
+> founded: there is no track record to count, the first client engagement is in
+> progress, and nothing has been rated by anyone. The values are `—` placeholders
+> and **the labels are the actual problem**.
+>
+> So this is not a "fill in the numbers" task. Either find four things that are
+> true today and worth saying, or drop the section — the hero survives without it,
+> and the bottom half of the frame is already empty since the request form and the
+> social-proof pill went. Do not invent metrics; the pill and its stock avatars
+> were deleted for exactly that reason.
+>
+> Candidates that are true without a track record: years of engineering
+> experience, the stack's breadth, the domains worked in (space, medical,
+> automotive, metaverse — see the CV), or something not numeric at all. Ask before
+> choosing.
 
 > [!important] The blank hero on old browsers is a decision, not a bug
 > `<HalftoneVideo>` needs **WebGL2** and **`createImageBitmap`**, both of which
