@@ -1,0 +1,42 @@
+{
+  "_readme": "Every user-facing string in English. JSON rather than TS on purpose: scripts/generate-brand-assets.mjs runs in plain Node and reads this same file, so the Open Graph card and the page cannot drift apart. Keys must match ja.json — src/locales/index.ts types both as one shape. Asset paths and layout live in src/data/mocks/home.ts.",
+  "_stats_readme": "hero.stats labels must stay unique: <HeroStats> keys its cards by label. The values are placeholders awaiting real figures — fill them in or drop the section rather than inventing numbers.",
+  "meta": {
+    "title": "FarEdge Labs — Beyond the leading edge",
+    "description": "Serverless on AWS and GCP: AI agents, distributed data pipelines and feature engineering, inference model quantisation. From proof of concept to production.",
+    "_ogImage_readme": "Regenerate with `npm run brand` after changing the brand or hero copy — the card renders from this file.",
+    "ogImage": "/open-graph.png"
+  },
+  "brand": {
+    "name": "FarEdge ",
+    "nameAccent": "Labs"
+  },
+  "_nav_readme": "`path` is the page's own segment, with no locale in it. The URL is assembled by localeHref(locale, path) (src/locales/index.ts). Do not write hrefs here — that is how a locale prefix ends up doubled or missing.",
+  "nav": [
+    { "label": "Home", "path": "" },
+    { "label": "Services", "path": "services" },
+    { "label": "Works", "path": "works" },
+    { "label": "About", "path": "about" }
+  ],
+  "underConstruction": {
+    "heading": "Under construction",
+    "body": "This page is being built. It will be here shortly.",
+    "backLabel": "Back to home"
+  },
+  "languageSwitch": {
+    "label": "JA",
+    "ariaLabel": "日本語に切り替える"
+  },
+  "hero": {
+    "headline": "Beyond the leading",
+    "headlineAccent": "edge",
+    "lead": "From proof of concept to production",
+    "body": "Serverless on AWS and GCP: AI agents, distributed data pipelines and feature engineering, and inference models quantised to fit their hardware budget. Requirements without precedent, delivered as working systems.",
+    "stats": [
+      { "value": "—", "label": "Projects", "accented": true },
+      { "value": "—", "label": "Clients", "accented": false },
+      { "value": "—", "label": "Uptime", "accented": false },
+      { "value": "—", "label": "Rating", "accented": true }
+    ]
+  }
+}

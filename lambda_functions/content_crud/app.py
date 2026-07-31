@@ -11,14 +11,13 @@ dynamodb = boto3.resource('dynamodb', config=_BOTO_CONFIG)
 s3_client = boto3.client('s3', config=_BOTO_CONFIG)
 ACCOUNT_ID = boto3.client('sts', config=_BOTO_CONFIG).get_caller_identity()['Account']
 
-CONTENT_TABLE = os.environ.get('CONTENT_TABLE', 'auditive-content-table')
-SITE_CONFIG_TABLE = os.environ.get('SITE_CONFIG_TABLE', 'auditive-site-config')
-S3_BUCKET = os.environ.get('CONTENT_BUCKET', 'auditive-content-md')
+CONTENT_TABLE = os.environ.get('CONTENT_TABLE', 'faredgelabs-content-table')
+SITE_CONFIG_TABLE = os.environ.get('SITE_CONFIG_TABLE', 'faredgelabs-site-config')
+S3_BUCKET = os.environ.get('CONTENT_BUCKET', 'faredgelabs-content-md')
 CONTENT_TYPE_JSON = 'application/json'
 
 ALLOWED_ORIGINS = [
     'https://auditive-tokyo.github.io',
-    'https://auditive.tokyo',
     'http://localhost:5173',
 ]
 _DEFAULT_ORIGIN = ALLOWED_ORIGINS[0]

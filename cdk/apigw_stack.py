@@ -13,7 +13,6 @@ from constructs import Construct
 
 CORS_ALLOWED_ORIGINS = [
     "https://auditive-tokyo.github.io",
-    "https://auditive.tokyo",
     "http://localhost:5173",
 ]
 
@@ -51,7 +50,7 @@ class ApiGwStack(Stack):
         # ── DynamoDB Tables ──────────────────────────────────────────────────
         content_table = dynamodb.Table(
             self, "ContentTable",
-            table_name="auditive-content-table",
+            table_name="faredgelabs-content-table",
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             partition_key=dynamodb.Attribute(
                 name="id",
@@ -63,7 +62,7 @@ class ApiGwStack(Stack):
 
         site_config_table = dynamodb.Table(
             self, "SiteConfigTable",
-            table_name="auditive-site-config",
+            table_name="faredgelabs-site-config",
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             partition_key=dynamodb.Attribute(
                 name="id",
@@ -76,7 +75,7 @@ class ApiGwStack(Stack):
         # ── S3 Bucket ────────────────────────────────────────────────────────
         content_bucket = s3.Bucket(
             self, "ContentBucket",
-            bucket_name="auditive-content-md",
+            bucket_name="faredgelabs-content-md",
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             removal_policy=RemovalPolicy.RETAIN,
             versioned=False,  # NOSONAR - versioning not needed; content is managed via DynamoDB + S3 write-through
@@ -93,14 +92,14 @@ class ApiGwStack(Stack):
         # ── Cognito User Pool ────────────────────────────────────────────────
         user_pool = cognito.UserPool(
             self, "AdminUserPool",
-            user_pool_name="auditive-admin-pool",
+            user_pool_name="faredgelabs-admin-pool",
             self_sign_up_enabled=False,
             removal_policy=RemovalPolicy.RETAIN,
         )
 
         user_pool_client = user_pool.add_client(
             "AdminUserPoolClient",
-            user_pool_client_name="auditive-admin-client",
+            user_pool_client_name="faredgelabs-admin-client",
             auth_flows=cognito.AuthFlow(
                 user_password=True,
                 user_srp=True,
@@ -109,8 +108,8 @@ class ApiGwStack(Stack):
 
         # ── API Gateway REST API ─────────────────────────────────────────────
         api = apigw.RestApi(
-            self, "AuditiveApi",
-            rest_api_name="auditive-api",
+            self, "FarEdgeLabsApi",
+            rest_api_name="faredgelabs-api",
             deploy_options=apigw.StageOptions(stage_name="prod"),
             default_cors_preflight_options=apigw.CorsOptions(
                 allow_origins=CORS_ALLOWED_ORIGINS,
@@ -144,7 +143,7 @@ class ApiGwStack(Stack):
             return apigw.AwsIntegration(
                 service="s3",
                 integration_http_method="GET",
-                path=f"auditive-content-md/{s3_path}",
+                path=f"faredgelabs-content-md/{s3_path}",
                 options=apigw.IntegrationOptions(
                     credentials_role=api_gw_role,
                     request_parameters=request_parameters or {},
@@ -239,17 +238,17 @@ class ApiGwStack(Stack):
             self, "ApiEndpoint",
             value=api.url,
             description="API Gateway endpoint URL",
-            export_name="AuditiveApiEndpoint",
+            export_name="FarEdgeLabsApiEndpoint",
         )
         CfnOutput(
             self, "UserPoolId",
             value=user_pool.user_pool_id,
             description="Cognito User Pool ID",
-            export_name="AuditiveUserPoolId",
+            export_name="FarEdgeLabsUserPoolId",
         )
         CfnOutput(
             self, "UserPoolClientId",
             value=user_pool_client.user_pool_client_id,
             description="Cognito User Pool Client ID",
-            export_name="AuditiveUserPoolClientId",
+            export_name="FarEdgeLabsUserPoolClientId",
         )
