@@ -78,6 +78,12 @@
   --size-stat: 1.5rem; /* 24px */
   --size-lead: 1.25rem; /* 20px */
   --size-body: 1rem; /* 16px */
+  /* The step below body — eyebrows that name a group, and asides that qualify
+     one. Added for the figures panel, which had four separate jobs of text all
+     landing at --size-body and reading as one flat block. A role is only worth a
+     token when something has to be quieter than body without being decoration;
+     that is this. */
+  --size-caption: 0.8125rem; /* 13px */
 
   /* The mobile menu's links. One value and no desktop twin: the menu it belongs
      to does not exist above the breakpoint — there the nav is a pill in the
@@ -94,6 +100,7 @@
     --size-stat: 2rem; /* 32px */
     --size-lead: 1.5rem; /* 24px */
     --size-body: 1rem; /* 16px */
+    --size-caption: 0.875rem; /* 14px */
   }
 }
 
@@ -120,6 +127,7 @@
   --text-stat: var(--size-stat); /* stat values */
   --text-lead: var(--size-lead); /* the section lead */
   --text-body: var(--size-body); /* body, nav, labels, buttons */
+  --text-caption: var(--size-caption); /* eyebrows, and asides that qualify */
   --text-menu: var(--size-menu); /* the mobile menu's links */
 
   /* Every pill in the design has a radius larger than half its height, so it

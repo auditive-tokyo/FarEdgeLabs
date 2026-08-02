@@ -32,11 +32,21 @@
     "headlineAccent": "形にする",
     "lead": "検証から、本番まで",
     "body": "AWS / GCP のサーバーレス構成を軸に、AI エージェント、大規模データの分散処理と特徴量設計、推論モデルの量子化まで。前例のない要件を、動くシステムにして納めます。",
-    "stats": [
-      { "value": "—", "label": "案件数", "accented": true },
-      { "value": "—", "label": "クライアント", "accented": false },
-      { "value": "—", "label": "稼働率", "accented": false },
-      { "value": "—", "label": "評価", "accented": true }
-    ]
+    "stats": {
+      "scope": "過去30日の稼働統計",
+      "items": [
+        { "value": "—", "label": "クライアント数" },
+        { "value": "—", "label": "プロジェクト数" },
+        { "value": "—", "label": "稼働時間" }
+      ],
+      "note": {
+        "summary": "この数字は何？",
+        "body": [
+          "代表エンジニアの過去30日の稼働記録を Jibble の API で取得し、日次で集計しています。",
+          "ただの遊びで深い意味はありません。",
+          "お仕事を依頼していただく際の簡易的な指標にはしていただけると思います。"
+        ]
+      }
+    }
   }
 }

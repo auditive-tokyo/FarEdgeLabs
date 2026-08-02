@@ -37,9 +37,8 @@ export const REVEAL_DELAY = {
   rule: 420,
   cta: 480,
   lead: 500,
+  /** The figures panel. One object, so there is no per-item step. */
   stats: 560,
-  /** Per stat card, on top of `stats`. */
-  statStep: 80,
   body: 620,
   /** Late on purpose: the bar arrives under a word that has already landed. */
   headlineBar: 1100,
