@@ -27,32 +27,55 @@ nothing at all. Needs the site token from the Cloudflare dashboard, then a
 
 This is the one item where the code contradicts a written decision.
 
-### `hero.stats` — to be fed from Jibble, three cards not four
-The 2×2 grid is the template's: Projects, Clients, Uptime, Rating, all showing `—`.
-The **labels** were the problem, not the empty values — the company was founded
-weeks ago, the first engagement is in progress, and nothing has been rated.
+### `hero.stats` — the panel is built, the figures are not
+**Done:** the template's 2×2 grid of four cards is now **one panel** in the same
+footprint, a `<dl>` of label-and-figure lines plus a `<details>` disclosure
+answering "what are these figures?". Rows are data, so the count is no longer a
+layout question — a figure is a line added or removed. `Rating` is gone (see
+below), leaving Projects / Clients / Uptime.
 
-**Decided:** drop to three cards and fill them from the Jibble time tracker's API,
-refreshed daily by a scheduled job. Jibble treats *client* as a grouping dimension
-alongside project and activity, so a single Tracked Time Report call can yield
-hours, distinct clients and distinct projects.
+Dropped with the grid: the per-card `accented` flag in both locale files, and
+`REVEAL_DELAY.statStep`. Neither has meaning for a single object.
 
-`hero-stats.tsx` maps over an array, so 4 → 3 is the two locale JSONs plus the
-`grid-cols-2` class. The `accented` flag per card stays.
+**Decided:** fill it from the Jibble time tracker's API, refreshed daily by the
+scheduled job in the migration below. Jibble treats *client* as a grouping
+dimension alongside project and activity, so one Tracked Time Report call can
+yield hours, distinct clients and distinct projects.
 
-Two things are still open:
+**The three figures are settled:** clients, projects and hours tracked, each over
+the **trailing 30 days**. The window is said once as the panel's caption
+(`stats.scope`) rather than prefixed onto all three labels, and the panel is a
+`role="group"` named by that caption so the period is attached to the figures for
+a screen reader rather than sitting loose beside them.
 
-- **The labels.** Do not pick them before seeing what the API actually returns —
-  that is how the current four got there. Probe first (step 1 of the migration
-  below). One caution: *hours in the last 30 days* is a number that goes **down**
-  when you take a week off, and there is no honest way to tune it. Cumulative
-  figures only move one way.
+No client is named. The aggregate is the point, and naming engagements on a
+marketing page is a separate decision with its own consent question.
+
+A trailing window **falls** when a week is taken off. That is now a conscious
+choice — cumulative totals were the alternative and only ever rise, but they say
+nothing about now. Do not quietly switch to cumulative to make a number look
+better.
+
+Still open:
+
+- **The note is currently false.** `stats.note.body` says the figures are
+  compiled daily from Jibble's API. Nothing does that yet, so this **must not
+  reach production before the job does** — it would be the only untrue sentence
+  on the site. The wording itself is settled and names the vendor.
 - **The empty state.** The numbers arrive by client-side `fetch`, so first paint
-  has none of them, above the fold. Decide what that frame shows — skeleton, or
-  labels with `—` that swap in. On a day the job or the bucket fails the cards
-  stay in that state, so it has to be a designed state, not an accident.
+  has none of them, above the fold. Decide what shows then — skeleton, or the `—`
+  that swaps in. The panel sits in that state on any day the job or the bucket
+  fails, so it has to be designed rather than incidental.
+- **The hours format.** `168`, `168h`, `168時間` — the script decides, and the two
+  locales may want different suffixes. It is the only figure of the three that is
+  not a bare count.
 
 Crawlers will not see the figures. That is fine; nobody searches for them.
+
+**`Rating` is not coming back as a figure.** There is nothing rated yet, and when
+there is, the plan is to link out to the Google review rather than restate a score
+in the panel — a number typed beside a star is worth less than the page it came
+from. That makes it a link somewhere in the layout, not a line in this list.
 
 ### Services / Works / About are placeholders
 Six live routes (three segments × two locales) render "under construction" and
@@ -139,6 +162,15 @@ there is no HTTP endpoint to secure. Nothing listening is nothing to protect.
 Jibble credentials in Secret Manager, mounted into the job. Its service account
 gets `secretmanager.secretAccessor` and `storage.objectAdmin` **scoped to the one
 bucket**. Output is a single `stats.json`.
+
+What it aggregates, over the **trailing 30 days** and nothing else:
+
+- distinct clients
+- distinct projects
+- hours tracked
+
+Counts and a total — **no client or project names leave Jibble.** The panel shows
+aggregates, so the job should not fetch identities it has no use for.
 
 No database. Three scalars, no queries, no history — Firestore or anything like it
 would be ceremony. It earns a place only if a trend line is ever wanted.

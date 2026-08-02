@@ -32,11 +32,21 @@
     "headlineAccent": "edge",
     "lead": "From proof of concept to production",
     "body": "Serverless on AWS and GCP: AI agents, distributed data pipelines and feature engineering, and inference models quantised to fit their hardware budget. Requirements without precedent, delivered as working systems.",
-    "stats": [
-      { "value": "—", "label": "Projects", "accented": true },
-      { "value": "—", "label": "Clients", "accented": false },
-      { "value": "—", "label": "Uptime", "accented": false },
-      { "value": "—", "label": "Rating", "accented": true }
-    ]
+    "stats": {
+      "scope": "Activity, last 30 days",
+      "items": [
+        { "value": "—", "label": "Clients" },
+        { "value": "—", "label": "Projects" },
+        { "value": "—", "label": "Hours tracked" }
+      ],
+      "note": {
+        "summary": "What are these figures?",
+        "body": [
+          "The lead engineer's tracked time over the last 30 days, pulled from Jibble's API and compiled daily.",
+          "It is mostly for the fun of building it — there is no deeper meaning in the numbers.",
+          "They may still serve as a rough indicator if you are considering an engagement."
+        ]
+      }
+    }
   }
 }
