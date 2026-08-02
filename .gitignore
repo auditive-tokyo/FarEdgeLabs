@@ -45,7 +45,7 @@ next-env.d.ts
 resume*
 cv*
 
-# python (cdk / lambda_functions)
+# python (gc_run_functions)
 __pycache__/
 *.py[cod]
 *$py.class

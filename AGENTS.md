@@ -30,9 +30,13 @@ So the following do not exist and must not be reached for:
 
 Metadata routes (`robots.ts`, `sitemap.ts`) need `export const dynamic = "force-static"`.
 
-The backend is separate: `cdk/` and `lambda_functions/` hold AWS (API Gateway +
-Lambda), and a move to GCP is planned. The browser calls it directly over the
-network. There is nothing between the two.
+The backend is separate and lives in `gc_run_functions/`. It is **GCP**, run on
+Cloud Run and provisioned with Terraform; the AWS CDK app that used to sit beside
+it was never deployed and has been deleted. The browser calls the backend directly
+over the network. There is nothing between the two.
+
+Nothing in this repo has ever had an AWS resource of its own — see the warning in
+`.kiro/steering/todo.md` before touching an AWS account from here.
 
 ## Two locales, two root layouts
 
@@ -196,9 +200,10 @@ directory is pushed to `gh-pages`.
   `_next/`, so without `.nojekyll` the site loads no JS or CSS
 - `NEXT_PUBLIC_SITE_URL` is set in the workflow, not committed — it drives
   canonical URLs, OG tags, `robots.txt`, `sitemap.xml` and JSON-LD
-- The CDK job in `deploy.yml` is **commented out** while the frontend is rebuilt.
-  Restore it, and `needs: deploy-infrastructure`, when the app starts consuming
-  the API at build time
+- `deploy.yml` builds and publishes the frontend and does nothing else. **Do not
+  add a backend step to it.** The backend is provisioned out of band with
+  Terraform, on purpose: a site deploy must not depend on a function existing, and
+  a backend change must not need a site deploy
 - `npm run brand` is not part of the build. Run it locally and commit the PNGs
 - Do not delete `.next` while `npm run dev` is running — Turbopack's cache is in
   there and the server does not recover

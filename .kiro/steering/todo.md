@@ -86,8 +86,9 @@ When one becomes real: write its `page.tsx`, drop `noindex`, drop its entry from
 `src/app/sitemap.ts`** — placeholders are deliberately absent from the sitemap.
 
 ### No contact route
-`lambda_functions/contact_form/app.py` requires **`name`, `email`, `message`** and
-sends through Zoho SMTP with a DynamoDB rate limit. Nothing on the site calls it.
+`gc_run_functions/contact_form/app.py` requires **`name`, `email`, `message`** and
+sends through Zoho SMTP with a DynamoDB rate limit — it is still the AWS handler,
+kept for its logic, not its bindings. Nothing on the site calls it.
 The hero's inline form was deleted rather than wired: two fields with no message
 field produce an enquiry with no subject.
 
@@ -110,8 +111,8 @@ after 2 is a chain.
 
 **None of this touches GitHub Actions.** The site deploy and the stats refresh are
 independent on purpose: the job writes an object, the page reads it, and neither
-knows the other's schedule. The CDK job in `deploy.yml` stays commented out and
-will be deleted rather than restored.
+knows the other's schedule. `deploy.yml` is now the frontend job and nothing else —
+the commented-out `deploy-infrastructure` job went with `cdk/`.
 
 ### 1. Probe the Jibble API — needs nothing from GCP
 An organization owner creates the credential in Organization Settings → API
@@ -140,20 +141,31 @@ Enable the APIs — Cloud Run, Cloud Scheduler, Secret Manager, Cloud Storage �
 Terraform, not the console**. This is the repo's first GCP resource, and a resource
 nobody can rebuild is worse than no resource.
 
-### 4. Restructure the directories, and decide what survives of AWS
-Check this before moving anything: **no frontend code references AWS at all** — no
-API URL, no Amplify, no Cognito. And `content_crud` served the old admin CMS, which
-the static rebuild deleted.
+### 4. Restructure the directories — **done**
+`cdk/` is deleted. `lambda_functions/` is now `gc_run_functions/`, and
+`content_crud` went with it — it served the old admin CMS, which the static
+rebuild removed. Only `contact_form` survives, and only for its logic: it is still
+the AWS handler and has to be rewritten for Cloud Run in step 7.
 
-So `content_crud`, `faredgelabs-content-table`, `faredgelabs-site-config`,
-`faredgelabs-content-md` and the Cognito pool are all orphaned. Note that
-`cdk/lambda_stack.py` pulls those tables and that bucket in **by name**
-(`from_table_name`, `from_bucket_name`) — they were created outside this app, so
-destroying the stack will not remove them. They are live and still billing.
+`terraform/` does not exist yet; it arrives with step 3.
 
-Only `contact_form` has a future. Settle the layout now (`terraform/`,
-`functions/`, or similar) and whether the AWS files are deleted here or parked
-until GCP is serving.
+The name says "functions", but the stats side is a Cloud Run **job**. If the
+directory ends up holding both a job and an HTTP function, consider renaming it
+then, when what is in it is actually known.
+
+> [!warning] This repo has never owned an AWS resource. Do not go looking.
+> Verified against the account, not inferred: there is **no** `faredgelabs-*`
+> anything — no CloudFormation stack, no DynamoDB table, no S3 bucket, no Lambda,
+> no API Gateway, no Cognito pool. The CDK app defined `faredgelabs-lambda` and
+> `faredgelabs-apigw` and was **never deployed**; `cdk/` was a copy of another
+> project's IaC with the names swapped.
+>
+> What *does* exist in that account is `auditive-*` — tables, a bucket, two
+> Lambdas, a REST API and a user pool belonging to **auditive.tokyo, a different
+> site**. An earlier draft of this file claimed the `faredgelabs-*` resources were
+> "live and still billing". That was wrong, and it is a dangerous kind of wrong:
+> anyone acting on it would find the similarly-named `auditive-*` resources and
+> delete another site's data. **Nothing in this account is ours to remove.**
 
 ### 5. Write the stats job, test it locally
 Cloud Run **job**, not a service and not a function: it runs to completion, so
@@ -203,9 +215,11 @@ step 2, and the rate limit rebuilt — the DynamoDB table has no GCS analogue, s
 either Firestore, or reconsider whether a rate limit is the right control for a
 one-person company's enquiry form.
 
-### 8. Tear down AWS
-Only once GCP is serving. Includes the orphaned resources named in step 4, which
-are the ones actually costing money.
+### 8. ~~Tear down AWS~~ — nothing to tear down
+Deleting `cdk/` was the whole teardown. See the warning in step 4: there was never
+a deployed AWS resource belonging to this site, so there is no bill to stop and
+nothing to destroy. The step is kept, struck through, so the question is not asked
+a third time.
 
 ---
 

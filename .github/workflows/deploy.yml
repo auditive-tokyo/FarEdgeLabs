@@ -12,91 +12,15 @@ on:
   workflow_dispatch:
 
 jobs:
-  # CDK Deploy (Lambda + API Gateway)
-  # deploy-infrastructure:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-  #     - name: Configure AWS credentials
-  #       uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
-  #       with:
-  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #         aws-region: ${{ secrets.AWS_REGION }}
-
-  #     - name: Set up Python
-  #       uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
-  #       with:
-  #         python-version: "3.13"
-
-  #     - name: Install CDK dependencies
-  #       run: |
-  #         npm install -g aws-cdk --ignore-scripts # --ignore-scripts is safe for the CDK CLI
-  #         cd cdk
-  #         python -m venv .venv
-  #         source .venv/bin/activate
-  #         pip install --only-binary :all: -r requirements.txt # NOSONAR: versions are pinned with == in requirements.txt; --only-binary prevents setup script execution
-
-  #     - name: CDK Bootstrap
-  #       run: |
-  #         cd cdk
-  #         source .venv/bin/activate
-  #         cdk bootstrap --no-previous-parameters
-
-  #     - name: CDK Deploy (all stacks)
-  #       env:
-  #         CONTACT_EMAIL: ${{ secrets.CONTACT_FORM_EMAIL }}
-  #         ZOHO_PASSWORD: ${{ secrets.ZOHO_APP_PASSWORD }}
-  #       run: |
-  #         cd cdk
-  #         source .venv/bin/activate
-  #         cdk deploy --all --require-approval never \
-  #           --no-fail-on-empty-changeset \
-  #           --parameters faredgelabs-lambda:SenderEmail="$CONTACT_EMAIL" \
-  #           --parameters faredgelabs-lambda:ReceiverEmail="$CONTACT_EMAIL" \
-  #           --parameters faredgelabs-lambda:ZohoAppPassword="$ZOHO_PASSWORD"
-
-  #     - name: Get API GW outputs
-  #       run: |
-  #         API_URL=$(aws cloudformation describe-stacks --stack-name faredgelabs-apigw --query "Stacks[0].Outputs[?OutputKey=='ApiEndpoint'].OutputValue" --output text)
-  #         USER_POOL_ID=$(aws cloudformation describe-stacks --stack-name faredgelabs-apigw --query "Stacks[0].Outputs[?OutputKey=='UserPoolId'].OutputValue" --output text)
-  #         USER_POOL_CLIENT_ID=$(aws cloudformation describe-stacks --stack-name faredgelabs-apigw --query "Stacks[0].Outputs[?OutputKey=='UserPoolClientId'].OutputValue" --output text)
-  #         echo "API_URL=${API_URL}" > apigw-outputs.env
-  #         echo "USER_POOL_ID=${USER_POOL_ID}" >> apigw-outputs.env
-  #         echo "USER_POOL_CLIENT_ID=${USER_POOL_CLIENT_ID}" >> apigw-outputs.env
-
-  #     - name: Ensure admin Cognito user
-  #       env:
-  #         ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-  #       run: |
-  #         source apigw-outputs.env
-  #         # admin ユーザーが無ければ作成（メール送信は抑止）。既存なら無視。
-  #         aws cognito-idp admin-create-user \
-  #           --user-pool-id "$USER_POOL_ID" \
-  #           --username admin \
-  #           --message-action SUPPRESS >/dev/null 2>&1 || true
-  #         # 恒久パスワードを設定（CfnParameter を使わずシークレットから直接。テンプレートに残らない）
-  #         aws cognito-idp admin-set-user-password \
-  #           --user-pool-id "$USER_POOL_ID" \
-  #           --username admin \
-  #           --password "$ADMIN_PASSWORD" \
-  #           --permanent
-
-  #     - name: Upload API GW outputs
-  #       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-  #       with:
-  #         name: apigw-outputs
-  #         path: apigw-outputs.env
-  #         retention-days: 1
-
-  # Frontend Deploy (Next.js static export → GitHub Pages)
+  # Frontend only, and that is the whole pipeline: a Next.js static export
+  # pushed to gh-pages.
   #
-  # The CDK job above is commented out while the frontend is being rebuilt: the
-  # new app calls no API yet, so there is nothing to deploy it for. Restore both
-  # the job and `needs: deploy-infrastructure` here once the app consumes the
-  # API Gateway endpoint at build time.
+  # There used to be a commented-out `deploy-infrastructure` job here that ran
+  # `cdk deploy` against AWS. It is gone with `cdk/` — the backend is moving to
+  # GCP, provisioned with Terraform out of band. The site deploy and the backend
+  # are deliberately independent: nothing this workflow does should depend on a
+  # function or a bucket existing, and nothing the backend does should need a
+  # site deploy. See `.kiro/steering/todo.md`.
   build-and-deploy:
     runs-on: ubuntu-latest
     # peaceiris/actions-gh-pages pushes the build to the gh-pages branch.

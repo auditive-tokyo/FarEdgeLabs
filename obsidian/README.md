@@ -50,9 +50,11 @@ humans and AI agents (Claude Code, Cursor).
 - [[utils]] — utility functions catalog
 
 ### 03 — Backend
-The backend is **not part of this Next.js app** — it is AWS serverless
-(API Gateway + Lambda), defined in `cdk/` and `lambda_functions/` at the repo
-root. The frontend is a static export and calls it over the network.
+The backend is **not part of this Next.js app** — it lives in `gc_run_functions/`
+at the repo root. It is moving to **GCP** (Cloud Run, Terraform); the AWS CDK app
+that used to sit in `cdk/` was never deployed and is deleted, so anything below
+describing API Gateway or Lambda is history. The frontend is a static export and
+calls the backend over the network.
 See [[data-flow]] and the root `AGENTS.md`.
 
 ### 04 — Workflows
