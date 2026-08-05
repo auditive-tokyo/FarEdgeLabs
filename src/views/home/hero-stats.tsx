@@ -1,8 +1,15 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { Inview } from "@/components/animation/springs/in-view";
 import { useIntroRevealed } from "@/components/common/intro";
 import type { HomeContent } from "@/data/mocks/home";
+import {
+  fetchWorkStatistics,
+  formatFigure,
+  type WorkStatistics,
+} from "@/lib/work-statistics";
 
 import { LIFT_IN, LIFT_OUT, REVEAL_DELAY, REVEAL_SPRING } from "./reveal";
 
@@ -121,23 +128,30 @@ const SCOPE_ID = "hero-stats-scope";
  *
  * ## The figures
  *
- * Clients, projects and hours, each over the trailing 30 days, from the Jibble
- * job in `#todo`. No client is named — the aggregate is the point, and naming
- * engagements on a marketing page is a separate decision with a separate
- * consent question.
+ * Clients, projects and hours, each over the trailing 30 days, fetched at runtime from
+ * the object a Cloud Run function writes daily — see `@/lib/work-statistics`. Which
+ * figure lands on which row is decided in the locale files by a `field` name, so the
+ * order and the wording are copy decisions rather than code ones.
+ *
+ * No client is named. The aggregate is the point, and naming engagements on a marketing
+ * page is a separate decision with its own consent question.
  *
  * A trailing window **falls** when a week is taken off. That is accepted: the
- * alternative was cumulative totals, which only ever rise but say nothing about
- * now. Do not quietly switch to cumulative to make a number look better.
+ * alternative was cumulative totals, which only ever rise but say nothing about now. Do
+ * not quietly switch to cumulative to make a number look better.
  *
- * They are `—` until the job fills them. What shows while they are missing is a
- * designed state, not a gap — it is what the panel looks like on any day the
- * fetch fails.
+ * ## Why the fetch happens here and not at build time
  *
- * > [!warning] The note claims something that is not true yet
- * > `stats.note.body` says the figures are compiled daily from Jibble's API.
- * > There is no job doing that. **Do not let this reach production before the job
- * > does** — it would be the only false statement on the site.
+ * Baking the numbers into the export would freeze them until the next deploy, and tie a
+ * daily refresh to a release. So the panel renders `stats.placeholder` on the server,
+ * and swaps in real figures once the object arrives.
+ *
+ * **The placeholder is a designed state, not a loading spinner.** It is what the panel
+ * looks like before the fetch lands, on a browser that blocks the request, and on any
+ * day the function or the bucket fails. All three want the same thing — a panel that
+ * reads as complete with dashes in it — so none of them gets an error message, and there
+ * is no retry. Rendering the same placeholder on both sides of hydration is also what
+ * keeps the server and client markup identical.
  *
  * ## Why a `<details>` and not a tooltip or a state toggle
  *
@@ -155,6 +169,17 @@ const SCOPE_ID = "hero-stats-scope";
  */
 export const HeroStats = ({ stats }: HeroStatsProps) => {
   const isRevealed = useIntroRevealed();
+  const [figures, setFigures] = useState<WorkStatistics | null>(null);
+
+  useEffect(() => {
+    // Aborted on unmount so a navigation away does not resolve into a dead
+    // component. `fetchWorkStatistics` swallows the abort with every other failure,
+    // which is correct here: an aborted fetch and a missing object both mean "leave
+    // the placeholder alone".
+    const controller = new AbortController();
+    void fetchWorkStatistics(controller.signal).then(setFigures);
+    return () => controller.abort();
+  }, []);
 
   return (
     /* `mt-auto` puts the panel on the bottom of the phone's column — see the
@@ -184,22 +209,40 @@ export const HeroStats = ({ stats }: HeroStatsProps) => {
       </div>
 
       <dl className="divide-y divide-hairline">
-        {stats.items.map((stat) => (
-          /* A `div` between `dl` and its `dt`/`dd` is what the HTML spec
-             provides for grouping a pair — it is what lets each row be a flex
-             line and carry the divider. */
-          <div
-            key={stat.label}
-            className="flex items-baseline justify-between gap-4 py-3"
-          >
-            <dt className="font-mulish text-body leading-[1.2]">
-              {stat.label}
-            </dt>
-            <dd className="text-stat italic leading-none tabular-nums">
-              {stat.value}
-            </dd>
-          </div>
-        ))}
+        {stats.items.map((stat) => {
+          const figure = formatFigure(figures, stat.field);
+
+          return (
+            /* A `div` between `dl` and its `dt`/`dd` is what the HTML spec
+               provides for grouping a pair — it is what lets each row be a flex
+               line and carry the divider. */
+            <div
+              key={stat.field}
+              className="flex items-baseline justify-between gap-4 py-3"
+            >
+              <dt className="font-mulish text-body leading-[1.2]">
+                {stat.label}
+              </dt>
+              <dd className="text-stat italic leading-none tabular-nums">
+                {/* The suffix rides with the figure, so it is absent from the
+                    placeholder — "—時間" reads as a broken value rather than a
+                    missing one. It is per locale and per row: hours take `時間`
+                    and `h`, the counts take nothing. */}
+                {figure === null ? stats.placeholder : figure}
+                {/* Its own span, a step down, and **not italic**. A unit set as
+                    large as its figure competes with it, and italic on `時間`
+                    shears a CJK glyph — the same fault the headline and the Open
+                    Graph card already avoid. `font-mulish` puts it on the label's
+                    face, which is what it belongs to. */}
+                {figure !== null && stat.suffix ? (
+                  <span className="ml-1 font-mulish text-body not-italic">
+                    {stat.suffix}
+                  </span>
+                ) : null}
+              </dd>
+            </div>
+          );
+        })}
       </dl>
 
       {/* The panel is pinned by its top edge, so opening this grows it downward

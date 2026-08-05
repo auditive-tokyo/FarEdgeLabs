@@ -34,10 +34,11 @@
     "body": "AWS / GCP のサーバーレス構成を軸に、AI エージェント、大規模データの分散処理と特徴量設計、推論モデルの量子化まで。前例のない要件を、動くシステムにして納めます。",
     "stats": {
       "scope": "過去30日の稼働統計",
+      "placeholder": "—",
       "items": [
-        { "value": "—", "label": "クライアント数" },
-        { "value": "—", "label": "プロジェクト数" },
-        { "value": "—", "label": "稼働時間" }
+        { "field": "clients", "label": "クライアント数", "suffix": "" },
+        { "field": "projects", "label": "プロジェクト数", "suffix": "" },
+        { "field": "hours", "label": "稼働時間", "suffix": "時間" }
       ],
       "note": {
         "summary": "この数字は何？",

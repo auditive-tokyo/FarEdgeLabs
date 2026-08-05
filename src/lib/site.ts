@@ -22,6 +22,22 @@ export const siteConfig = {
    */
   url: publicEnv.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   /**
+   * Where the hero panel's figures come from. Written daily by the Cloud Run function
+   * in `gc_run_functions/work_statics/`, served publicly by the bucket that
+   * `terraform/main.tf` creates.
+   *
+   * A working default rather than an environment variable, deliberately — and the
+   * opposite choice from `url` above, which defaults to localhost so that forgetting
+   * it is loud. There is one bucket and it is named in Terraform; making this
+   * configurable would add a way to forget it, and forgetting it is silent (the panel
+   * simply never fills). The trade is that renaming the bucket needs a change here
+   * too.
+   *
+   * `storage.googleapis.com`, not `storage.cloud.google.com` — the latter demands
+   * authentication even for a public object.
+   */
+  statsUrl: "https://storage.googleapis.com/faredgelabs-public/stats.json",
+  /**
    * `undefined` on purpose, and it should stay that way until someone confirms
    * the real account. `twitter:site` is a *claim about who owns this site*, so a
    * guessed handle credits whichever stranger happens to hold the name. The

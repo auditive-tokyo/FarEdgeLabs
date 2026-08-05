@@ -34,10 +34,11 @@
     "body": "Serverless on AWS and GCP: AI agents, distributed data pipelines and feature engineering, and inference models quantised to fit their hardware budget. Requirements without precedent, delivered as working systems.",
     "stats": {
       "scope": "Activity, last 30 days",
+      "placeholder": "—",
       "items": [
-        { "value": "—", "label": "Clients" },
-        { "value": "—", "label": "Projects" },
-        { "value": "—", "label": "Hours tracked" }
+        { "field": "clients", "label": "Clients", "suffix": "" },
+        { "field": "projects", "label": "Projects", "suffix": "" },
+        { "field": "hours", "label": "Hours tracked", "suffix": "h" }
       ],
       "note": {
         "summary": "What are these figures?",
