@@ -1,7 +1,24 @@
 {
-    "sonarlint.connectedMode.project": {
-        "connectionId": "auditive-tokyo",
-        "projectKey": "auditive-tokyo_FarEdgeLabs"
-    },
-    "sonarlint.analysisExcludesStandalone": "**/cdk/.venv/**,**/node_modules/**,**/__pycache__/**,**/.*/**"
+  "sonarlint.connectedMode.project": {
+    "connectionId": "auditive-tokyo",
+    "projectKey": "auditive-tokyo_FarEdgeLabs"
+  },
+  "sonarlint.analysisExcludesStandalone": "**/cdk/.venv/**,**/node_modules/**,**/__pycache__/**,**/.*/**",
+
+  // The editor's built-in CSS language server predates Tailwind v4 and reports its
+  // directives as errors — `@theme` in globals.css is the one you see, and `@layer`,
+  // `@apply` and `@custom-variant` are the same story. They are valid; the PostCSS
+  // plugin resolves them, and the build has never failed on one.
+  //
+  // Silenced rather than tolerated. A warning you have decided to ignore trains you to
+  // stop reading the channel it appears in, and the next warning there will be a real
+  // one. The narrow fix is what is wanted here: this turns off *unknown at-rules* and
+  // leaves the rest of the CSS linting on.
+  //
+  // Tailwind's own language server understands the syntax properly and is recommended
+  // in extensions.json. Its docs also suggest mapping `*.css` to the `tailwindcss`
+  // language, which is deliberately **not** set here: that language id comes from the
+  // extension, so on a machine without it every stylesheet would lose its
+  // highlighting. Losing syntax highlighting to silence one warning is a bad trade.
+  "css.lint.unknownAtRules": "ignore"
 }
