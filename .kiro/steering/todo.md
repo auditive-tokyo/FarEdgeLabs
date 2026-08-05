@@ -38,7 +38,7 @@ Dropped with the grid: the per-card `accented` flag in both locale files, and
 `REVEAL_DELAY.statStep`. Neither has meaning for a single object.
 
 **Decided:** fill it from the Jibble time tracker's API, refreshed daily by the
-scheduled job in the migration below. Jibble treats *client* as a grouping
+scheduled function in the migration below. Jibble treats *client* as a grouping
 dimension alongside project and activity, so one Tracked Time Report call can
 yield hours, distinct clients and distinct projects.
 
@@ -60,11 +60,11 @@ Still open:
 
 - **The note is currently false.** `stats.note.body` says the figures are
   compiled daily from Jibble's API. Nothing does that yet, so this **must not
-  reach production before the job does** — it would be the only untrue sentence
+  reach production before the function does** — it would be the only untrue sentence
   on the site. The wording itself is settled and names the vendor.
 - **The empty state.** The numbers arrive by client-side `fetch`, so first paint
   has none of them, above the fold. Decide what shows then — skeleton, or the `—`
-  that swaps in. The panel sits in that state on any day the job or the bucket
+  that swaps in. The panel sits in that state on any day the function or the bucket
   fails, so it has to be designed rather than incidental.
 - **The hours format.** `168`, `168h`, `168時間` — the script decides, and the two
   locales may want different suffixes. It is the only figure of the three that is
@@ -86,82 +86,215 @@ When one becomes real: write its `page.tsx`, drop `noindex`, drop its entry from
 `src/app/sitemap.ts`** — placeholders are deliberately absent from the sitemap.
 
 ### No contact route
-`lambda_functions/contact_form/app.py` requires **`name`, `email`, `message`** and
-sends through Zoho SMTP with a DynamoDB rate limit. Nothing on the site calls it.
+`gc_run_functions/contact_form/app.py` requires **`name`, `email`, `message`** and
+sends through Zoho SMTP with a DynamoDB rate limit — it is still the AWS handler,
+kept for its logic, not its bindings. Nothing on the site calls it.
 The hero's inline form was deleted rather than wired: two fields with no message
 field produce an enquiry with no subject.
 
 It is being ported to GCP rather than wired as-is — step 7 of the migration below.
-It is deliberately *after* the stats job, which is the smaller thing to prove the
-new platform with.
+It is deliberately *after* the stats function, which is the smaller thing to prove
+the new platform with.
 
 ---
 
 ## The GCP migration, in order
 
-**Decided:** the backend moves to GCP, provisioned with **Terraform**. The stats
-job goes first — it is the smaller of the two functions and it proves the whole
-chain (Terraform, Secret Manager, Cloud Run, GCS, CORS) with a trivial payload, no
-form UI, no email deliverability and no spam surface. The contact form then lands
-on ground that is known to work.
+**Decided:** the backend moves to GCP, provisioned with **Terraform**, as **two
+Cloud Run functions**. The stats one goes first — it proves the whole chain
+(Terraform, Secret Manager, Cloud Run, Scheduler, GCS, CORS) with a trivial
+payload, no form UI, no email deliverability and no spam surface. The contact form
+then lands on ground that is known to work.
+
+Both are functions, not services and not jobs. A **function defaults to a
+concurrency of 1**, which is the Lambda-shaped execution model this code was
+written for, and it deploys from source with no Dockerfile. A Cloud Run *service*
+defaults to 80 concurrent requests per instance — a difference that matters, see
+step 7. A **job** would suit the stats side on paper (it runs to completion and
+needs no URL) but it is a second deployment shape, a second Terraform pattern and a
+second mental model for two lines of IAM saved. Not worth it at this size.
 
 Ordered by dependency, not by size. Steps 1 and 2 can run in parallel; everything
 after 2 is a chain.
 
-**None of this touches GitHub Actions.** The site deploy and the stats refresh are
-independent on purpose: the job writes an object, the page reads it, and neither
-knows the other's schedule. The CDK job in `deploy.yml` stays commented out and
-will be deleted rather than restored.
+**Reversed: this does run in GitHub Actions**, in its own workflow `infra.yml`. An
+earlier version of this entry said it must not, on the grounds that a long-lived
+service account key in repository secrets was too high a price. Two things changed
+that. Manual `terraform apply` was rejected as the standing procedure, and Workload
+Identity Federation removes the key entirely — CI gets a short-lived token bound to
+this repository, so the objection no longer applies to anything.
 
-### 1. Probe the Jibble API — needs nothing from GCP
-An organization owner creates the credential in Organization Settings → API
-Credentials; **the secret is shown once**. Auth is OAuth2 client-credentials
-against `https://identity.prod.jibble.io/connect/token`.
+What survives from the original reasoning is the *separation*: `deploy.yml` publishes
+the site, `infra.yml` applies the backend, both gated on `paths`, neither aware of the
+other. The stats function writes an object and the page reads it; no deploy waits on
+the other.
 
-Call the Tracked Time Report from a laptop and **read the response before choosing
-the three labels** or writing any job. Picking labels first is exactly how the
-current four cards got there.
+`infra.yml` has **one trigger that matters** — a push to `production` — and it plans and
+applies in the same job. Several things were tried and removed on the way there, all of
+them machinery that ran but achieved nothing: a `pull_request` trigger (the release PR
+raises no event), a step commenting the plan on that PR, a plan on `main` pushes to
+substitute for it, an `exitcode` capture reading `tee`'s status instead of Terraform's,
+and `always()` on the summary step, which only covered the case where the plan failed
+and wrote its error to stderr where `tee` never saw it. The reasons are in comments at
+the top of the workflow so the same options are not re-derived.
 
-### 2. Company email → Google account → GCP project → billing
-Strict order. The APIs in step 3 will not enable without billing attached.
+### 1. Probe the Jibble API — **done**
+`probe.py` dumps every response and prints the computed figures. Credentials are
+OAuth2 client-credentials against `https://identity.prod.jibble.io/connect/token`;
+Jibble's dashboard calls the pair API Key ID and API Key Secret, and **the secret is
+shown once**.
 
-Then re-point local auth and *verify* it, rather than assuming: `gcloud auth list`
-and `gcloud config list` should show the new account as active, not merely present.
+Reading the responses first was the point, and it earned itself twice:
 
-The mail decision here has a second consumer — it fixes the contact form's sender
-identity in step 7. Zoho or Google Workspace, decided once, not twice.
+- **`TrackedTimeReport` returns an unassigned bucket as an ordinary row** — `id: ""`,
+  `subject.name: null`, neither omitted nor flagged. Counting rows reports two clients
+  where there is one. Off by exactly one, and entirely plausible on the page.
+- **Break time lands in that bucket**, because the break button selects no project.
+  So the clocked total (296 h/month) is not worked time (174 h). Excluded — with the
+  caveat that "no project" means "cannot tell", not "break": work logged without a
+  project is counted as break by this rule and disappears. `probe.py` also asks
+  `TimesheetsSummary` for Jibble's own worked-versus-break split; **that output has
+  not been compared yet**, and if it agrees it should be preferred, because it does not
+  depend on a habit.
 
-### 3. Terraform bootstrap
-State lives in a GCS bucket, and that bucket cannot be created by the
-configuration that keeps its state in it. Create it out of band (by hand, or a
-bootstrap module on local state) then `terraform init -migrate-state`.
+`groupBy=Activity` is fetched and returns nothing but the unassigned bucket — no
+activities are in use. Kept so the number exists the day they are.
 
-Enable the APIs — Cloud Run, Cloud Scheduler, Secret Manager, Cloud Storage — **in
-Terraform, not the console**. This is the repo's first GCP resource, and a resource
-nobody can rebuild is worse than no resource.
+### 2. Mail and identity → GCP project → billing — **done**
+No Google Workspace was bought.
 
-### 4. Restructure the directories, and decide what survives of AWS
-Check this before moving anything: **no frontend code references AWS at all** — no
-API URL, no Amplify, no Cognito. And `content_crud` served the old admin CMS, which
-the static rebuild deleted.
+| what | where |
+|------|-------|
+| `@faredgelabs.com` mail, receiving and human sending | **iCloud+ custom email domain** |
+| Google / GCP sign-in | the existing **`keigo.miyasaka@icloud.com`** account |
+| project | `faredgelabs`, number `89292293815`, region `asia-northeast1` |
+| billing | `017BDD-E996A4-F6B56B`, created **2026-08-05** |
+| organization | `keigo-miyasaka-org` (`283976129708`) |
 
-So `content_crud`, `faredgelabs-content-table`, `faredgelabs-site-config`,
-`faredgelabs-content-md` and the Cognito pool are all orphaned. Note that
-`cdk/lambda_stack.py` pulls those tables and that bucket in **by name**
-(`from_table_name`, `from_bucket_name`) — they were created outside this app, so
-destroying the stack will not remove them. They are live and still billing.
+iCloud+ allows up to five custom domains and three addresses per domain per person,
+and the domain can both send and receive. Human correspondence goes out from the same
+address that receives it.
 
-Only `contact_form` has a future. Settle the layout now (`terraform/`,
-`functions/`, or similar) and whether the AWS files are deleted here or parked
-until GCP is serving.
+**An organization exists, and it was not planned.** An earlier version of this entry
+recorded "organization resource: none" and reasoned about Cloud Identity Free as the
+way to get one. Creating the billing account produced a **standalone organization**
+automatically — Google does that when you sign up with a Google email address rather
+than a domain — along with a `My First Project` that has since been deleted. Both
+`faredgelabs` and `farm-scoring-system` were moved under it.
 
-### 5. Write the stats job, test it locally
-Cloud Run **job**, not a service and not a function: it runs to completion, so
-there is no HTTP endpoint to secure. Nothing listening is nothing to protect.
+Its display name cannot be changed: an organization is bound to one domain at
+creation, and a standalone one has no domain. Getting `faredgelabs.com` as the name
+means Cloud Identity Free on the domain, which creates a *second* organization, a
+migration, and a new `@faredgelabs.com` Google identity to sign in as. **Decide that
+on whether you want a company-domain Google identity, not on the name** — the name is
+seen by one person in one console.
 
-Jibble credentials in Secret Manager, mounted into the job. Its service account
-gets `secretmanager.secretAccessor` and `storage.objectAdmin` **scoped to the one
-bucket**. Output is a single `stats.json`.
+> [!warning] The free trial ends 2026-11-03
+> 90 days from the billing account, and **the workloads are shut down when it ends**,
+> not billed. 30 days of grace to reinstate by upgrading, then they are deleted.
+> Upgrading early costs nothing here (this all sits inside the always-free tier) and
+> removes the cliff; the remaining credit stays usable until it expires.
+
+> [!warning] Do not let account recovery form a loop
+> Google sign-in is an iCloud address, so **Google's recovery mail arrives at
+> iCloud**. If Apple's recovery then points at a Google address, the loop closes:
+> lose one and you cannot reach the other. GCP billing hangs off this account, so the
+> loop would lock production out.
+>
+> Put a **non-email** factor on both sides — phone number, Apple recovery contact,
+> Google backup codes.
+
+> [!warning] Do not let account recovery form a loop
+> Google sign-in is an iCloud address, so **Google's recovery mail arrives at
+> iCloud**. If Apple's recovery then points at a Google address, the loop closes:
+> lose one and you cannot reach the other. GCP billing hangs off this account, so
+> the loop would lock production out.
+>
+> Put a **non-email** factor on both sides — phone number, Apple recovery contact,
+> Google backup codes.
+
+### 3. Terraform bootstrap — **done**
+`terraform/` holds 48 resources in five files: `versions.tf` (constraints, backend,
+provider), `variables.tf`, `outputs.tf`, `wif.tf`, `main.tf`. Terraform concatenates
+every `.tf` in a directory before evaluating any of it, so the split is for readers
+only — `wif.tf` stays separate because it is the security boundary and changes for
+different reasons than the function.
+
+No shell bootstrap script was written, and none is needed: the pool, provider,
+service accounts and IAM are all Terraform resources. Putting the `attribute_condition`
+in a script would have moved the security-critical line outside the tool that
+describes the infrastructure, where drift is invisible.
+
+**State is in `gs://faredgelabs-tfstate`.** The one genuine circularity — a bucket
+cannot hold its own state before it exists — was resolved by applying with local
+state, then enabling the backend block and `terraform init -migrate-state`. Done
+once; the backend block stays enabled. The bucket carries `prevent_destroy`.
+
+Everything is enabled in Terraform rather than the console. A missing
+"authentication required" is invisible in a console and a visible diff in a plan.
+
+### 4. Restructure the directories — **done**
+`cdk/` is deleted. `lambda_functions/` is now `gc_run_functions/`, and
+`content_crud` went with it — it served the old admin CMS, which the static
+rebuild removed. Only `contact_form` survives, and only for its logic: it is still
+the AWS handler and has to be rewritten for Cloud Run in step 7.
+
+`terraform/` does not exist yet; it arrives with step 3.
+
+The directory name is correct as it stands: both pieces are Cloud Run **functions**,
+so `gc_run_functions/` says what is in it. An earlier note here suggested renaming
+it if a job moved in — no job is coming, so leave it alone.
+
+> [!warning] This repo has never owned an AWS resource. Do not go looking.
+> Verified against the account, not inferred: there is **no** `faredgelabs-*`
+> anything — no CloudFormation stack, no DynamoDB table, no S3 bucket, no Lambda,
+> no API Gateway, no Cognito pool. The CDK app defined `faredgelabs-lambda` and
+> `faredgelabs-apigw` and was **never deployed**; `cdk/` was a copy of another
+> project's IaC with the names swapped.
+>
+> What *does* exist in that account is `auditive-*` — tables, a bucket, two
+> Lambdas, a REST API and a user pool belonging to **auditive.tokyo, a different
+> site**. An earlier draft of this file claimed the `faredgelabs-*` resources were
+> "live and still billing". That was wrong, and it is a dangerous kind of wrong:
+> anyone acting on it would find the similarly-named `auditive-*` resources and
+> delete another site's data. **Nothing in this account is ours to remove.**
+
+### 5. The stats function — **deployed and verified**
+`work-statistics`, a Cloud Run function on `python312`, entry point
+`refresh_work_statistics`, invoked daily at 06:00 Asia/Tokyo by Cloud Scheduler.
+Confirmed end to end: the scheduler run wrote the object, and the function's URL
+answers **403** to an unauthenticated caller.
+
+Jibble credentials come from Secret Manager as environment variables. The runtime
+service account may read those two secrets and write to the one public bucket — that
+is the whole list.
+
+`probe.py` imports from `main.py` rather than reimplementing, because the two places
+a wrong-but-plausible number comes from — parsing ISO 8601 durations and excluding
+the unassigned bucket — must have one implementation.
+
+> [!important] Three things that were only found by deploying
+> - **`date.today()` reads the container's clock, and Cloud Run runs in UTC.**
+>   Scheduling for the JST morning would put the window a whole day behind what the
+>   Jibble dashboard shows, permanently. `WINDOW_TIMEZONE` fixes it, and a JST laptop
+>   hides the bug completely.
+> - **`zoneinfo` ships no timezone data.** It reads the host database and raises
+>   without one, so `tzdata` is a runtime dependency, not an optional extra.
+> - **Cloud Build needs its own service account.** Google changed the default and the
+>   first apply failed with "missing permission on the build service account". Fixed
+>   with a dedicated builder, *not* by widening the default compute account — that one
+>   carries Editor on the whole project.
+
+> [!warning] A function has a URL. It is locked down in Terraform, not by hand.
+> 1. No unauthenticated invocations
+> 2. `roles/run.invoker` granted **on the underlying Cloud Run service** to the
+>    scheduler's account only — `cloudfunctions.invoker` is how a gen2 function keeps
+>    answering 403 to the caller you meant to allow
+> 3. Scheduler attaches an **OIDC token** whose audience is the function's URL
+>
+> Get it wrong and the endpoint is world-callable while still looking like it works.
+> The damage is strangers burning Jibble API calls, tripping its rate limit so the
+> figures stop updating, and running up invocations.
 
 What it aggregates, over the **trailing 30 days** and nothing else:
 
@@ -170,27 +303,41 @@ What it aggregates, over the **trailing 30 days** and nothing else:
 - hours tracked
 
 Counts and a total — **no client or project names leave Jibble.** The panel shows
-aggregates, so the job should not fetch identities it has no use for.
+aggregates, so the function should not fetch identities it has no use for.
 
 No database. Three scalars, no queries, no history — Firestore or anything like it
 would be ceremony. It earns a place only if a trend line is ever wanted.
 
-### 6. Publish the object and wire the frontend
-`allUsers` → `roles/storage.objectViewer`, plus a CORS configuration for
-`https://faredgelabs.com`. GCS serves it directly, so there is no API Gateway
-equivalent to build — that piece existed in the AWS sketch only because the S3
-bucket was fully private.
+### 6. Publish the object — **done**. Wire the frontend — **not started**
+Live and checked with `curl`:
 
-Two traps:
+```
+https://storage.googleapis.com/faredgelabs-public/stats.json
+  200  cache-control: public, max-age=1800  content-type: application/json
+  Origin: https://faredgelabs.com  → access-control-allow-origin returned
+  Origin: https://example.com      → no CORS headers
+```
+
+GCS serves it directly and answers preflights itself, so there is no gateway to
+build — that piece only existed in the AWS sketch because the S3 bucket was fully
+private.
+
+Two traps, both handled, both worth keeping written down:
 
 - A public object with **no explicit `Cache-Control` is served
-  `public, max-age=3600`**. A fresh write can read stale for an hour. Set it
-  deliberately.
+  `public, max-age=3600`**, so a fresh write can read stale for an hour. Set
+  deliberately to 1800.
 - The anonymous URL is `storage.googleapis.com/<bucket>/<object>`.
   `storage.cloud.google.com` demands authentication even for public objects.
 
-Then Cloud Scheduler on a daily cron, and the empty state decided in the
-`hero.stats` entry above.
+**What remains is the frontend.** `hero-stats.tsx` still renders the `—` from the
+locale files and fetches nothing. Until it reads this object, `stats.note.body` is
+claiming a daily refresh that the page cannot see — see the `hero.stats` entry above,
+including the empty-state decision that is still open.
+
+Then Cloud Scheduler on a daily cron, calling the private function with an OIDC
+token as set out in step 5, and the empty state decided in the `hero.stats` entry
+above.
 
 **A webhook will not replace the cron.** Jibble publishes none — the third-party
 "Jibble webhook" integrations are polling in costume. And it would not help anyway:
@@ -198,14 +345,90 @@ a *trailing 30-day* figure changes when the clock moves, not when data does, so 
 needs a tick regardless of what events exist.
 
 ### 7. Port the contact form
-More than a function: a `/contact` page in both locales, the sender identity from
-step 2, and the rate limit rebuilt — the DynamoDB table has no GCS analogue, so
-either Firestore, or reconsider whether a rate limit is the right control for a
-one-person company's enquiry form.
+A Cloud Run function plus a `/contact` page in both locales. The mail is a *private
+notification to the operator*, not correspondence with the visitor — that framing
+decides most of what follows.
 
-### 8. Tear down AWS
-Only once GCP is serving. Includes the orphaned resources named in step 4, which
-are the ones actually costing money.
+#### Settled
+
+- **The notification goes to the iCloud `@faredgelabs.com` address**, never to the
+  personal `@icloud.com` one. Replying in iCloud Mail then goes out as the
+  faredgelabs identity. Deliver it to a personal address and every reply carries a
+  personal or unrelated From to a prospect.
+- **No auto-reply to the visitor.** It doubles the send volume, and — more
+  importantly — it turns a form that only ever mails *you* into one that mails
+  addresses **strangers typed in**. That is where sender reputation starts to
+  matter and where the form becomes a way to make you mail a third party.
+- **Email must not be the only record.** Persist the submission (a GCS object, or
+  Firestore) and *then* notify. SMTP tells you the submission server accepted it
+  and nothing more; the way you find out mail has been failing is that enquiries
+  stopped arriving. Persist first and a delivery failure costs a notification, not
+  a customer.
+- **Rate limit before the send, and it fails closed.** The old handler's DynamoDB
+  limiter returned `True` on error — a broken table meant no limit at all.
+
+#### Who sends it: the existing Zoho mailbox
+**Settled by test, not by reading.** The live contact form on auditive.tokyo was
+submitted and the mail arrived, so `info@auditive.tokyo` over `smtp.zoho.jp:465`
+works today. The handler already speaks it, and GCP restricts neither 465 nor 587.
+
+Its real attraction: **nothing is added to `faredgelabs.com`'s DNS.** The apex stays
+purely iCloud — no DKIM, no send subdomain, no second sender to keep aligned.
+
+> [!warning] This is a grandfathered plan. It cannot be re-created.
+> Zoho's free plan is **closed to new signups**; accounts that already had it keep
+> it. So the dependency is not "a Zoho free account" — it is *this* Zoho account.
+> Close it, downgrade it, migrate it, or lose it, and there is no going back to the
+> same terms.
+>
+> Combined with the coupling it introduces — FarEdge's enquiry path resting on
+> another business's credential, and a **mailbox login** rather than a send-only
+> key — treat this as the cheap option it is, not as infrastructure. Which is why
+> the fallback below is worth keeping written down.
+
+**Do not try to move `faredgelabs.com` into Zoho** to make the From match. A hosted
+domain there wants Zoho's MX, and the apex MX belongs to iCloud. The notification
+carries the auditive identity, and that is exactly why it must be delivered to the
+iCloud `@faredgelabs.com` address — see "Settled" above.
+
+#### Fallback if Zoho ever stops: Resend
+Free tier is **100/day and 3,000/month**, and the quota counts **received as well as
+sent**, each To/CC/BCC recipient separately.
+
+The DNS objection people expect does not apply: Resend puts its **SPF and MX on a
+`send.` subdomain** (its Return-Path), so verifying the apex leaves iCloud's apex MX
+and SPF untouched. Only the DKIM TXT sits on the apex, under a different selector
+from iCloud's, and that gives strict DKIM alignment for DMARC. **No SPF merging is
+needed.** (If it ever were: one SPF TXT per name, and a 10-DNS-lookup ceiling above
+which SPF permerrors and fails outright.)
+
+Switching is roughly fifteen lines — `smtplib` out, one HTTPS call in. Keep the mail
+send behind a single function so that stays true.
+
+#### The existing handler is AWS-shaped — budget a rewrite, not a copy
+
+Only the `smtplib` block transfers. Found in `gc_run_functions/contact_form/app.py`:
+
+- `lambda_handler(event, context)` — needs an HTTP handler
+- `event['requestContext']['identity']['sourceIp']` — on Cloud Run the client IP
+  comes from `X-Forwarded-For`, and a client can prepend values to that header. Read
+  it wrong and the rate limit is trivially bypassed
+- `dynamodb.Table(...)` for the limiter — no AWS here any more
+- `ALLOWED_ORIGINS` is `https://auditive-tokyo.github.io` and `http://localhost:5173`
+  — the wrong site and Vite's port; this app is `https://faredgelabs.com` and 3000
+- `_request_origin` is a **module-level global mutated per request**. Harmless while
+  concurrency is 1, which is a function's default — but raising concurrency is a
+  single flag, and then two simultaneous submissions can swap CORS headers. Fix it
+  in the port; request state does not belong in module scope
+- `print("Received event:", json.dumps(event))` writes the **whole body** to Cloud
+  Logging — the sender's name, address and message. Narrow it
+- No length caps and no address-shape check; presence is the only validation
+
+### 8. ~~Tear down AWS~~ — nothing to tear down
+Deleting `cdk/` was the whole teardown. See the warning in step 4: there was never
+a deployed AWS resource belonging to this site, so there is no bill to stop and
+nothing to destroy. The step is kept, struck through, so the question is not asked
+a third time.
 
 ---
 
@@ -283,5 +506,19 @@ Cheap fix once the engine is fair game: turn the rule on, or set
 
 ## Small and mechanical
 
+- **`infra.yml` has never run.** Terraform was applied from a laptop, so the CI path is
+  built and unproven. Prove it with `workflow_dispatch` **from `main`** while the
+  configuration matches reality: Apply's condition is false there, so it plans, and a
+  plan of no changes tells you the whole chain works. Doing it that way means the first
+  real run is not also the first apply. If it fails, the candidates are a missing
+  `id-token: write`, an `attribute_condition` that does not match the repository ids, or
+  a role `tf-deployer` lacks.
+- **No budget alert.** During the trial the $300 absorbs a mistake silently, which is
+  the opposite of what is wanted from an unauthenticated function being hammered.
+  Scope it to the `faredgelabs` project (number `89292293815`) and set
+  `--credit-types-treatment=exclude-all-credits`, or it measures spend *after* the
+  credit and never fires. Left out of Terraform on purpose: `google_billing_budget`
+  needs IAM on the billing account, and one budget is not worth widening the CI
+  service account beyond the project.
 - **No AAAA records.** IPv6-only clients cannot reach the site. GitHub publishes
   four: `2606:50c0:800{0,1,2,3}::153`. `www` and the apex A records are set.

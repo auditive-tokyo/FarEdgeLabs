@@ -12,8 +12,9 @@ marketing and landing pages. It ships with a complete spring-animation system, s
 scrolling, SEO scaffolding, and cookie consent — ready to drop a design into.
 
 The frontend is a **static export on GitHub Pages** and holds no server code.
-The backend is separate: AWS API Gateway + Lambda, defined in `cdk/` and
-`lambda_functions/`. See [[data-flow]].
+The backend is separate and lives in `gc_run_functions/`. It is moving to GCP
+(Cloud Run, provisioned with Terraform); the AWS CDK app in `cdk/` was never
+deployed and has been deleted. See [[data-flow]] and `.kiro/steering/todo.md`.
 
 ## Mental model
 

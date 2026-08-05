@@ -406,10 +406,11 @@ project wants anyway. This **amends ADR-0004**: design *tokens* still go in
 > ships the frontend as a **static export to GitHub Pages**, which has no server
 > runtime: Route Handlers cannot run and there is no server-side place to hold a
 > secret. The `app/api` layer, `src/lib/api/`, `src/lib/api-client.ts` and
-> `getServerEnv()` were removed. The backend is AWS API Gateway + Lambda
-> (`cdk/`, `lambda_functions/`). The transferable parts of this decision —
-> `zod` input validation, a consistent `{ data }` / `{ error }` envelope, and
-> never leaking upstream internals — now apply to the Lambda handlers instead.
+> `getServerEnv()` were removed. The backend is a separate deployment, now
+> `gc_run_functions/` on GCP (it was AWS API Gateway + Lambda in `cdk/` when this
+> was written). The transferable parts of this decision — `zod` input validation,
+> a consistent `{ data }` / `{ error }` envelope, and never leaking upstream
+> internals — now apply to those handlers instead.
 > See [[data-flow]].
 
 **Context.** The starter had no API layer. It needs a convention for reaching

@@ -1,0 +1,15 @@
+.terraform/
+.terraform.lock.hcl.bak
+
+# Local state, which exists only between the first apply and
+# `terraform init -migrate-state`. After that the real state is in GCS and anything
+# left here is a stale copy of secrets and resource ids.
+*.tfstate
+*.tfstate.*
+
+# Variable files are how a value ends up committed by accident.
+*.tfvars
+*.tfvars.json
+
+# Built by `archive_file` on every plan.
+.build/

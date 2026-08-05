@@ -1,0 +1,13 @@
+# Local development only. Deliberately not in requirements.txt: the deployed function
+# reads no `.env` — its secrets come from Secret Manager, and there is no file in the
+# container to read — so shipping a dotenv reader would put a dependency in production
+# that can never run there.
+#
+#   python3 -m venv .venv && source .venv/bin/activate
+#   pip install -r requirements.txt -r requirements-dev.txt
+#
+# `requirements.txt` is included above because testing the HTTP entry point the way
+# Cloud Scheduler will call it needs the Functions Framework locally:
+#
+#   functions-framework --target refresh_work_statistics --debug
+python-dotenv==1.2.2
