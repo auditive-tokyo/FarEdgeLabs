@@ -112,7 +112,7 @@ resource "google_storage_bucket" "public" {
   # Read by `fetch` from the site, so the browser needs the bucket to say the origin
   # is allowed. GCS answers CORS preflights itself; there is no gateway in front of it.
   cors {
-    origin          = [var.site_origin]
+    origin          = var.site_origins
     method          = ["GET", "HEAD"]
     response_header = ["Content-Type"]
     max_age_seconds = 3600

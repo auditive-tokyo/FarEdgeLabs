@@ -97,7 +97,7 @@
 @media (min-width: 1024px) {
   :root {
     --size-display: 5rem; /* 80px */
-    --size-stat: 2rem; /* 32px */
+    --size-stat: 1.5rem; /* 24px */
     --size-lead: 1.5rem; /* 24px */
     --size-body: 1rem; /* 16px */
     --size-caption: 0.875rem; /* 14px */

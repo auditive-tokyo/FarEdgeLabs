@@ -18,10 +18,19 @@ variable "region" {
   default = "asia-northeast1"
 }
 
-variable "site_origin" {
-  description = "Origin allowed to read stats.json from the browser."
-  type        = string
-  default     = "https://faredgelabs.com"
+variable "site_origins" {
+  description = <<-EOT
+    Origins a browser may read stats.json from.
+
+    `localhost` is in the list on purpose. CORS is **not** a security control for an
+    object that is already world-readable — anyone can `curl` it, and the grant to
+    `allUsers` is what decides who may. All CORS decides is which pages a *browser* will
+    hand the response to. Leaving the dev origin out would mean the panel could only be
+    seen working after a deploy, which is how a broken fetch reaches production
+    unnoticed.
+  EOT
+  type        = list(string)
+  default     = ["https://faredgelabs.com", "http://localhost:3000"]
 }
 
 # --------------------------------------------------------------------------- #
