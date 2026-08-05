@@ -30,10 +30,14 @@ So the following do not exist and must not be reached for:
 
 Metadata routes (`robots.ts`, `sitemap.ts`) need `export const dynamic = "force-static"`.
 
-The backend is separate and lives in `gc_run_functions/`. It is **GCP**, run on
-Cloud Run and provisioned with Terraform; the AWS CDK app that used to sit beside
-it was never deployed and has been deleted. The browser calls the backend directly
-over the network. There is nothing between the two.
+The backend is separate: handlers in `gc_run_functions/`, infrastructure in
+`terraform/`. It is **GCP** — Cloud Run functions, deployed by `infra.yml`. See
+"The backend" below. The AWS CDK app that used to sit beside it was never deployed
+and has been deleted.
+
+The browser calls the backend directly over the network, and for the statistics it
+does not call it at all: the function writes a public object to Cloud Storage and the
+page fetches that. There is nothing between the two.
 
 Nothing in this repo has ever had an AWS resource of its own — see the warning in
 `.kiro/steering/todo.md` before touching an AWS account from here.
@@ -201,12 +205,50 @@ directory is pushed to `gh-pages`.
 - `NEXT_PUBLIC_SITE_URL` is set in the workflow, not committed — it drives
   canonical URLs, OG tags, `robots.txt`, `sitemap.xml` and JSON-LD
 - `deploy.yml` builds and publishes the frontend and does nothing else. **Do not
-  add a backend step to it.** The backend is provisioned out of band with
-  Terraform, on purpose: a site deploy must not depend on a function existing, and
-  a backend change must not need a site deploy
+  add a backend step to it.** The backend has its own workflow, `infra.yml`, and the
+  separation is the point: a site deploy must not depend on a function existing, and
+  a backend change must not rebuild the site. Both are gated on `paths`
 - `npm run brand` is not part of the build. Run it locally and commit the PNGs
 - Do not delete `.next` while `npm run dev` is running — Turbopack's cache is in
   there and the server does not recover
+
+## The backend
+
+**GCP, in `terraform/`, applied by `infra.yml`.** Project `faredgelabs`, region
+`asia-northeast1`, under the `keigo-miyasaka-org` organisation. An earlier note here
+said the backend was provisioned out of band and that GitHub Actions must not touch
+it; that was reversed — manual applies were rejected, and Workload Identity
+Federation removes the reason to avoid CI.
+
+- **Terraform state is in `gs://faredgelabs-tfstate`.** Never commit a `.tfstate`.
+  A run that cannot see the state believes nothing exists and tries to create all
+  48 resources again
+- **CI authenticates with WIF — there are no service account keys.** All of the
+  security is `attribute_condition` in `wif.tf`, which pins the GitHub owner and
+  repository by *numeric id*. Without it, any public repository on GitHub can mint a
+  token for this project. Hiding the provider name in a repository secret would do
+  nothing; it is an identifier, not a credential
+- **Secret *values* never go through Terraform.** The containers are managed; the
+  payloads are added with `gcloud secrets versions add` so they stay out of state.
+  Use `printf`, not `echo` — a trailing newline authenticates nowhere and looks
+  perfectly present
+- **Flow:** one path in. A human merges the release PR, `production` gets the push,
+  and `infra.yml` plans and then applies in the same job. **The review is the pull
+  request diff, not the plan** — the same shape as putting `sam deploy` behind a
+  branch. The edge of that trade: Terraform replaces resources for changes that look
+  harmless in a diff (a bucket rename, a region, an `account_id`), and only a plan says
+  `must be replaced`. When a change might do that, dispatch the workflow from `main`
+  first, where Apply's condition is false, or plan locally
+- There is **no `pull_request` trigger**, because the release PR is opened with
+  `GITHUB_TOKEN` and **GitHub raises no workflow event for it**. Do not add one back
+  expecting it to fire
+- The function is private. `roles/run.invoker` is granted to the scheduler's service
+  account **on the underlying Cloud Run service** — granting
+  `cloudfunctions.invoker` instead is how a gen2 function keeps answering 403
+- Cloud Build needs a **dedicated build service account**. Google changed the
+  default and a fresh project fails with "missing permission on the build service
+  account". Do not fix it by widening the default compute account; that one holds
+  Editor on the whole project
 
 DNS lives at Cloudflare and **must stay "DNS only"** — proxying breaks GitHub's
 certificate renewal for the apex and `www` (next renewal 2026-10-29). That is also

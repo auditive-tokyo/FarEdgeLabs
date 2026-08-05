@@ -5,3 +5,10 @@
 # library. That is deliberate, so the probe runs on a laptop with no install step.
 functions-framework==3.*
 google-cloud-storage==3.4.1
+
+# `zoneinfo` is in the standard library but the *data* is not — it reads the host's
+# tz database and raises ZoneInfoNotFoundError when there isn't one. `WINDOW_TIMEZONE`
+# is the difference between the window this function reports and the one the Jibble
+# dashboard shows, so it cannot be left to whatever the base image happens to carry.
+# With this installed, zoneinfo falls back to it.
+tzdata==2026.2
