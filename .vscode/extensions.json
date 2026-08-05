@@ -1,0 +1,21 @@
+{
+  // Suggested on opening the workspace. None of these are required to build — `npm run
+  // build` and `npx tsc --noEmit` are the contract — but each one moves a class of
+  // mistake from "found in CI" to "found while typing".
+  "recommendations": [
+    // Understands Tailwind v4's `@theme` / `@layer` / `@apply`, which the built-in CSS
+    // server reports as unknown at-rules. Also completes the design tokens defined in
+    // globals.css, which is what stops a `text-stat` typo becoming a silently
+    // unstyled element.
+    "bradlc.vscode-tailwindcss",
+    // Formatting is not enforced in CI for TS/CSS, so it is worth having locally.
+    "esbenp.prettier-vscode",
+    // The repo's lint rules, in the editor.
+    "dbaeumer.vscode-eslint",
+    // Terraform: `terraform fmt -check` runs in `infra.yml`, so a formatting slip fails
+    // the workflow before it plans. Cheaper to catch on save.
+    "hashicorp.terraform",
+    // Already configured in settings.json for connected mode.
+    "sonarsource.sonarlint-vscode"
+  ]
+}
