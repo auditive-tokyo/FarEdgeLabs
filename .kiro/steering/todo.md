@@ -86,15 +86,17 @@ When one becomes real: write its `page.tsx`, drop `noindex`, drop its entry from
 `src/app/sitemap.ts`** — placeholders are deliberately absent from the sitemap.
 
 ### No contact route
-`gc_run_functions/contact_form/app.py` requires **`name`, `email`, `message`** and
-sends through Zoho SMTP with a DynamoDB rate limit — it is still the AWS handler,
-kept for its logic, not its bindings. Nothing on the site calls it.
-The hero's inline form was deleted rather than wired: two fields with no message
-field produce an enquiry with no subject.
+**The backend exists; the front end does not.**
+`gc_run_functions/contact_form/main.py` is deployed by `terraform/contact.tf` and takes
+**`name`, `email`, `message`** plus a `turnstileToken`, sending through Zoho SMTP.
+Nothing on the site calls it yet — no `/contact` page in either locale, and
+`NEXT_PUBLIC_TURNSTILE_SITE_KEY` is in neither `deploy.yml` nor `src/env.ts`.
 
-It is being ported to GCP rather than wired as-is — step 7 of the migration below.
-It is deliberately *after* the stats function, which is the smaller thing to prove
-the new platform with.
+The hero's inline form was deleted rather than wired: two fields with no message field
+produce an enquiry with no subject.
+
+See step 7 below for what the port settled, including **why the IP rate limiter was
+built and then removed** — the one decision here most likely to be re-proposed.
 
 ---
 
@@ -367,7 +369,43 @@ decides most of what follows.
   in logs on the normal path — which also fixes the old handler's
   `print(json.dumps(event))`, currently dumping every name, address and message.
 
-#### Protection: four layers, cheapest and most effective first
+#### Protection: three layers, cheapest and most effective first
+
+> [!important] There were four. The IP rate limiter was built, then deleted — read this
+> before rebuilding it
+> It was written: Firestore, TTL policy, sliding window, three in five minutes. It came
+> out again because putting numbers on it broke the argument for it.
+>
+> - **Three in five minutes still passes 864 a day.** That does not protect Zoho's
+>   daily cap, which is the asset this section names as the thing that matters
+> - **Distribute the source and per-IP misses entirely** — and distribution is the
+>   natural shape of a flood, not an exotic one
+> - What remained was "a naive loop that already passed Turnstile", plus double
+>   submits. The first is bot-shaped, so it is layer 1's job; the second belongs in the
+>   form's own disabled-button state, not the backend
+>
+> Against that, the standing cost was **`roles/datastore.user` on the whole project**
+> (Firestore has no per-collection IAM, so the narrowest predefined role still reaches
+> every document in every collection), a **fail-closed path that takes the form down
+> when Firestore is unwell**, `google-cloud-firestore` in the cold start, and three
+> Terraform resources. A permanent widening bought against a low-probability event.
+>
+> **The accepted risk:** if Turnstile is beaten, Zoho's daily cap drains and real
+> enquiries then fail — the failure this section opens by naming. It is *not* silent
+> though: layer 3 logs every send failure, so it is visible in Cloud Logging. Nobody
+> is watching those logs, which is a different problem with a cheaper fix. **A
+> log-based alert on the send-failure line is the next thing to add, ahead of
+> rebuilding the limiter.**
+>
+> Rebuilding is cheap if it ever earns its place. Firestore's location is fixed *after*
+> creation; creating it later in `asia-northeast1` costs nothing extra. The code is in
+> git history.
+>
+> This also removed a task: **measuring `X-Forwarded-For` is no longer needed.** The
+> only consumer of a trustworthy client IP was the limiter. `remoteip` on `siteverify`
+> is optional, and passing a *wrong* IP is worse than omitting it, so it is omitted.
+> The trap below is kept because it is what makes rebuilding safe, not because
+> anything currently depends on it.
 
 The function has to accept unauthenticated requests from strangers — a static page has
 no credential to present, so `allow_unauthenticated` is unavoidable and every control
@@ -390,8 +428,12 @@ channel, not blocking requests.
 2. **Cap the input.** Lengths on name, email and message, and a shape check on the
    address. The current handler has **no caps at all** — a 10 MB body would be accepted
    and mailed.
-3. **Rate limit per IP.** Effective, and easy to build in a way that does nothing. Three
-   traps, each of them a real CVE class:
+3. **Log the content on send failure only.** No personal data in logs on the normal
+   path — see "Settled" above. This is also the only place a drained Zoho cap becomes
+   visible, which is why the alert mentioned above hangs off it.
+
+~~**Rate limit per IP.**~~ **Removed — see the note above.** The traps are kept below
+because they are what a rebuild would need, and every one of them is a real CVE class:
    - **IPv6 must be bucketed by prefix, not address.** An ISP hands a household at
      least a **/64 — 2^64 addresses** (RIPE suggests /56 for home users, /48 for
      businesses). Keyed on the full /128, a client rotates addresses for free and the
@@ -408,20 +450,24 @@ channel, not blocking requests.
      it: send a request with a forged header and log what arrives. The header is
      append-only and the left end is attacker-controlled; leftmost parsing is its own
      vulnerability class.
-4. **Firestore for the counter, with its built-in TTL policy** — field-based, deleted in
-   the background, no cron and no cleanup function. One caveat that changes the design:
-   **deletion happens within 24 hours of expiry, not at expiry.** So a "3 in 5 minutes"
-   window cannot rely on the document being gone; compare timestamps in code and let TTL
-   do housekeeping only.
+~~**Firestore for the counter, with its built-in TTL policy.**~~ Also removed. If it
+returns, the caveat that shaped it still holds: **TTL deletion happens within 24 hours
+of expiry, not at expiry.** A "3 in 5 minutes" window cannot rely on the document being
+gone — compare timestamps in code and let TTL do housekeeping only.
 
 **Not doing: Cloud Armor.** A real WAF with edge rate limiting, but it needs a global
 load balancer in front of Cloud Run, which bills hourly whether or not anyone visits.
 Disproportionate for one form.
 
-Order matters: Turnstile removes the traffic the limiter is meant to catch, and the
-limiter is the only stateful piece. Building the stateful thing first and skipping the
-free effective one is exactly the shape of the handler being replaced — it has a
-DynamoDB rate limiter, no CAPTCHA and no input caps.
+**What bounds the bill instead is `max_instance_count = 3`** on the function. It stops
+nothing, but it converts "the invocation bill grows without limit" into "requests get
+429 or 503" — free, and for a site this size the only cost control that matters. Raise
+it knowing that is what you are raising.
+
+Order matters, and it is why the limiter lost: Turnstile removes the traffic the limiter
+was meant to catch, and the limiter was the only stateful piece. Building the stateful
+thing first and skipping the free effective one is exactly the shape of the handler that
+was replaced — a DynamoDB rate limiter, no CAPTCHA and no input caps.
 
 #### Who sends it: the existing Zoho mailbox
 **Settled by test, not by reading.** The live contact form on auditive.tokyo was
@@ -461,24 +507,29 @@ which SPF permerrors and fails outright.)
 Switching is roughly fifteen lines — `smtplib` out, one HTTPS call in. Keep the mail
 send behind a single function so that stays true.
 
-#### The existing handler is AWS-shaped — budget a rewrite, not a copy
+#### ~~The existing handler is AWS-shaped — budget a rewrite, not a copy~~ — done
 
-Only the `smtplib` block transfers. Found in `gc_run_functions/contact_form/app.py`:
+`app.py` is gone; `gc_run_functions/contact_form/main.py` replaced it, and
+`terraform/contact.tf` deploys it. The rewrite was the right budget — two of the
+findings were bugs that only appear on Cloud Run, and the reasoning for each now lives
+next to the code that fixes it rather than here:
 
-- `lambda_handler(event, context)` — needs an HTTP handler
-- `event['requestContext']['identity']['sourceIp']` — on Cloud Run the client IP
-  comes from `X-Forwarded-For`, and a client can prepend values to that header. Read
-  it wrong and the rate limit is trivially bypassed
-- `dynamodb.Table(...)` for the limiter — no AWS here any more
-- `ALLOWED_ORIGINS` is `https://auditive-tokyo.github.io` and `http://localhost:5173`
-  — the wrong site and Vite's port; this app is `https://faredgelabs.com` and 3000
-- `_request_origin` is a **module-level global mutated per request**. Harmless while
-  concurrency is 1, which is a function's default — but raising concurrency is a
-  single flag, and then two simultaneous submissions can swap CORS headers. Fix it
-  in the port; request state does not belong in module scope
-- `print("Received event:", json.dumps(event))` writes the **whole body** to Cloud
-  Logging — the sender's name, address and message. Narrow it
-- No length caps and no address-shape check; presence is the only validation
+- **`_request_origin` was a module-level global mutated per request.** Correct under
+  Lambda's one-request-per-container model; on Cloud Run two concurrent submissions
+  swap each other's `Access-Control-Allow-Origin`
+- **The subject line interpolated the raw name**, so `\r\n` in it injects SMTP headers
+  — `Bcc:` turns the form into someone else's sending relay
+- `lambda_handler(event, context)` → an HTTP handler that answers `OPTIONS` itself,
+  since there is no API Gateway to do it
+- `print("Received event:", json.dumps(event))` was writing every name, address and
+  message to Cloud Logging on the normal path
+- No length caps, no address-shape check, and `smtplib` with no timeout
+- `ALLOWED_ORIGINS` pointed at `auditive-tokyo.github.io` and Vite's 5173
+
+**Still open:** the front end. No `/contact` page, no form, no Turnstile widget, and
+`NEXT_PUBLIC_TURNSTILE_SITE_KEY` is not in `deploy.yml` or `src/env.ts` yet. The
+backend is deployed and effectively closed until then — `TURNSTILE_SECRET` is set, so a
+request without a valid token never reaches the mail send.
 
 ### 8. ~~Tear down AWS~~ — nothing to tear down
 Deleting `cdk/` was the whole teardown. See the warning in step 4: there was never

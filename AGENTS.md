@@ -100,6 +100,24 @@ Sans is **Latin-only** — a Japanese OG card needs a font with the glyphs added
     a clean heading outline, named landmarks, real `button`/`a`, `alt` text,
     JSON-LD (not microdata), semantic `tag` on animation components.
 
+## コメントは日本語で書く
+
+これから書くコメントと docstring は日本語。既存の英語は、**そのコードを触るついでに**直す。
+
+**翻訳だけのコミットは作らない。** 差分がレビューできない大きさになり、`git blame` が全行そのコミットに付け替わって、そのコメントが書かれた理由を辿れなくなる。急いで揃える必要はない。英語のコメントが残っていること自体は不具合ではない。
+
+言語が変わってもコメントの基準は変わらない。**何をしているか**はコードが言うので書かない。書くのは**なぜそうなっているか**と、**素直に書くと何が壊れるか**。`gc_run_functions/work_statics/main.py` の `WINDOW_TIMEZONE` と `duration_to_hours` の注記が見本で、どちらも「もっともらしいが間違っている数字」がどこから出てくるかを説明している。訳すときにそこを削ってはいけない。日本語にした結果ただの要約になるなら、英語のまま残したほうがまだよい。
+
+英語のまま残すもの:
+
+- 識別子、型名、外部 API のフィールド名（`belongsToDate`、`trackedTime`）。訳すと grep で追えなくなる
+- `# noqa: PLC0415` や `# pragma: no cover` のような、機械が読むディレクティブ
+- 引用した外部のエラー文字列。検索して当てるために書いてある
+
+例外メッセージとログ出力は日本語でよい。Cloud Logging は日本語で検索できる。ただし外部から受け取った文字列を混ぜる行は、その部分だけ原文のまま残す。
+
+この文書と `obsidian/` はまだ英語。移すかどうかはコードとは別の判断で、いまは触らない。
+
 ## Colour tokens: which ink goes on which ground
 
 The site follows the OS through `prefers-color-scheme` — **light is pink, dark is

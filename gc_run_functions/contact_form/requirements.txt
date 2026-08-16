@@ -1,0 +1,11 @@
+# Cloud Run functions (Python) は main.py の隣にこのファイルを要求し、その中に
+# Functions Framework を要求する。範囲ではなく固定 — AGENTS.md を見よ。
+#
+# **これだけ。** `boto3` は DynamoDB のレートリミット表ごと消えた。移植先の
+# `google-cloud-firestore` も一度は入れたが、レートリミットの層そのものを落としたので
+# 不要になった（判断の記録は main.py 冒頭）。
+#
+# Turnstile の検証と SMTP は標準ライブラリ（urllib、smtplib、email）で足りる。
+# requests を足さないのは work_statics と同じ理由で、ローカルで動かすのに
+# インストールが要らないほうがよいから。副産物としてコールドスタートが短い。
+functions-framework==3.*

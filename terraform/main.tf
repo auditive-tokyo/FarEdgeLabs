@@ -265,9 +265,14 @@ resource "google_storage_bucket_iam_member" "work_statistics_writer" {
 # --------------------------------------------------------------------------- #
 
 resource "google_service_account" "function_build" {
-  account_id   = "work-statistics-build"
-  display_name = "work statistics function builder"
-  description  = "Used by Cloud Build to build the function. Builds nothing else."
+  account_id = "work-statistics-build"
+
+  # `account_id` はこのリポジトリの関数が1つだった時代の名前で、いまは
+  # `contact.tf` の関数もこれで建てている。改名しないのは `account_id` が
+  # サービスアカウントの identity そのもので、**変えると置き換えになる**から
+  # （IAM の付け替えが全部道連れになる）。実態は display_name と description が持つ。
+  display_name = "Cloud Functions builder"
+  description  = "Used by Cloud Build to build this repository's functions. Builds nothing else."
 }
 
 resource "google_project_iam_member" "function_build" {
