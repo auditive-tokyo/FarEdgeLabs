@@ -359,13 +359,69 @@ decides most of what follows.
   importantly — it turns a form that only ever mails *you* into one that mails
   addresses **strangers typed in**. That is where sender reputation starts to
   matter and where the form becomes a way to make you mail a third party.
-- **Email must not be the only record.** Persist the submission (a GCS object, or
-  Firestore) and *then* notify. SMTP tells you the submission server accepted it
-  and nothing more; the way you find out mail has been failing is that enquiries
-  stopped arriving. Persist first and a delivery failure costs a notification, not
-  a customer.
-- **Rate limit before the send, and it fails closed.** The old handler's DynamoDB
-  limiter returned `True` on error — a broken table meant no limit at all.
+- **An enquiry must survive a failed send** — but only the failed ones are worth
+  keeping. An earlier draft here said to persist every submission before notifying;
+  that was narrowed, correctly, because a stored copy of a mail that arrived is a
+  second copy of something you already have, with a TTL to manage. **Log the content
+  to Cloud Logging on send failure only.** No Firestore, no TTL, and no personal data
+  in logs on the normal path — which also fixes the old handler's
+  `print(json.dumps(event))`, currently dumping every name, address and message.
+
+#### Protection: four layers, cheapest and most effective first
+
+The function has to accept unauthenticated requests from strangers — a static page has
+no credential to present, so `allow_unauthenticated` is unavoidable and every control
+lives in what the function does.
+
+> [!warning] CORS will not protect this, and it is the natural mistake to make here
+> A `POST` from `curl` ignores CORS entirely; it is enforced by browsers, on browsers.
+> The bucket's CORS rule protects nothing either — see step 6.
+
+**What actually breaks when it is abused** is not the invocation bill. It is **Zoho's
+daily sending cap**: a flood exhausts it, and then *real* enquiries fail silently and
+the way you notice is that nobody is contacting you. So the goal is protecting the
+channel, not blocking requests.
+
+1. **Cloudflare Turnstile.** Managed mode is free for unlimited use and works on any
+   site regardless of whether it is proxied through Cloudflare — which matters, since
+   DNS here must stay "DNS only". Bots are the overwhelming majority of contact-form
+   abuse, so this is where volume actually stops. Tokens last five minutes and are
+   verified server-side against `siteverify`.
+2. **Cap the input.** Lengths on name, email and message, and a shape check on the
+   address. The current handler has **no caps at all** — a 10 MB body would be accepted
+   and mailed.
+3. **Rate limit per IP.** Effective, and easy to build in a way that does nothing. Three
+   traps, each of them a real CVE class:
+   - **IPv6 must be bucketed by prefix, not address.** An ISP hands a household at
+     least a **/64 — 2^64 addresses** (RIPE suggests /56 for home users, /48 for
+     businesses). Keyed on the full /128, a client rotates addresses for free and the
+     limiter is decoration. Bucket on **/64**.
+   - **Do not mask IPv4 the same way.** IPv4-mapped IPv6 (`::ffff:a.b.c.d`) has 80
+     leading zero bits, so a /56 mask collapses **every IPv4 client into one bucket** —
+     one abuser then returns 429 to everyone else. Separate masks, and normalise the
+     mapped form first.
+   - **Normalise the text before keying.** One address has several valid
+     representations; comparing strings lets the same client look like many.
+   - And **fail closed.** The old handler returned `True` when the table errored, so a
+     broken limiter meant no limit.
+   - **Measure what Cloud Run puts in `X-Forwarded-For`** rather than reasoning about
+     it: send a request with a forged header and log what arrives. The header is
+     append-only and the left end is attacker-controlled; leftmost parsing is its own
+     vulnerability class.
+4. **Firestore for the counter, with its built-in TTL policy** — field-based, deleted in
+   the background, no cron and no cleanup function. One caveat that changes the design:
+   **deletion happens within 24 hours of expiry, not at expiry.** So a "3 in 5 minutes"
+   window cannot rely on the document being gone; compare timestamps in code and let TTL
+   do housekeeping only.
+
+**Not doing: Cloud Armor.** A real WAF with edge rate limiting, but it needs a global
+load balancer in front of Cloud Run, which bills hourly whether or not anyone visits.
+Disproportionate for one form.
+
+Order matters: Turnstile removes the traffic the limiter is meant to catch, and the
+limiter is the only stateful piece. Building the stateful thing first and skipping the
+free effective one is exactly the shape of the handler being replaced — it has a
+DynamoDB rate limiter, no CAPTCHA and no input caps.
 
 #### Who sends it: the existing Zoho mailbox
 **Settled by test, not by reading.** The live contact form on auditive.tokyo was
