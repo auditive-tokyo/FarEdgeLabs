@@ -12,10 +12,9 @@ import { HOVER_SPRING, LIFT_IN, REVEAL_DELAY, REVEAL_SPRING } from "./reveal";
 
 export interface SiteHeaderProps {
   brand: HomeContent["brand"];
+  /** All five destinations, contact included. There is no separate CTA. */
   nav: HomeContent["nav"];
   languageSwitch: HomeContent["languageSwitch"];
-  /** The CTA's destination and label. Not part of `nav` — see the note below. */
-  contact: HomeContent["contact"];
   /** Root-relative path of this page in the other locale. */
   languageHref: string;
 }
@@ -46,7 +45,6 @@ export const SiteHeader = ({
   brand,
   nav,
   languageSwitch,
-  contact,
   languageHref,
 }: SiteHeaderProps) => {
   const isRevealed = useIntroRevealed();
@@ -134,29 +132,37 @@ export const SiteHeader = ({
         >
           {languageSwitch.label}
         </Link>
-        <NavMenu nav={nav} contact={contact} />
+        <NavMenu nav={nav} />
       </div>
 
-      {/* Where the design put a "Send Request" pill — and it is a request pill
-          again. It was the language switch for a while, because the CTA pointed at
-          the hero's own form, sat a screen's width from it, and submitted nothing.
-          There is now a real `/contact` page at the other end, so the slot goes
-          back to what Figma drew and the language switch becomes the 50px circle
-          beside it — the same pill-and-circle pair the phone already uses.
+      {/* Where the design put a "Send Request" pill. That CTA was a link to the
+          hero's own form, sitting a screen's width away from it and submitting
+          nothing — two identical buttons, one of which did not do what it said.
+          The language switch takes the slot instead: on a bilingual site it is
+          the one control that belongs in the header on every page.
 
-          > [!warning] Why `contact` is not in the nav
-          > The centre pill has no fixed width; it shrink-wraps `gap-8` plus
-          > `px-12`. A fifth item takes the `ja` pill past roughly 614px, which is
-          > where a viewport-centred pill starts overlapping the logo at 1024px.
-          > The CTA slot costs no width in the middle, and an action is not a nav
-          > item anyway.
+          It briefly went back to being a contact CTA once `/contact` existed, and
+          came out again. Contact is a **destination**, so it belongs in the nav
+          with the other four; giving it a pill of its own said it was a different
+          kind of thing, which it is not.
 
-          The design's decorative arrow circle stays gone. The circle in that
-          position is the language switch now, and an arrow on it would promise
-          "onward" for a control that returns you to the same page. */}
+          > [!warning] Five nav items leave 8.8px beside the logo at 1024px
+          > The centre pill is centred on the *viewport* and shrink-wraps its
+          > contents, so every label widens it on both sides at once. Measured from
+          > the real font metrics: the `ja` pill is **672px** with five items
+          > (508px with four), which clears the logo by 8.8px and this button by
+          > 19px at `GRID_MIN_WIDTH`. It fits, and it is the tightest the header
+          > gets — above 1024px each side gains half of whatever the viewport
+          > gains. Adding a sixth item, or a longer label, needs remeasuring rather
+          > than eyeballing.
+
+          The design's decorative arrow circle went with the CTA. An arrow means
+          "onward", which is what a request button promises; a language switch
+          returns you to the same page in another language, so the arrow was
+          saying something untrue about where the button goes. */}
       <Inview
         tag="div"
-        className="hidden items-center gap-2 lg:flex"
+        className="hidden lg:block"
         from={DROP_OUT}
         to={LIFT_IN}
         config={REVEAL_SPRING}
@@ -172,26 +178,19 @@ export const SiteHeader = ({
           config={HOVER_SPRING}
         >
           <Link
-            href={contact.href}
-            aria-label={contact.cta.ariaLabel}
+            href={languageHref}
+            // The label is the language being switched *to*, written in that
+            // language, so it reads to someone who cannot read the current one.
+            // `hrefLang` tells a crawler this is a translation rather than a
+            // navigation link; `aria-label` spells out the action, since "EN"
+            // alone is not one.
+            hrefLang={languageSwitch.label.toLowerCase()}
+            aria-label={languageSwitch.ariaLabel}
             className="flex h-[3.125rem] w-[9.1875rem] items-center justify-center rounded-full border border-hairline bg-accent text-body leading-[1.2] text-on-accent"
           >
-            {contact.cta.label}
+            {languageSwitch.label}
           </Link>
         </Hover>
-        <Link
-          href={languageHref}
-          // The label is the language being switched *to*, written in that
-          // language, so it reads to someone who cannot read the current one.
-          // `hrefLang` tells a crawler this is a translation rather than a
-          // navigation link; `aria-label` spells out the action, since "EN"
-          // alone is not one.
-          hrefLang={languageSwitch.label.toLowerCase()}
-          aria-label={languageSwitch.ariaLabel}
-          className="grid size-[3.125rem] place-items-center rounded-full border border-hairline bg-surface text-body leading-none"
-        >
-          {languageSwitch.label}
-        </Link>
       </Inview>
     </header>
   );

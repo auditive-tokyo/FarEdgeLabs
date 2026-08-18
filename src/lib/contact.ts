@@ -17,11 +17,13 @@
 
 import { contactEndpoint } from "@/env";
 
-/** `main.py` の `parse_submission` が要求する3項目。あちらと揃えること。 */
+/** `main.py` の `parse_submission` が読む項目。あちらと揃えること。 */
 export interface ContactSubmission {
   name: string;
   email: string;
   message: string;
+  /** 任意。空文字で送ってよく、バックエンドは空白のみも「無し」として扱う。 */
+  company: string;
   /** Turnstile が発行する使い捨てトークン。空だとバックエンドが 403 を返す。 */
   turnstileToken: string;
 }
@@ -33,6 +35,7 @@ export interface ContactSubmission {
  * ここで見るのは往復を1回節約するためで、防御ではない。防御はあちら側。
  */
 export const CONTACT_LIMITS = {
+  company: 100,
   name: 100,
   /** RFC 5321 のメールアドレスの最大長。 */
   email: 254,
@@ -40,6 +43,22 @@ export const CONTACT_LIMITS = {
 } as const;
 
 export type ContactField = keyof typeof CONTACT_LIMITS;
+
+/**
+ * 必須の項目。**表示順もこれ**で、`company` が先頭に無いことに意味がある。
+ *
+ * 会社名は名前の**上**に置いている（日本の法人向けフォームの並びで、名刺と同じ順）。
+ * ただし必須ではないので、この配列とは別に扱う — 空でも通す項目を「未入力」と言うと、
+ * 埋める義務があるように見える。
+ */
+export const REQUIRED_CONTACT_FIELDS = ["name", "email", "message"] as const;
+
+export type RequiredContactField = (typeof REQUIRED_CONTACT_FIELDS)[number];
+
+export const isRequiredField = (
+  field: ContactField,
+): field is RequiredContactField =>
+  (REQUIRED_CONTACT_FIELDS as readonly string[]).includes(field);
 
 /** 何が起きたか。文言は持たない — 表示する言葉はロケールファイルにある。 */
 export type ContactResult =

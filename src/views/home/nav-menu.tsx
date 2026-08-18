@@ -10,9 +10,8 @@ import { useScroll } from "@/hooks/smooth-scroll/use-scroll";
 import { useWindowWidth } from "@/hooks/use-window-size";
 
 export interface NavMenuProps {
+  /** All five destinations, contact last. It is not a special case here either. */
   nav: HomeContent["nav"];
-  /** The CTA. Rendered below the links, not among them — see the note below. */
-  contact: HomeContent["contact"];
 }
 
 /**
@@ -40,7 +39,7 @@ const CURTAIN_SPRING = { tension: 110, friction: 24, clamp: true } as const;
  * Above `GRID_MIN_WIDTH` this component renders nothing visible: the header's
  * centre pill takes over.
  */
-export const NavMenu = ({ nav, contact }: NavMenuProps) => {
+export const NavMenu = ({ nav }: NavMenuProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const panelId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -149,28 +148,6 @@ export const NavMenu = ({ nav, contact }: NavMenuProps) => {
                   ))}
                 </ul>
               </nav>
-
-              {/* The CTA, and the phone's only way to the form — the desktop pill
-                  it mirrors is `lg:` only.
-
-                  Outside the `<nav>` and styled as the pill rather than as a
-                  menu link, because it is an action and not a destination in the
-                  same sense as the four above. `mt-auto` drops it to the bottom of
-                  the panel, which is also where a thumb is.
-
-                  The language switch is deliberately *not* here. It used to be,
-                  and that put a top-level control two taps deep behind a button
-                  labelled "menu"; it now sits beside the burger. This is the
-                  opposite case: a form is somewhere you go, so the menu is
-                  exactly where it belongs. */}
-              <Link
-                href={contact.href}
-                onClick={close}
-                aria-label={contact.cta.ariaLabel}
-                className="mt-auto flex h-[3.125rem] items-center justify-center rounded-full border border-hairline bg-accent text-body leading-[1.2] text-on-accent"
-              >
-                {contact.cta.label}
-              </Link>
             </animated.div>
           ),
       )}

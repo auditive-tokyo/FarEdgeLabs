@@ -7,7 +7,7 @@
     # ローカル、Functions Framework 越しに本番と同じ形で叩く
     functions-framework --target submit_contact_form --debug
 
-    # 送信
+    # 送信。`company` は任意で、他の3つは必須。
     curl -X POST http://localhost:8080 \
       -H 'Content-Type: application/json' -H 'Origin: http://localhost:3000' \
       -d '{"name":"テスト","email":"a@example.com","message":"本文","turnstileToken":"..."}'
@@ -104,6 +104,10 @@ MAX_NAME_LENGTH = 100
 MAX_EMAIL_LENGTH = 254
 MAX_MESSAGE_LENGTH = 5000
 
+#: 会社名の上限。**この項目だけ任意。** 法人からの問い合わせを想定しているので集めるが、
+#: 個人や屋号で来る人を止める理由が無い。空でも欠けていても同じ扱い。
+MAX_COMPANY_LENGTH = 100
+
 TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
 TURNSTILE_TIMEOUT = 10
 
@@ -193,25 +197,47 @@ def verify_turnstile(token: str) -> bool:
 # --------------------------------------------------------------------------- #
 
 
+#: 必須の項目と上限。
+REQUIRED_LIMITS = {
+    "name": MAX_NAME_LENGTH,
+    "email": MAX_EMAIL_LENGTH,
+    "message": MAX_MESSAGE_LENGTH,
+}
+
+#: 任意の項目と上限。空・空白のみ・キーが無い、のどれでも「無し」として通す。
+OPTIONAL_LIMITS = {
+    "company": MAX_COMPANY_LENGTH,
+}
+
+
 def parse_submission(payload: object) -> tuple[dict[str, str] | None, str | None]:
     """`(値, エラー)` を返す。片方だけが `None` になる。
 
     長さは SMTP に渡す前に見る。上限を超えたものを切って送るのではなく落とす —
-    切ると送信者は全部送れたつもりのままになる。
+    切ると送信者は全部送れたつもりのままになる。**任意の項目も長さは見る**: 任意なのは
+    「無くてもよい」であって「何を入れてもよい」ではない。
+
+    返る辞書に `company` が入るのは値があったときだけ。空文字を入れて返さないのは、
+    呼び出し側が `if fields.get("company")` の1つで判断できるようにするため。
     """
     if not isinstance(payload, dict):
         return None, "リクエストの本文が JSON オブジェクトではありません"
 
     fields: dict[str, str] = {}
-    limits = {
-        "name": MAX_NAME_LENGTH,
-        "email": MAX_EMAIL_LENGTH,
-        "message": MAX_MESSAGE_LENGTH,
-    }
-    for field, limit in limits.items():
+
+    for field, limit in REQUIRED_LIMITS.items():
         value = payload.get(field)
         if not isinstance(value, str) or not value.strip():
             return None, f"{field} が入っていません"
+        value = value.strip()
+        if len(value) > limit:
+            return None, f"{field} が長すぎます（上限 {limit} 文字）"
+        fields[field] = value
+
+    for field, limit in OPTIONAL_LIMITS.items():
+        value = payload.get(field)
+        if not isinstance(value, str) or not value.strip():
+            continue
         value = value.strip()
         if len(value) > limit:
             return None, f"{field} が長すぎます（上限 {limit} 文字）"
@@ -266,17 +292,28 @@ def send_email(fields: dict[str, str]) -> None:
     receiver = os.environ["RECEIVER_EMAIL"]
     password = os.environ["APP_PASSWORD"]
 
+    company = fields.get("company")
+
     message = EmailMessage()
     message["From"] = sender
     message["To"] = receiver
-    message["Subject"] = f"FarEdge Labs お問い合わせ: {_single_line(fields['name'], 80)}"
+    # 会社名があれば件名に入れる。受信箱の一覧で誰から来たのかが分かるのが、この項目を
+    # 集めている一番の理由なので、本文の中だけに置いても半分しか役に立たない。
+    # `_single_line` を通すのは注入対策で、任意の項目でも例外にしない。
+    who = _single_line(fields["name"], 80)
+    if company:
+        who = f"{_single_line(company, 80)} / {who}"
+    message["Subject"] = f"FarEdge Labs お問い合わせ: {who}"
 
     # Reply-To を送信者にすると通知メールからそのまま返信できる。ここも生では入れない。
     message["Reply-To"] = _single_line(fields["email"], MAX_EMAIL_LENGTH)
+
+    # 会社名の行は値があるときだけ。中身の無い見出しだけの行は読み手を迷わせる。
     message.set_content(
-        f"名前: {fields['name']}\n"
-        f"メール: {fields['email']}\n\n"
-        f"本文:\n{fields['message']}\n"
+        (f"会社名: {company}\n" if company else "")
+        + f"名前: {fields['name']}\n"
+        + f"メール: {fields['email']}\n\n"
+        + f"本文:\n{fields['message']}\n"
     )
 
     # timeout なしだと、応答しない相手にインスタンスをリクエストタイムアウトまで

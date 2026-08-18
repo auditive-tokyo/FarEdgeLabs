@@ -9,6 +9,7 @@ import { useTurnstile } from "@/hooks/use-turnstile";
 import {
   CONTACT_LIMITS,
   isEmailShaped,
+  isRequiredField,
   submitContactForm,
   type ContactField,
 } from "@/lib/contact";
@@ -24,7 +25,12 @@ export interface ContactFormProps {
 /** 送信の状態。`sent` から戻る道は無い — 成功したらフォームごと差し替える。 */
 type Phase = "editing" | "sending" | "sent" | "failed";
 
-const EMPTY: Record<ContactField, string> = { name: "", email: "", message: "" };
+const EMPTY: Record<ContactField, string> = {
+  company: "",
+  name: "",
+  email: "",
+  message: "",
+};
 
 /**
  * フォーム本体 — クライアントリーフ。ビューは Server Component のまま（hard rule #6）。
@@ -61,13 +67,15 @@ export const ContactForm = ({ copy, locale }: ContactFormProps) => {
 
   const errorFor = (field: ContactField): string | null => {
     const value = values[field].trim();
-    if (!value) return copy.errors.required;
+    // 空の任意項目は正常。ここで `required` を返すと、埋める義務があるように見える。
+    if (!value) return isRequiredField(field) ? copy.errors.required : null;
     if (value.length > CONTACT_LIMITS[field]) return copy.errors.tooLong;
     if (field === "email" && !isEmailShaped(value)) return copy.errors.email;
     return null;
   };
 
-  const fieldErrors = {
+  const fieldErrors: Record<ContactField, string | null> = {
+    company: errorFor("company"),
     name: errorFor("name"),
     email: errorFor("email"),
     message: errorFor("message"),
@@ -87,7 +95,8 @@ export const ContactForm = ({ copy, locale }: ContactFormProps) => {
     // 自分のページに投げ直し、入力が URL に載って履歴に残る。
     event.preventDefault();
 
-    // 何も触らずに押された場合にエラーを出すため、全項目を touched にする。
+    // 何も触らずに押された場合にエラーを出すため、必須項目を touched にする。
+    // `company` は入れない — 空で正常なので、触られてもいないのに印を付ける意味が無い。
     setTouched({ name: true, email: true, message: true });
     if (!canSubmit) return;
 
@@ -96,6 +105,7 @@ export const ContactForm = ({ copy, locale }: ContactFormProps) => {
 
     const result = await submitContactForm(
       {
+        company: values.company.trim(),
         name: values.name.trim(),
         email: values.email.trim(),
         message: values.message.trim(),
@@ -132,6 +142,22 @@ export const ContactForm = ({ copy, locale }: ContactFormProps) => {
       {/* `noValidate`: ブラウザ内蔵のバリデーションを切って、ロケールファイルの文言に
           揃える。切らないと日本語ページに `Please fill out this field.` が混ざる。 */}
       <form noValidate onSubmit={onSubmit} className="flex flex-col gap-5">
+        {/* 会社名が名前の**上**にあるのは、日本の法人向けフォームの並び（会社名 → 部署
+            → お名前）で、名刺と同じ順だから。既定ロケールが日本語で相手が法人なので、
+            そちらに合わせている。
+            「必須を先、任意を後」という逆の作法もあるが、法人からの問い合わせなら
+            実際に空になる人は少ない。 */}
+        <Field
+          field="company"
+          label={copy.fields.company.label}
+          optionalLabel={copy.optional}
+          placeholder={copy.fields.company.placeholder}
+          value={values.company}
+          error={touched.company ? fieldErrors.company : null}
+          autoComplete="organization"
+          onChange={(value) => setValues((v) => ({ ...v, company: value }))}
+          onBlur={() => setTouched((t) => ({ ...t, company: true }))}
+        />
         <Field
           field="name"
           label={copy.fields.name.label}
@@ -227,6 +253,8 @@ const Card = ({
 interface FieldProps {
   field: ContactField;
   label: string;
+  /** 渡されたときだけ「任意」の印が出る。必須項目には渡さない。 */
+  optionalLabel?: string;
   placeholder: string;
   value: string;
   error: string | null;
@@ -250,6 +278,7 @@ interface FieldProps {
 const Field = ({
   field,
   label,
+  optionalLabel,
   placeholder,
   value,
   error,
@@ -282,7 +311,18 @@ const Field = ({
 
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="font-mulish text-caption leading-[1.2]">{label}</span>
+      <span className="flex items-baseline gap-2 font-mulish text-caption leading-[1.2]">
+        {label}
+        {/* `<label>` の中なので、この印はラベルの読み上げに含まれる。`aria-label` を
+            別に足したり `title` に隠したりしないのはそのため — 目で見える文字と
+            読み上げられる文字を同じにしておく。
+            `aria-hidden` にしていないのも同じ理由で、任意であることは装飾ではない。 */}
+        {/* 括弧はロケールファイル側に持たせている。全角の（）と半角の () は言語ごとに
+            変わるので、ここで足すと "Company（optional）" のような混ざり方をする。 */}
+        {optionalLabel ? (
+          <span className="text-foreground/60">{optionalLabel}</span>
+        ) : null}
+      </span>
       {multiline ? (
         <textarea {...shared} rows={6} />
       ) : (

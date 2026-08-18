@@ -16,7 +16,8 @@
     { "label": "Home", "path": "" },
     { "label": "Services", "path": "services" },
     { "label": "Works", "path": "works" },
-    { "label": "About", "path": "about" }
+    { "label": "About", "path": "about" },
+    { "label": "Contact", "path": "contact" }
   ],
   "underConstruction": {
     "heading": "Under construction",
@@ -27,17 +28,15 @@
     "label": "JA",
     "ariaLabel": "日本語に切り替える"
   },
-  "_contact_readme": "Deliberately not in `nav`. Reached from the header's CTA slot (where Figma put \"Send Request\") and from the phone's menu panel. A fifth nav item widens the centre pill until it collides with the logo at 1024px — see the note in src/views/home/site-header.tsx. Keep `cta.label` short enough for the 9.1875rem pill. `errors.*` duplicate the backend's validation, which is not redundancy: anything answerable without a round trip is answered in the browser (keep the limits in step with gc_run_functions/contact_form/main.py).",
+  "_contact_readme": "`path` must match the `\"contact\"` entry in `nav` above. The header's link is built from `nav`; the page itself, the sitemap and the language switch use this `path`. If they drift, the header points at a 404. `heading` matches the nav label on purpose — tap \"Contact\", land on a page headed \"Contact\", the same reason the placeholder pages take their titles from the nav. `errors.*` duplicate the backend's validation, which is not redundancy: anything answerable without a round trip is answered in the browser (keep the limits in step with gc_run_functions/contact_form/main.py).",
   "contact": {
     "path": "contact",
-    "cta": {
-      "label": "Get in touch",
-      "ariaLabel": "Go to the contact form"
-    },
-    "heading": "Get in touch",
+    "heading": "Contact",
     "lead": "Enquiries, estimates, or a technical question",
     "body": "We read everything that arrives and reply ourselves. If it is time-sensitive, say so and we will treat it that way.",
+    "optional": "(optional)",
     "fields": {
+      "company": { "label": "Company", "placeholder": "Acme Inc." },
       "name": { "label": "Name", "placeholder": "Jane Doe" },
       "email": { "label": "Email", "placeholder": "you@example.com" },
       "message": { "label": "Message", "placeholder": "Tell us the background, and what you are trying to make possible." }
