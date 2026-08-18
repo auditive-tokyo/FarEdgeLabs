@@ -128,6 +128,91 @@ resource "google_storage_bucket_iam_member" "public_read" {
 }
 
 # --------------------------------------------------------------------------- #
+# 関数イメージの置き場
+#
+# **Terraform が作ったものではない。** Cloud Functions が最初のデプロイで自分で作った
+# リポジトリを、cleanup policy を張るために import して引き取っている。
+#
+# なぜイメージが要るのか: Cloud Run functions は「関数」という別サービスではなく
+# Cloud Run サービスの薄い包装で、Cloud Run は常にコンテナを動かす。`main.py` を渡すと
+# Cloud Build がコンテナイメージに焼いてここに置き、Cloud Run がそれを起動する。
+# **Lambda の zip に相当する軽い経路が存在しない**ので、ECR 相当が必ず経路に入る。
+#
+# 課金されるのはこのストレージだけ。Cloud Run のリビジョン自体は無料で（待機
+# インスタンスが 0 なので）、実行されなければ計算資源は発生しない。無料枠 0.5 GB に対し
+# デプロイ1回あたり十数 MB 積まれる。
+# --------------------------------------------------------------------------- #
+
+import {
+  # 済んだらこのブロックを消す。残すと「既に管理下にある」と言われる。
+  to = google_artifact_registry_repository.gcf_artifacts
+  id = "projects/faredgelabs/locations/asia-northeast1/repositories/gcf-artifacts"
+}
+
+resource "google_artifact_registry_repository" "gcf_artifacts" {
+  location      = var.region
+  repository_id = "gcf-artifacts"
+  format        = "DOCKER"
+  mode          = "STANDARD_REPOSITORY"
+
+  # Cloud Functions が付けた値をそのまま宣言する。違う値を書くと apply のたびに
+  # Google と取り合いになる。
+  description = "This repository is created and used by Cloud Functions for storing function docker images."
+  labels = {
+    "goog-managed-by" = "cloudfunctions"
+  }
+
+  # タグの無いイメージだけ消す。**タグ付きには触らない。**
+  #
+  # 安全なのは、この構成ではタグの無いイメージが誰からも参照されていないから。
+  # Cloud Functions はデプロイごとに新しいイメージへ `version_N` と `latest` を打ち、
+  # 古いものも `version_N` を保持する。つまりリビジョンが指しているイメージは必ず
+  # タグを持つ。タグが無いのは**ビルドは成功したが関数の作成が失敗した**残骸で、
+  # 実際に1つある（`available_cpu` を書き忘れて落ちた apply のもの）。
+  #
+  # > [!warning] Cloud Run はイメージをダイジェストで固定する
+  # > タグではない。だから「タグが無い = 参照されていない」が成り立つのは上の前提の
+  # > 下だけで、手で `docker push` するような運用を混ぜたら成り立たなくなる。現在の
+  # > リビジョンのイメージを消せばコールドスタートが失敗する。
+  #
+  # 30日空けているのは、デプロイの最中に一瞬タグが無い状態があっても巻き込まないため。
+  cleanup_policies {
+    id     = "delete-untagged"
+    action = "DELETE"
+
+    condition {
+      tag_state  = "UNTAGGED"
+      older_than = "2592000s" # 30 日
+    }
+  }
+
+  # > [!note] タグ付きイメージを消す方針は**まだ入れていない**。入れ方は決まっている
+  # > 形は `DELETE` に `older_than` を付けて、`KEEP` の
+  # > `most_recent_versions { keep_count = N }` で直近を守る。両方に当たったものは
+  # > **keep が勝つ**のが Artifact Registry の規則。
+  # >
+  # > 保留の理由は `keep_count` の数え方。API リファレンスは「保持する最小数」としか
+  # > 書いておらず、リポジトリ全体か**パッケージ単位**かが明記されていない
+  # > （併記されている `package_name_prefixes` からはパッケージ単位に読める）。ここを
+  # > 取り違えると稼働中のイメージを消しうる — 関数2つとそれぞれの `/cache` で
+  # > 4パッケージある。
+  # >
+  # > **`cleanup_policy_dry_run` で試すことはできるが、それはリポジトリ全体に効く。**
+  # > 上のタグ無し削除も一緒に止まるので、「片方だけ本番、片方だけ試験」はできない。
+  # > だから入れるときは、一度リポジトリごと dry run にして削除予定をログで確かめ、
+  # > それから両方を有効に戻す、という順番になる。
+  # >
+  # > 急がない。23 MB は無料枠 0.5 GB の 5% で、デプロイ30〜40回ぶんの余裕がある。
+  # > 増え方は予算アラートが教えてくれるので、**鳴ったら「攻撃」ではなくこれを疑う**
+  # > 余地があることだけ覚えておく。
+  lifecycle {
+    # 引き取ったが、Google のものでもある。設定から消しただけで `destroy` が走ると、
+    # 稼働中の関数が起動できなくなる。
+    prevent_destroy = true
+  }
+}
+
+# --------------------------------------------------------------------------- #
 # Secrets
 #
 # The containers only. **The values are added out of band:**
@@ -138,6 +223,9 @@ resource "google_storage_bucket_iam_member" "public_read" {
 # `printf` rather than `echo` so no trailing newline is stored — a secret with an
 # invisible `\n` authenticates nowhere and looks perfectly present. Verify by
 # comparing byte lengths, never by printing the value.
+#
+# ただしバイト数が示すのは「壊れずに保存された」ことだけで、値が正しいことではない。
+# デプロイせずに試せる値（SMTP の login など）は、版を追加する前に試すほうが速い。
 #
 # Terraform could manage the versions too, and is kept out on purpose: a value passed
 # through Terraform is written to state in the clear, and reaches state by way of a

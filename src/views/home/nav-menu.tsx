@@ -113,7 +113,15 @@ export const NavMenu = ({ nav }: NavMenuProps) => {
               aria-modal="true"
               aria-label="Menu"
               style={{ y: style.y }}
-              className="fixed inset-0 z-30 flex flex-col overflow-hidden bg-menu-panel px-5 pb-10 pt-24 lg:hidden"
+              /* `/75` は他の面と同じ値。カード（`hero-copy`、`hero-stats`、
+                 `under-construction`、お問い合わせフォーム）が全部これで、`/70` が
+                 下限だと `hero-stats.tsx` に書いてある。不透明だったのはこの幕だけで、
+                 揃えると場が薄く透けて他の面と同じ素材に見える。
+
+                 `backdrop-blur` は付けない。後ろは毎フレーム描き直している WebGL の
+                 canvas で、ぼかしも同じ頻度でかけ直すことになる（`hero-copy.tsx` の
+                 注記と同じ理由）。 */
+              className="fixed inset-0 z-30 flex flex-col overflow-hidden bg-menu-panel/75 px-5 pb-10 pt-24 lg:hidden"
             >
               <button
                 type="button"

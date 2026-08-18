@@ -35,10 +35,11 @@
     "lead": "Enquiries, estimates, or a technical question",
     "body": "We read everything that arrives and reply ourselves. If it is time-sensitive, say so and we will treat it that way.",
     "optional": "(optional)",
+    "_fields_readme": "Only `message` has a placeholder. The test is whether it says something the label cannot: a sample company name is an example, not a format, and it silently picks a side on where 株式会社 goes in Japanese (this company puts it last). Name and email are fully described by their labels. A placeholder also disappears the moment someone starts typing, and whether it is announced varies by screen reader — it is not the place for a restatement of the label. `message` keeps one because \"what should I write here\" does not fit in a label.",
     "fields": {
-      "company": { "label": "Company", "placeholder": "Acme Inc." },
-      "name": { "label": "Name", "placeholder": "Jane Doe" },
-      "email": { "label": "Email", "placeholder": "you@example.com" },
+      "company": { "label": "Company" },
+      "name": { "label": "Name" },
+      "email": { "label": "Email" },
       "message": { "label": "Message", "placeholder": "Tell us the background, and what you are trying to make possible." }
     },
     "submit": {
