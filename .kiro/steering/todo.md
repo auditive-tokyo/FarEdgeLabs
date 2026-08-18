@@ -27,7 +27,7 @@ nothing at all. Needs the site token from the Cloudflare dashboard, then a
 
 This is the one item where the code contradicts a written decision.
 
-### `hero.stats` — the panel is built, the figures are not
+### ~~`hero.stats` — the panel is built, the figures are not~~ — 繋がった
 **Done:** the template's 2×2 grid of four cards is now **one panel** in the same
 footprint, a `<dl>` of label-and-figure lines plus a `<details>` disclosure
 answering "what are these figures?". Rows are data, so the count is no longer a
@@ -51,24 +51,21 @@ a screen reader rather than sitting loose beside them.
 No client is named. The aggregate is the point, and naming engagements on a
 marketing page is a separate decision with its own consent question.
 
-A trailing window **falls** when a week is taken off. That is now a conscious
-choice — cumulative totals were the alternative and only ever rise, but they say
-nothing about now. Do not quietly switch to cumulative to make a number look
-better.
+~~Still open~~ — 3点すべて解決済み。決まった内容だけ残す:
 
-Still open:
+- **注記はもう嘘ではない。** 関数が日次で動いていて `stats.json` が実在し、
+  `hero-stats.tsx` がそれを読んでいる。`stats.note.body` が主張する日次集計は成立した。
+- **空の状態は `—` を出す。** スケルトンではない。数字はクライアントの `fetch` で
+  来るので初回描画には無く、関数やバケットが落ちた日も同じ見た目になる。
+  **これは設計された状態**で、事故ではない — だからリトライも出さない
+  （`fetchWorkStatistics` は失敗を全部 `null` に潰す）。
+- **時間の接尾辞はロケールごと。** `時間` と `h`。数字とは**別の `span`** に置き、
+  一段小さく、**italic を付けない**。単位が数字と同じ大きさだと数字と競い、
+  CJK に italic をかけると字が剪断される。カウント2つには接尾辞が無い。
 
-- **The note is currently false.** `stats.note.body` says the figures are
-  compiled daily from Jibble's API. Nothing does that yet, so this **must not
-  reach production before the function does** — it would be the only untrue sentence
-  on the site. The wording itself is settled and names the vendor.
-- **The empty state.** The numbers arrive by client-side `fetch`, so first paint
-  has none of them, above the fold. Decide what shows then — skeleton, or the `—`
-  that swaps in. The panel sits in that state on any day the function or the bucket
-  fails, so it has to be designed rather than incidental.
-- **The hours format.** `168`, `168h`, `168時間` — the script decides, and the two
-  locales may want different suffixes. It is the only figure of the three that is
-  not a bare count.
+> [!warning] 数字が縮むのは仕様
+> 直近30日の窓なので、休むと下がる。累計に切り替えれば下がらないが、累計は「いま」を
+> 何も語らない。**見栄えのために黙って累計へ変えないこと。**
 
 Crawlers will not see the figures. That is fine; nobody searches for them.
 
@@ -85,18 +82,37 @@ When one becomes real: write its `page.tsx`, drop `noindex`, drop its entry from
 `PLACEHOLDER_SEGMENTS` in `src/views/under-construction/pages.ts`, and **add it to
 `src/app/sitemap.ts`** — placeholders are deliberately absent from the sitemap.
 
-### No contact route
-**The backend exists; the front end does not.**
-`gc_run_functions/contact_form/main.py` is deployed by `terraform/contact.tf` and takes
-**`name`, `email`, `message`** plus a `turnstileToken`, sending through Zoho SMTP.
-Nothing on the site calls it yet — no `/contact` page in either locale, and
-`NEXT_PUBLIC_TURNSTILE_SITE_KEY` is in neither `deploy.yml` nor `src/env.ts`.
+### ~~No contact route~~ — `/contact` は両ロケールにある
+`src/views/contact.tsx` と `src/views/contact/form.tsx`、ルートは
+`src/app/(ja)/contact/` と `src/app/(en)/en/contact/`。バックエンドは
+`gc_run_functions/contact_form/main.py`（`terraform/contact.tf` がデプロイ）。
 
-The hero's inline form was deleted rather than wired: two fields with no message field
-produce an enquiry with no subject.
+**残っているのは1つだけ**: `deploy.yml` の `NEXT_PUBLIC_CONTACT_ENDPOINT` が未検証。
 
-See step 7 below for what the port settled, including **why the IP rate limiter was
-built and then removed** — the one decision here most likely to be re-proposed.
+**マージ前には確認できない。** URL のハッシュは Cloud Run が生成する値で、
+`contact_form_uri` は関数を参照しているので、`infra.yml` が apply して関数が state に
+入るまで出力自体が存在しない（先に `terraform output` を打つと
+`Output "contact_form_uri" not found` になる。これは正常）。
+
+順序:
+
+1. `production` にマージ。`infra.yml` が関数を作り、同じ push で `deploy.yml` が
+   フロントエンドを推測値でビルドする
+2. `cd terraform && terraform output contact_form_uri`
+   （`gcloud run services describe contact-form --region=asia-northeast1
+   --format='value(status.url)'` でも読める。state を見ないので手元の状態に依らない）
+3. 一致していればコメントを消すだけ。違っていれば `deploy.yml` を直して push し直す
+
+推測の根拠は `work-statistics` の `xbu7yir7nq` が**プロジェクト単位のハッシュ**だという
+前提。観測点が1つしかないので確証はない。外れていても全送信がネットワークエラーで
+落ちるだけで、まだ誰も使っていないので実害は無い。ただし**見えはするが誰かが試すまで
+気づかない**種類の壊れ方なので、上の2を飛ばさないこと。
+
+ヒーローにあったインラインのフォームは繋がずに削除した。項目が2つで本文欄が無く、
+件名の無い問い合わせしか作れなかったので。
+
+`contact` を `nav` に入れていない理由と、**IP レートリミットを作ってから消した理由**は
+ステップ7に。後者はここで最も再提案されやすい判断。
 
 ---
 
@@ -310,7 +326,7 @@ aggregates, so the function should not fetch identities it has no use for.
 No database. Three scalars, no queries, no history — Firestore or anything like it
 would be ceremony. It earns a place only if a trend line is ever wanted.
 
-### 6. Publish the object — **done**. Wire the frontend — **not started**
+### 6. Publish the object — **done**. Wire the frontend — **done**
 Live and checked with `curl`:
 
 ```
@@ -332,24 +348,49 @@ Two traps, both handled, both worth keeping written down:
 - The anonymous URL is `storage.googleapis.com/<bucket>/<object>`.
   `storage.cloud.google.com` demands authentication even for public objects.
 
-**What remains is the frontend.** `hero-stats.tsx` still renders the `—` from the
-locale files and fetches nothing. Until it reads this object, `stats.note.body` is
-claiming a daily refresh that the page cannot see — see the `hero.stats` entry above,
-including the empty-state decision that is still open.
+**フロントエンドも繋がった。** `src/lib/work-statistics.ts` がこのオブジェクトを取り、
+`hero-stats.tsx` が描く。空の状態は `—`（上の `hero.stats` の項）。Scheduler は
+06:00 JST の日次で、OIDC トークン付きで私物の関数を叩く（ステップ5）。
 
-Then Cloud Scheduler on a daily cron, calling the private function with an OIDC
-token as set out in step 5, and the empty state decided in the `hero.stats` entry
-above.
+`statsUrl` は環境変数ではなく `src/lib/site.ts` にリテラルで置いてある。バケットは
+1つで Terraform が名前を決めているので、設定可能にすると**忘れる余地が増えるだけ**で、
+しかも忘れたときの症状が「パネルが永久に埋まらない」という静かなもの。代償はバケットを
+改名したらここも直すこと。`NEXT_PUBLIC_SITE_URL` が localhost を既定にして「忘れたら
+騒がしい」側に倒してあるのと逆の判断で、逆にしてある理由がこれ。
 
 **A webhook will not replace the cron.** Jibble publishes none — the third-party
 "Jibble webhook" integrations are polling in costume. And it would not help anyway:
 a *trailing 30-day* figure changes when the clock moves, not when data does, so it
 needs a tick regardless of what events exist.
 
-### 7. Port the contact form
-A Cloud Run function plus a `/contact` page in both locales. The mail is a *private
-notification to the operator*, not correspondence with the visitor — that framing
-decides most of what follows.
+### 7. Port the contact form — **done**、残り1点
+Cloud Run function と両ロケールの `/contact`。メールは**訪問者との往復ではなく運営者へ
+の私信**で、その前提が以下のほとんどを決めている。
+
+**残っているのは `NEXT_PUBLIC_CONTACT_ENDPOINT` の検証だけ**（上の「No contact route」）。
+
+以下は解決済みの記録として残す。特に**3層に落とした理由**と**`contact` を `nav` に
+入れない理由**は、どちらも「良くしよう」として戻されやすい。
+
+#### フロントエンド側で決めたこと
+
+- **`contact` は `nav` に入れない。** ヘッダー中央のピルは幅固定ではなく `gap-8` +
+  `px-12` で中身に合わせて伸びる。5項目目で ja のピルが約 614px を超え、
+  ビューポート中央寄せのまま **1024px でロゴと重なる**。代わりに Figma が
+  "Send Request" を置いていた **CTA スロット**に入れ、言語切替は隣の 50px の円へ
+  （スマホが既に使っているピルと円の対と同じ）。スマホはメニューパネルの下端。
+  そもそも**行き先ではなく操作**なので `nav` の並びには属さない。
+- **Turnstile は明示レンダリング。** `class="cf-turnstile"` + `data-callback` の暗黙
+  レンダリングは、トークンの受け取りが**グローバル関数名**になる。`?render=explicit` と
+  `turnstile.render()` ならコールバックがクロージャで済む。`src/hooks/use-turnstile.ts`。
+- **トークンは使い捨てなので、送信が失敗したら `reset()`。** 忘れると
+  「1通目は届くが2通目から必ず `timeout-or-duplicate` で落ちる」という、手で1回試す
+  だけでは見つからない壊れ方をする。
+- **`aria-invalid:` は Tailwind の既定バリアントに無い**（`checked` や `disabled` は
+  ある）。`aria-[invalid=true]:` と書く。そのまま書くと**静かに効かない**。
+- **サイトキーは公開値。** `deploy.yml` にリテラルで置く。repository secret に入れても
+  隠れるのは自分に対してだけ。既定値は Cloudflare のテスト用キーで、本番で設定を忘れて
+  も**本番の secret がダミートークンを拒否するので抜け道にならない**。
 
 #### Settled
 
@@ -526,10 +567,9 @@ next to the code that fixes it rather than here:
 - No length caps, no address-shape check, and `smtplib` with no timeout
 - `ALLOWED_ORIGINS` pointed at `auditive-tokyo.github.io` and Vite's 5173
 
-**Still open:** the front end. No `/contact` page, no form, no Turnstile widget, and
-`NEXT_PUBLIC_TURNSTILE_SITE_KEY` is not in `deploy.yml` or `src/env.ts` yet. The
-backend is deployed and effectively closed until then — `TURNSTILE_SECRET` is set, so a
-request without a valid token never reaches the mail send.
+フロントエンドも済んだ。このリポジトリで**最初の `<form>`、最初の `<label>`、最初の
+外部スクリプト**なので、形を決めたのはここ — 前例が無かった。`src/views/contact/form.tsx`
+と `src/hooks/use-turnstile.ts`。
 
 ### 8. ~~Tear down AWS~~ — nothing to tear down
 Deleting `cdk/` was the whole teardown. See the warning in step 4: there was never

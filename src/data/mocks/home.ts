@@ -35,6 +35,20 @@ export const getHomeContent = (locale: Locale) => {
     })),
     languageSwitch: copy.languageSwitch,
     underConstruction: copy.underConstruction,
+    /**
+     * The contact page's copy, with its URL assembled here for the same reason
+     * `nav` is — the locale prefix is `localeHref`'s business, and the JSON
+     * carries a `path`.
+     *
+     * It is **not** in `nav`, and that is a layout constraint rather than a
+     * judgement about its importance: a fifth item widens the header's centre
+     * pill past what fits beside the logo at 1024px. It gets the CTA slot
+     * instead, which is what Figma put there. See `<SiteHeader>`.
+     */
+    contact: {
+      ...copy.contact,
+      href: localeHref(locale, copy.contact.path),
+    },
     hero: {
       ...copy.hero,
       /**

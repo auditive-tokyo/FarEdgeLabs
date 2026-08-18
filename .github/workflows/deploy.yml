@@ -52,6 +52,17 @@ jobs:
           NEXT_PUBLIC_SITE_URL: https://faredgelabs.com
           # Empty: the site is served from a domain root, not /<repo>/.
           NEXT_PUBLIC_BASE_PATH: ""
+          # Both of these are public by construction — the browser needs them.
+          # Moving either into a repository secret hides it from you, not from
+          # anyone else. The credential is Turnstile's *secret* key, which is in
+          # Secret Manager (terraform/contact.tf).
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: 0x4AAAAAAER3PIYqn9ys4CQX
+          # UNVERIFIED — the hash is copied from work-statistics on the assumption
+          # that it is per-project. Cannot be checked until infra.yml has created the
+          # function; the output does not exist in state before then. After the first
+          # apply run `terraform output contact_form_uri`, fix this if it differs,
+          # then delete these four lines.
+          NEXT_PUBLIC_CONTACT_ENDPOINT: https://contact-form-xbu7yir7nq-an.a.run.app
         run: npm run build
 
       - name: Deploy

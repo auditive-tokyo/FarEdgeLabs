@@ -45,6 +45,7 @@ export const UnderConstructionView = ({
         brand={content.brand}
         nav={content.nav}
         languageSwitch={content.languageSwitch}
+        contact={content.contact}
         // The same page in the other language, not that language's home — this is
         // the whole reason `path` is threaded through.
         languageHref={localeHref(otherLocale(locale), path)}
