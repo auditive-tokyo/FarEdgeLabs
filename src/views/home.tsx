@@ -35,7 +35,6 @@ export const HomeView = ({ locale }: HomeViewProps) => {
         brand={content.brand}
         nav={content.nav}
         languageSwitch={content.languageSwitch}
-        contact={content.contact}
         languageHref={languageHref}
       />
       <main>

@@ -5,9 +5,9 @@
  * 差し替える。プレースホルダーと違うのは `noindex` を付けないこと: これは実在する
  * ページで、検索から直接来てほしい唯一の下層ページ。
  *
- * ヘッダーの CTA はこのページを指すので、**このページでは CTA が現在地を指す**。
- * 消していないのは、他のページから来たときに戻る先が分かるほうがよく、CTA が
- * 消えたり現れたりするヘッダーのほうが落ち着かないから。
+ * ヘッダーの nav は5項目目としてこのページを指す。**専用の CTA ボタンは無い** —
+ * 一度ヘッダーのピルとして特別扱いにして、戻した。行き先の1つであって別種のものでは
+ * ないので。
  */
 
 import { getHomeContent } from "@/data/mocks/home";
@@ -31,7 +31,6 @@ export const ContactView = ({ locale }: ContactViewProps) => {
         brand={content.brand}
         nav={content.nav}
         languageSwitch={content.languageSwitch}
-        contact={content.contact}
         // 同じページの他言語版。`under-construction` と同じ理由で `path` を渡す。
         languageHref={localeHref(otherLocale(locale), content.contact.path)}
       />

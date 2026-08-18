@@ -16,7 +16,8 @@
     { "label": "ホーム", "path": "" },
     { "label": "サービス", "path": "services" },
     { "label": "実績", "path": "works" },
-    { "label": "会社概要", "path": "about" }
+    { "label": "会社概要", "path": "about" },
+    { "label": "お問い合わせ", "path": "contact" }
   ],
   "underConstruction": {
     "heading": "準備中",
@@ -27,17 +28,15 @@
     "label": "EN",
     "ariaLabel": "Switch to English"
   },
-  "_contact_readme": "nav には入れない。ヘッダーの CTA スロット（Figma の \"Send Request\" の位置）とスマホのメニューパネルから入る。nav に5項目目を足すと中央ピルが伸びて 1024px でロゴと衝突する — src/views/home/site-header.tsx の注記。cta.label はピルの幅 9.1875rem に収まる長さで。errors.* はバックエンドの検証と重複しているが、これは冗長ではない: 往復させずに返せるものはブラウザ側で返す（gc_run_functions/contact_form/main.py の上限と揃えること）。",
+  "_contact_readme": "path は上の nav の \"contact\" と一致させること。ヘッダーのリンクは nav が作り、ページ自身と sitemap と言語切替はこの path を使うので、ずれるとヘッダーだけ 404 を指す。heading は nav のラベルと同じにしてある（「お問い合わせ」を押した人が「お問い合わせ」と書かれたページに着くべき — placeholder ページが nav からタイトルを取っているのと同じ理由）。errors.* はバックエンドの検証と重複しているが冗長ではない: 往復させずに返せるものはブラウザ側で返す（gc_run_functions/contact_form/main.py の上限と揃えること）。",
   "contact": {
     "path": "contact",
-    "cta": {
-      "label": "お問い合わせ",
-      "ariaLabel": "お問い合わせフォームへ"
-    },
     "heading": "お問い合わせ",
     "lead": "ご相談・お見積り・技術的な質問など",
     "body": "内容を確認のうえ、担当者より返信いたします。お急ぎの場合はその旨をご記入ください。",
+    "optional": "（任意）",
     "fields": {
+      "company": { "label": "会社名", "placeholder": "株式会社◯◯" },
       "name": { "label": "お名前", "placeholder": "山田 太郎" },
       "email": { "label": "メールアドレス", "placeholder": "you@example.com" },
       "message": { "label": "お問い合わせ内容", "placeholder": "ご相談の背景と、実現したいことをお書きください。" }

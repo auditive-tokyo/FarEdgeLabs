@@ -62,7 +62,7 @@ src/app/
 ├─ fonts.ts              next/font, declared once for both layouts
 ├─ (ja)/layout.tsx       root layout, locale="ja"  → /
 ├─ (ja)/page.tsx         + not-found / loading / error
-├─ (ja)/contact/         → /contact/          a real page
+├─ (ja)/contact/         → /contact/          a real page, in the nav
 ├─ (ja)/{services,works,about}/               placeholders, noindex
 ├─ (en)/layout.tsx       root layout, locale="en"
 ├─ (en)/en/page.tsx      → /en/
@@ -247,8 +247,17 @@ something to spend down.
 - **入力の上限は `src/lib/contact.ts` の `CONTACT_LIMITS` が単一の出どころ**で、
   `gc_run_functions/contact_form/main.py` の `MAX_*_LENGTH` と同じ数字。片方だけ
   動かすと「ブラウザは通すのにサーバが 400 を返す」という一番わかりにくい形で壊れる
+- **必須と任意は別の配列で持つ。** `REQUIRED_CONTACT_FIELDS`（`name` / `email` /
+  `message`）に無い項目は空でも通す。任意なのは「無くてもよい」であって「何を入れても
+  よい」ではないので、**長さは任意項目でも見る**。バックエンドも
+  `REQUIRED_LIMITS` / `OPTIONAL_LIMITS` に分けてあり、任意項目は値があるときだけ
+  返る辞書に入る（呼び出し側が `fields.get("company")` 1つで判断できる）
 - **二重送信を止めるのはフロントエンドの仕事。** バックエンドのレートリミットを落とした
   ときの前提がこれなので、送信中に `disabled` にするのは飾りではない
+- **ヘッダーの nav は5項目でほぼ限界。** 中央のピルはビューポートに対して中央寄せかつ
+  中身に合わせて伸びるので、ラベル1つで両側が同時に詰まる。`ja` は 672px で、
+  `GRID_MIN_WIDTH`（1024px）のときロゴとの余白が **8.8px**。6項目目やラベルの延長は
+  目分量ではなく測ること — 数字と測り方は `site-header.tsx` の注記にある
 - **外部スクリプトは `src/hooks/use-turnstile.ts` の1本だけ。** `next/script` は
   使っていない（このリポジトリに前例が無く、必要なのは「1回だけ読む」だけなので
   モジュールスコープの Promise 1つで足りる）。`next/script` を入れるならそれが最初の
