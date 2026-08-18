@@ -29,6 +29,17 @@ jobs:
     defaults:
       run:
         working-directory: terraform
+        # `shell: bash` を明示すると `-eo pipefail` が付く。**書かないと `-e` だけ**で、
+        # パイプの終了コードは最後のコマンドのものになる。
+        #
+        # それで一度事故になった（run 32162666593）。Plan が
+        # `terraform plan … | tee plan.txt` なので、ローカルの plan が残した state ロックで
+        # plan が失敗しても `tee` が成功して**ステップが緑になり**、`tfplan` が作られない
+        # まま Apply へ進む。**エラーは出ていた** — stderr は `tee` を通らずジョブログへ
+        # 直行するので、ロックの情報は Plan のログに全部ある。問題は**誰も緑のステップを
+        # 開かないこと**で、目に入るのは Apply の `Failed to load "tfplan"` だけ。原因と
+        # 症状が別のステップに分かれるので、読めるログがあっても辿り着かない。
+        shell: bash
 
     steps:
       - name: Checkout
@@ -55,6 +66,8 @@ jobs:
       - name: Validate
         run: terraform validate
 
+      # `| tee` はログにも出しつつサマリ用に残すため。終了コードが伝わるかは
+      # `defaults.run.shell` に依存している（上の注記）。
       - name: Plan
         run: terraform plan -input=false -no-color -out=tfplan | tee plan.txt
 
