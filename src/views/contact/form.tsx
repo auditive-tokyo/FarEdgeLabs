@@ -151,7 +151,6 @@ export const ContactForm = ({ copy, locale }: ContactFormProps) => {
           field="company"
           label={copy.fields.company.label}
           optionalLabel={copy.optional}
-          placeholder={copy.fields.company.placeholder}
           value={values.company}
           error={touched.company ? fieldErrors.company : null}
           autoComplete="organization"
@@ -161,7 +160,6 @@ export const ContactForm = ({ copy, locale }: ContactFormProps) => {
         <Field
           field="name"
           label={copy.fields.name.label}
-          placeholder={copy.fields.name.placeholder}
           value={values.name}
           error={touched.name ? fieldErrors.name : null}
           autoComplete="name"
@@ -171,7 +169,6 @@ export const ContactForm = ({ copy, locale }: ContactFormProps) => {
         <Field
           field="email"
           label={copy.fields.email.label}
-          placeholder={copy.fields.email.placeholder}
           value={values.email}
           error={touched.email ? fieldErrors.email : null}
           autoComplete="email"
@@ -255,7 +252,11 @@ interface FieldProps {
   label: string;
   /** 渡されたときだけ「任意」の印が出る。必須項目には渡さない。 */
   optionalLabel?: string;
-  placeholder: string;
+  /**
+   * 任意。**ラベルの言い換えを渡さないこと** — 置く基準はロケールファイルの
+   * `_fields_readme` にある。いま渡しているのは `message` だけ。
+   */
+  placeholder?: string;
   value: string;
   error: string | null;
   multiline?: boolean;
