@@ -27,6 +27,37 @@
     "label": "EN",
     "ariaLabel": "Switch to English"
   },
+  "_contact_readme": "nav には入れない。ヘッダーの CTA スロット（Figma の \"Send Request\" の位置）とスマホのメニューパネルから入る。nav に5項目目を足すと中央ピルが伸びて 1024px でロゴと衝突する — src/views/home/site-header.tsx の注記。cta.label はピルの幅 9.1875rem に収まる長さで。errors.* はバックエンドの検証と重複しているが、これは冗長ではない: 往復させずに返せるものはブラウザ側で返す（gc_run_functions/contact_form/main.py の上限と揃えること）。",
+  "contact": {
+    "path": "contact",
+    "cta": {
+      "label": "お問い合わせ",
+      "ariaLabel": "お問い合わせフォームへ"
+    },
+    "heading": "お問い合わせ",
+    "lead": "ご相談・お見積り・技術的な質問など",
+    "body": "内容を確認のうえ、担当者より返信いたします。お急ぎの場合はその旨をご記入ください。",
+    "fields": {
+      "name": { "label": "お名前", "placeholder": "山田 太郎" },
+      "email": { "label": "メールアドレス", "placeholder": "you@example.com" },
+      "message": { "label": "お問い合わせ内容", "placeholder": "ご相談の背景と、実現したいことをお書きください。" }
+    },
+    "submit": {
+      "idle": "送信する",
+      "sending": "送信中…"
+    },
+    "success": {
+      "heading": "送信しました",
+      "body": "ありがとうございます。内容を確認のうえ返信いたします。"
+    },
+    "errors": {
+      "required": "必須項目です。",
+      "email": "メールアドレスの形式が正しくありません。",
+      "tooLong": "長すぎます。",
+      "turnstile": "確認が完了していません。上のチェックをお待ちください。",
+      "failed": "送信できませんでした。しばらくしてからもう一度お試しください。"
+    }
+  },
   "hero": {
     "headline": "常識の外側を、",
     "headlineAccent": "形にする",

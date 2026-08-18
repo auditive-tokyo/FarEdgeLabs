@@ -14,6 +14,8 @@ export interface SiteHeaderProps {
   brand: HomeContent["brand"];
   nav: HomeContent["nav"];
   languageSwitch: HomeContent["languageSwitch"];
+  /** The CTA's destination and label. Not part of `nav` — see the note below. */
+  contact: HomeContent["contact"];
   /** Root-relative path of this page in the other locale. */
   languageHref: string;
 }
@@ -44,6 +46,7 @@ export const SiteHeader = ({
   brand,
   nav,
   languageSwitch,
+  contact,
   languageHref,
 }: SiteHeaderProps) => {
   const isRevealed = useIntroRevealed();
@@ -131,22 +134,29 @@ export const SiteHeader = ({
         >
           {languageSwitch.label}
         </Link>
-        <NavMenu nav={nav} />
+        <NavMenu nav={nav} contact={contact} />
       </div>
 
-      {/* Where the design put a "Send Request" pill. That CTA was a link to the
-          hero's own form, sitting a screen's width away from it and submitting
-          nothing — two identical buttons, one of which did not do what it said.
-          The language switch takes the slot instead: on a bilingual site it is
-          the one control that belongs in the header on every page.
+      {/* Where the design put a "Send Request" pill — and it is a request pill
+          again. It was the language switch for a while, because the CTA pointed at
+          the hero's own form, sat a screen's width from it, and submitted nothing.
+          There is now a real `/contact` page at the other end, so the slot goes
+          back to what Figma drew and the language switch becomes the 50px circle
+          beside it — the same pill-and-circle pair the phone already uses.
 
-          The design's decorative arrow circle went with the CTA. An arrow means
-          "onward", which is what a request button promises; a language switch
-          returns you to the same page in another language, so the arrow was
-          saying something untrue about where the button goes. */}
+          > [!warning] Why `contact` is not in the nav
+          > The centre pill has no fixed width; it shrink-wraps `gap-8` plus
+          > `px-12`. A fifth item takes the `ja` pill past roughly 614px, which is
+          > where a viewport-centred pill starts overlapping the logo at 1024px.
+          > The CTA slot costs no width in the middle, and an action is not a nav
+          > item anyway.
+
+          The design's decorative arrow circle stays gone. The circle in that
+          position is the language switch now, and an arrow on it would promise
+          "onward" for a control that returns you to the same page. */}
       <Inview
         tag="div"
-        className="hidden lg:block"
+        className="hidden items-center gap-2 lg:flex"
         from={DROP_OUT}
         to={LIFT_IN}
         config={REVEAL_SPRING}
@@ -162,19 +172,26 @@ export const SiteHeader = ({
           config={HOVER_SPRING}
         >
           <Link
-            href={languageHref}
-            // The label is the language being switched *to*, written in that
-            // language, so it reads to someone who cannot read the current one.
-            // `hrefLang` tells a crawler this is a translation rather than a
-            // navigation link; `aria-label` spells out the action, since "EN"
-            // alone is not one.
-            hrefLang={languageSwitch.label.toLowerCase()}
-            aria-label={languageSwitch.ariaLabel}
+            href={contact.href}
+            aria-label={contact.cta.ariaLabel}
             className="flex h-[3.125rem] w-[9.1875rem] items-center justify-center rounded-full border border-hairline bg-accent text-body leading-[1.2] text-on-accent"
           >
-            {languageSwitch.label}
+            {contact.cta.label}
           </Link>
         </Hover>
+        <Link
+          href={languageHref}
+          // The label is the language being switched *to*, written in that
+          // language, so it reads to someone who cannot read the current one.
+          // `hrefLang` tells a crawler this is a translation rather than a
+          // navigation link; `aria-label` spells out the action, since "EN"
+          // alone is not one.
+          hrefLang={languageSwitch.label.toLowerCase()}
+          aria-label={languageSwitch.ariaLabel}
+          className="grid size-[3.125rem] place-items-center rounded-full border border-hairline bg-surface text-body leading-none"
+        >
+          {languageSwitch.label}
+        </Link>
       </Inview>
     </header>
   );

@@ -25,8 +25,10 @@ So the following do not exist and must not be reached for:
 - **`next/image` optimisation** — `images.unoptimized` is set; ship right-sized
   files in `public/`
 - **Server-only secrets** — every env var is inlined at build time. `src/env.ts`
-  validates the public ones. If a value must stay private, it belongs in the
-  backend, never here
+  validates the public ones and is the only place that reads `process.env` in `src/`
+  (`next.config.ts` reads `NEXT_PUBLIC_BASE_PATH` directly). If a value must stay
+  private, it belongs in the backend, never here — Turnstile's *site* key is in
+  `deploy.yml` as a literal, its *secret* key is in Secret Manager
 
 Metadata routes (`robots.ts`, `sitemap.ts`) need `export const dynamic = "force-static"`.
 
@@ -35,9 +37,16 @@ The backend is separate: handlers in `gc_run_functions/`, infrastructure in
 "The backend" below. The AWS CDK app that used to sit beside it was never deployed
 and has been deleted.
 
-The browser calls the backend directly over the network, and for the statistics it
-does not call it at all: the function writes a public object to Cloud Storage and the
-page fetches that. There is nothing between the two.
+The browser talks to the backend directly — there is nothing between the two — and the
+two directions work differently:
+
+- **Reading the figures does not touch a function at all.** `work-statistics` writes a
+  public object to Cloud Storage and the page `fetch`es that. GCS answers the preflight
+  itself
+- **Sending an enquiry is a `POST` to a function that anyone may call.** It has to be:
+  a static page holds no credential to present. `contact-form` is therefore the one
+  unauthenticated endpoint in the project, and its defences are all inside its own
+  handler. See "The backend"
 
 Nothing in this repo has ever had an AWS resource of its own — see the warning in
 `.kiro/steering/todo.md` before touching an AWS account from here.
@@ -53,9 +62,17 @@ src/app/
 ├─ fonts.ts              next/font, declared once for both layouts
 ├─ (ja)/layout.tsx       root layout, locale="ja"  → /
 ├─ (ja)/page.tsx         + not-found / loading / error
+├─ (ja)/contact/         → /contact/          a real page
+├─ (ja)/{services,works,about}/               placeholders, noindex
 ├─ (en)/layout.tsx       root layout, locale="en"
-└─ (en)/en/page.tsx      → /en/
+├─ (en)/en/page.tsx      → /en/
+├─ (en)/en/contact/      → /en/contact/
+└─ (en)/en/{services,works,about}/
 ```
+
+`not-found` / `loading` / `error` exist only under `(ja)`. A new segment needs a
+`page.tsx` in **both** groups, the same `path` const in each, and an entry in
+`src/app/sitemap.ts` unless it is a `noindex` placeholder.
 
 Two root layouts in route groups, because **only a root layout can set
 `<html lang>`** — one shared layout would have to misdeclare one of the two
@@ -99,6 +116,24 @@ Sans is **Latin-only** — a Japanese OG card needs a font with the glyphs added
 10. **Semantic, SEO-correct HTML** — native elements over `div`s, one `<h1>` +
     a clean heading outline, named landmarks, real `button`/`a`, `alt` text,
     JSON-LD (not microdata), semantic `tag` on animation components.
+
+## コメントは日本語で書く
+
+これから書くコメントと docstring は日本語。既存の英語は、**そのコードを触るついでに**直す。
+
+**翻訳だけのコミットは作らない。** 差分がレビューできない大きさになり、`git blame` が全行そのコミットに付け替わって、そのコメントが書かれた理由を辿れなくなる。急いで揃える必要はない。英語のコメントが残っていること自体は不具合ではない。
+
+言語が変わってもコメントの基準は変わらない。**何をしているか**はコードが言うので書かない。書くのは**なぜそうなっているか**と、**素直に書くと何が壊れるか**。`gc_run_functions/work_statics/main.py` の `WINDOW_TIMEZONE` と `duration_to_hours` の注記が見本で、どちらも「もっともらしいが間違っている数字」がどこから出てくるかを説明している。訳すときにそこを削ってはいけない。日本語にした結果ただの要約になるなら、英語のまま残したほうがまだよい。
+
+英語のまま残すもの:
+
+- 識別子、型名、外部 API のフィールド名（`belongsToDate`、`trackedTime`）。訳すと grep で追えなくなる
+- `# noqa: PLC0415` や `# pragma: no cover` のような、機械が読むディレクティブ
+- 引用した外部のエラー文字列。検索して当てるために書いてある
+
+例外メッセージとログ出力は日本語でよい。Cloud Logging は日本語で検索できる。ただし外部から受け取った文字列を混ぜる行は、その部分だけ原文のまま残す。
+
+この文書と `obsidian/` はまだ英語。移すかどうかはコードとは別の判断で、いまは触らない。
 
 ## Colour tokens: which ink goes on which ground
 
@@ -154,23 +189,23 @@ The hero's entrance is sequenced by one signal: `<IntroReveal>` fires
 **every millisecond in `reveal.ts` is one the visitor waits**; treat the budget as
 something to spend down.
 
-> [!important] `hero.stats` needs rethinking, not filling in
-> The 2×2 grid is the template's, and so are its four slots — Projects, Clients,
-> Uptime, Rating. They describe an established agency. This company was just
-> founded: there is no track record to count, the first client engagement is in
-> progress, and nothing has been rated by anyone. The values are `—` placeholders
-> and **the labels are the actual problem**.
+> [!important] `hero.stats` の数字は実測値。作らないこと
+> テンプレートの 2×2 グリッド（Projects / Clients / Uptime / Rating）は捨てた。あれは
+> 実績のある会社を描いていて、この会社には数える実績が無かった。いまは `<dl>` 1枚に
+> **クライアント数・プロジェクト数・稼働時間**の3行で、値は Jibble の打刻から
+> `work-statistics` 関数が日次で集計している。行はデータなので、増減はレイアウトの
+> 問題ではない。
 >
-> So this is not a "fill in the numbers" task. Either find four things that are
-> true today and worth saying, or drop the section — the hero survives without it,
-> and the bottom half of the frame is already empty since the request form and the
-> social-proof pill went. Do not invent metrics; the pill and its stock avatars
-> were deleted for exactly that reason.
+> **`—` が出ているのは壊れているのではない。** 初回描画と、関数やバケットが落ちた日の
+> 設計された状態。`fetchWorkStatistics` は失敗を全部 `null` に潰す（見せるものが何も
+> 無いので、対処が1つしかない）。リトライもスケルトンも足さないこと。
 >
-> Candidates that are true without a track record: years of engineering
-> experience, the stack's breadth, the domains worked in (space, medical,
-> automotive, metaverse — see the CV), or something not numeric at all. Ask before
-> choosing.
+> **数字は休むと下がる。** 直近30日の窓なので当然で、累計に変えれば下がらないが累計は
+> 「いま」を何も語らない。見栄えのために黙って累計へ変えないこと。
+>
+> `Rating` は数字としては戻さない。評価が付いたら Google のレビューへ**リンクする**
+> 方針で、星の隣に打ち直した数字はリンク元より価値が低い。つまりレイアウトのどこかの
+> リンクであって、この一覧の行ではない。
 
 > [!important] The blank hero on old browsers is a decision, not a bug
 > `<HalftoneVideo>` needs **WebGL2** and **`createImageBitmap`**, both of which
@@ -195,6 +230,36 @@ something to spend down.
 > seeks and memory). They were halved from the template's values; both have notes
 > explaining what each buys.
 
+## フォームと外部スクリプト
+
+どちらも**前例が1つしか無い**ので、増やすときはそれに倣う。
+
+- **`<form>` と `<label>` は `src/views/contact/form.tsx` だけ。** 入力の
+  プリミティブは `src/components/` に無く、装飾は既存トークンの組み合わせ
+  （`bg-background` + `border-hairline` + `focus-visible:outline-accent`）。
+  ラベルは `htmlFor` と `id` を結ぶのではなく**入力要素を `<label>` で包む** —
+  `useId()` が要らず、`id` の付け忘れという壊れ方が存在しなくなる
+- **`noValidate` を付けてブラウザ内蔵の検証を切る。** 切らないと日本語のページに
+  `Please fill out this field.` が混ざる。文言はロケールファイルにある
+- **`aria-invalid:` は Tailwind の既定バリアントに無い**（`checked` / `disabled` /
+  `expanded` などはある）。`aria-[invalid=true]:` と書く。**そのまま書くと静かに
+  効かない**
+- **入力の上限は `src/lib/contact.ts` の `CONTACT_LIMITS` が単一の出どころ**で、
+  `gc_run_functions/contact_form/main.py` の `MAX_*_LENGTH` と同じ数字。片方だけ
+  動かすと「ブラウザは通すのにサーバが 400 を返す」という一番わかりにくい形で壊れる
+- **二重送信を止めるのはフロントエンドの仕事。** バックエンドのレートリミットを落とした
+  ときの前提がこれなので、送信中に `disabled` にするのは飾りではない
+- **外部スクリプトは `src/hooks/use-turnstile.ts` の1本だけ。** `next/script` は
+  使っていない（このリポジトリに前例が無く、必要なのは「1回だけ読む」だけなので
+  モジュールスコープの Promise 1つで足りる）。`next/script` を入れるならそれが最初の
+  使用になるので、そのつもりで入れること
+- **Turnstile のトークンは使い捨て。** 送信のあと必ず `reset()`。忘れると
+  「1通目は届くが2通目から必ず落ちる」という、手で1回試すだけでは見つからない壊れ方を
+  する
+
+`<script>` がもう1か所あるが別物: `layout-shell.tsx` の JSON-LD で、これは外部から
+読まないインライン。
+
 ## Deploying
 
 `main` → an auto-created release PR → merge to `production` → build → the `out/`
@@ -208,6 +273,11 @@ directory is pushed to `gh-pages`.
   add a backend step to it.** The backend has its own workflow, `infra.yml`, and the
   separation is the point: a site deploy must not depend on a function existing, and
   a backend change must not rebuild the site. Both are gated on `paths`
+- Its `env:` block holds four public values. Two are worth knowing about:
+  `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is a literal on purpose — the browser reads it, so a
+  repository secret would hide it from you and from nobody else — and
+  `NEXT_PUBLIC_CONTACT_ENDPOINT` must agree with `terraform output contact_form_uri`.
+  There is nothing that checks that they agree
 - `npm run brand` is not part of the build. Run it locally and commit the PNGs
 - Do not delete `.next` while `npm run dev` is running — Turbopack's cache is in
   there and the server does not recover
@@ -242,9 +312,21 @@ Federation removes the reason to avoid CI.
 - There is **no `pull_request` trigger**, because the release PR is opened with
   `GITHUB_TOKEN` and **GitHub raises no workflow event for it**. Do not add one back
   expecting it to fire
-- The function is private. `roles/run.invoker` is granted to the scheduler's service
-  account **on the underlying Cloud Run service** — granting
-  `cloudfunctions.invoker` instead is how a gen2 function keeps answering 403
+- **There are two functions and they have opposite exposure.** `work-statistics` is
+  private: `roles/run.invoker` goes to the scheduler's service account **on the
+  underlying Cloud Run service** — granting `cloudfunctions.invoker` instead is how a
+  gen2 function keeps answering 403. `contact-form` grants the same role to
+  **`allUsers`**, because a static page has no credential to present. It is the only
+  resource here for which that is correct
+- **`contact-form` has no rate limiter, and that was a decision.** One was built —
+  Firestore, TTL, sliding window — and removed: three in five minutes still passes 864
+  a day, distributing the source misses per-IP entirely, and what remained overlapped
+  what Turnstile already does. Against that it cost **`roles/datastore.user` on the
+  whole project** (Firestore has no per-collection IAM) and a fail-closed path that
+  takes the form down when Firestore is unwell. What bounds the damage instead is
+  `max_instance_count = 3`, which converts an unbounded bill into 429s. The full
+  reasoning, and the accepted risk, are at the top of
+  `gc_run_functions/contact_form/main.py` — **read it before rebuilding the limiter**
 - Cloud Build needs a **dedicated build service account**. Google changed the
   default and a fresh project fails with "missing permission on the build service
   account". Do not fix it by widening the default compute account; that one holds

@@ -27,6 +27,37 @@
     "label": "JA",
     "ariaLabel": "日本語に切り替える"
   },
+  "_contact_readme": "Deliberately not in `nav`. Reached from the header's CTA slot (where Figma put \"Send Request\") and from the phone's menu panel. A fifth nav item widens the centre pill until it collides with the logo at 1024px — see the note in src/views/home/site-header.tsx. Keep `cta.label` short enough for the 9.1875rem pill. `errors.*` duplicate the backend's validation, which is not redundancy: anything answerable without a round trip is answered in the browser (keep the limits in step with gc_run_functions/contact_form/main.py).",
+  "contact": {
+    "path": "contact",
+    "cta": {
+      "label": "Get in touch",
+      "ariaLabel": "Go to the contact form"
+    },
+    "heading": "Get in touch",
+    "lead": "Enquiries, estimates, or a technical question",
+    "body": "We read everything that arrives and reply ourselves. If it is time-sensitive, say so and we will treat it that way.",
+    "fields": {
+      "name": { "label": "Name", "placeholder": "Jane Doe" },
+      "email": { "label": "Email", "placeholder": "you@example.com" },
+      "message": { "label": "Message", "placeholder": "Tell us the background, and what you are trying to make possible." }
+    },
+    "submit": {
+      "idle": "Send",
+      "sending": "Sending…"
+    },
+    "success": {
+      "heading": "Sent",
+      "body": "Thank you. We will read it and reply."
+    },
+    "errors": {
+      "required": "This field is required.",
+      "email": "That does not look like an email address.",
+      "tooLong": "That is too long.",
+      "turnstile": "The check has not finished yet. Give it a moment.",
+      "failed": "It could not be sent. Please try again in a little while."
+    }
+  },
   "hero": {
     "headline": "Beyond the leading",
     "headlineAccent": "edge",

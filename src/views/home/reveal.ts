@@ -42,6 +42,15 @@ export const REVEAL_DELAY = {
   body: 620,
   /** Late on purpose: the bar arrives under a word that has already landed. */
   headlineBar: 1100,
+  /**
+   * The contact form's card.
+   *
+   * Deliberately the same 200 as `headline` rather than a slot of its own. On
+   * `/contact` the form *is* the page — there is no headline for it to follow, and
+   * a visitor who navigated there to write something should not watch it arrive.
+   * Adding a later number would have spent budget this file says to spend down.
+   */
+  contactForm: 200,
 } as const;
 
 /**
