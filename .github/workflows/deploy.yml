@@ -8,7 +8,7 @@ on:
       - ".gitignore"
       - "README.md"
       - "LICENSE.md"
-      - "AGENTS.md"
+      - "CLAUDE.md"
   workflow_dispatch:
 
 jobs:
