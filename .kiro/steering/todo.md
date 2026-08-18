@@ -210,15 +210,6 @@ seen by one person in one console.
 > Put a **non-email** factor on both sides — phone number, Apple recovery contact,
 > Google backup codes.
 
-> [!warning] Do not let account recovery form a loop
-> Google sign-in is an iCloud address, so **Google's recovery mail arrives at
-> iCloud**. If Apple's recovery then points at a Google address, the loop closes:
-> lose one and you cannot reach the other. GCP billing hangs off this account, so
-> the loop would lock production out.
->
-> Put a **non-email** factor on both sides — phone number, Apple recovery contact,
-> Google backup codes.
-
 ### 3. Terraform bootstrap — **done**
 `terraform/` holds 48 resources in five files: `versions.tf` (constraints, backend,
 provider), `variables.tf`, `outputs.tf`, `wif.tf`, `main.tf`. Terraform concatenates
@@ -648,13 +639,20 @@ Cheap fix once the engine is fair game: turn the rule on, or set
 
 ## Small and mechanical
 
-- **`infra.yml` has never run.** Terraform was applied from a laptop, so the CI path is
-  built and unproven. Prove it with `workflow_dispatch` **from `main`** while the
-  configuration matches reality: Apply's condition is false there, so it plans, and a
-  plan of no changes tells you the whole chain works. Doing it that way means the first
-  real run is not also the first apply. If it fails, the candidates are a missing
-  `id-token: write`, an `attribute_condition` that does not match the repository ids, or
-  a role `tf-deployer` lacks.
+- ~~**`infra.yml` has never run.**~~ **走った。WIF の鎖は実証済み** — production への
+  push で7回、うち5回成功。認証・`attribute_condition`・`tf-deployer` の権限は、もう
+  疑う対象ではない。落ちた2回はどちらも設定の中身の問題で、経路の問題ではなかった。
+  > **ローカルで `terraform plan` を強制終了すると CI が止まる。** GCS に
+  > `default.tflock` が残り、次の plan が 412 で落ちる。`plan` のロックなので state を
+  > 書いている途中ではなく、外して壊れるものは無い。ただし **GCS バックエンドの
+  > `force-unlock` は UUID ではなくオブジェクトの `generation` を要求する** —
+  > ロック情報が表示する `ID:` がそれで、`gcloud storage objects describe …
+  > --format='value(generation)'` で取れる。tflock の中身に載っている UUID を渡すと
+  > `Lock ID should be numerical value` で拒否される。
+  >
+  > **これが Apply で `Failed to load "tfplan"` として現れていた理由は
+  > `infra.yml` の `defaults.run.shell` の注記にある。** 症状と原因が別のステップに
+  > 出るので、片方だけ直すともう片方が次の事故で同じ形で戻ってくる。
 - **No budget alert.** During the trial the $300 absorbs a mistake silently, which is
   the opposite of what is wanted from an unauthenticated function being hammered.
   Scope it to the `faredgelabs` project (number `89292293815`) and set
