@@ -327,6 +327,15 @@ Federation removes the reason to avoid CI.
   `max_instance_count = 3`, which converts an unbounded bill into 429s. The full
   reasoning, and the accepted risk, are at the top of
   `gc_run_functions/contact_form/main.py` — **read it before rebuilding the limiter**
+- **`max_instance_request_concurrency > 1` requires `available_cpu >= 1`.** A function's
+  default memory is 256 MiB and the CPU that goes with it is under 1, so raising
+  concurrency alone fails the apply with `Total cpu < 1 is not supported with
+  concurrency > 1`. It failed exactly that way once; the note is in `contact.tf`
+- **A failed `apply` does not roll back.** Unlike a CloudFormation stack, whatever was
+  created before the error stays created, and state records it. That is usually what you
+  want — fix the one resource and re-run, rather than rebuild everything — but it means
+  "the apply failed" and "nothing happened" are different statements. Read the next
+  plan before assuming either
 - Cloud Build needs a **dedicated build service account**. Google changed the
   default and a fresh project fails with "missing permission on the build service
   account". Do not fix it by widening the default compute account; that one holds

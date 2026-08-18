@@ -156,10 +156,20 @@ resource "google_cloudfunctions2_function" "contact_form" {
   service_config {
     service_account_email = google_service_account.contact_form.email
 
-    # 内訳は Turnstile 10s + Firestore 1往復 + SMTP 20s。60 で足りる。長くしても
-    # 詰まる時間が伸びるだけで、送れるようにはならない。
+    # 内訳は Turnstile 10s + SMTP 20s。60 で足りる。長くしても詰まる時間が伸びるだけで、
+    # 送れるようにはならない。
     timeout_seconds  = 60
     available_memory = "256Mi"
+
+    # 既定（256Mi に対応する 1 未満の値）ではなく明示的に 1 vCPU。
+    #
+    # **送信はほぼ毎回コールドスタートになる。** 月に数件のフォームなので、インスタンスが
+    # 生きているうちに次が来ることはまず無い。つまり訪問者が待つ時間の大半は Python の
+    # 起動と TLS のハンドシェイク2本（Turnstile と Zoho）で、そこは CPU が効く。
+    #
+    # 費用は増えない。関数の CPU はリクエストを処理している時間だけ課金されるので、
+    # 「6倍の単価 × ほぼゼロの秒数」は無料枠の中で終わる。常時割り当てにはしていない。
+    available_cpu = "1"
 
     # > [!important] これが費用の上限で、実質いちばんの DDoS 対策
     # 攻撃は止まらないが、**「請求が無限に伸びる」を「リクエストが 429/503 で
@@ -167,11 +177,22 @@ resource "google_cloudfunctions2_function" "contact_form" {
     # 無料で効く制御はこれ。上げるときは上限額を上げていると理解して上げる。
     max_instance_count = 3
 
-    # 1 ではなく 4。`main.py` は並行に捌けるように書いてある（リクエストに紐づく値を
-    # モジュール変数に置かない）ので、ここは**正しさの境界ではなく絞り**。控えめなのは
-    # 1リクエストが SMTP のソケットを最長 20 秒握るから。同時に飛ぶのは最大
-    # 3 × 4 = 12 件。
-    max_instance_request_concurrency = 4
+    # 1。**一度 4 にして apply が落ちた**ので、その理由を残す。
+    #
+    #   Total cpu < 1 is not supported with concurrency > 1
+    #
+    # concurrency を 1 より大きくするには 1 vCPU 以上が必要で、関数の既定メモリ 256Mi に
+    # 対応する CPU は 1 未満。上で `available_cpu = "1"` にしたので**いまは 4 にできる**が、
+    # それでも 1 のままにしてある:
+    #
+    # 1リクエストが SMTP のソケットを最長 20 秒握るので、詰め込むと1インスタンスの中で
+    # 互いを待たせる。月に数件では詰め込む利点が無く、1 なら1件が1インスタンスで隔離される。
+    # 同時に捌けるのは `max_instance_count` と同じ 3 件で、4件目は並ぶ。
+    #
+    # `main.py` 自体は並行に捌けるように書いてある（リクエストに紐づく値をモジュール変数に
+    # 置かない）。それは**この設定値に正しさを預けないため**で、ここを上げてよいという意味
+    # ではない — 上げるなら CPU も一緒に見ること。
+    max_instance_request_concurrency = 1
 
     # `environment_variables` は無い。秘密でない設定が1つも残っていないので、空の
     # ブロックを置かずに省いてある。レートリミットを落としたときに
