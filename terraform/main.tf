@@ -141,13 +141,13 @@ resource "google_storage_bucket_iam_member" "public_read" {
 # 課金されるのはこのストレージだけ。Cloud Run のリビジョン自体は無料で（待機
 # インスタンスが 0 なので）、実行されなければ計算資源は発生しない。無料枠 0.5 GB に対し
 # デプロイ1回あたり十数 MB 積まれる。
+#
+# **import は済んでいる**（`id` は
+# `projects/faredgelabs/locations/asia-northeast1/repositories/gcf-artifacts`）ので、
+# `import` ブロックは消した。次に何かを引き取るときのために: **済んだブロックを残しても
+# エラーにはならない。** state に入った対象への `import` は黙って無視され、`plan` は
+# exit 0 で `No changes` を返す（1.15.8 で確認）。消すのは掃除であって、急ぐ話ではない。
 # --------------------------------------------------------------------------- #
-
-import {
-  # 済んだらこのブロックを消す。残すと「既に管理下にある」と言われる。
-  to = google_artifact_registry_repository.gcf_artifacts
-  id = "projects/faredgelabs/locations/asia-northeast1/repositories/gcf-artifacts"
-}
 
 resource "google_artifact_registry_repository" "gcf_artifacts" {
   location      = var.region
