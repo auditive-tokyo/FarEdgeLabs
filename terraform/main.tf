@@ -139,6 +139,9 @@ resource "google_storage_bucket_iam_member" "public_read" {
 # invisible `\n` authenticates nowhere and looks perfectly present. Verify by
 # comparing byte lengths, never by printing the value.
 #
+# ただしバイト数が示すのは「壊れずに保存された」ことだけで、値が正しいことではない。
+# デプロイせずに試せる値（SMTP の login など）は、版を追加する前に試すほうが速い。
+#
 # Terraform could manage the versions too, and is kept out on purpose: a value passed
 # through Terraform is written to state in the clear, and reaches state by way of a
 # variable that can be committed by accident. Keeping the payload out means the only

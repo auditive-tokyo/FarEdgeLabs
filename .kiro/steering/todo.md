@@ -92,26 +92,8 @@ When one becomes real: write its `page.tsx`, drop `noindex`, drop its entry from
 **件名にも入る** — 受信箱の一覧で誰から来たのか分かるのがこの項目を集めている理由なので、
 本文の中だけでは半分しか役に立たない。
 
-**残っているのは1つだけ**: `deploy.yml` の `NEXT_PUBLIC_CONTACT_ENDPOINT` が未検証。
-
-**マージ前には確認できない。** URL のハッシュは Cloud Run が生成する値で、
-`contact_form_uri` は関数を参照しているので、`infra.yml` が apply して関数が state に
-入るまで出力自体が存在しない（先に `terraform output` を打つと
-`Output "contact_form_uri" not found` になる。これは正常）。
-
-順序:
-
-1. `production` にマージ。`infra.yml` が関数を作り、同じ push で `deploy.yml` が
-   フロントエンドを推測値でビルドする
-2. `cd terraform && terraform output contact_form_uri`
-   （`gcloud run services describe contact-form --region=asia-northeast1
-   --format='value(status.url)'` でも読める。state を見ないので手元の状態に依らない）
-3. 一致していればコメントを消すだけ。違っていれば `deploy.yml` を直して push し直す
-
-推測の根拠は `work-statistics` の `xbu7yir7nq` が**プロジェクト単位のハッシュ**だという
-前提。観測点が1つしかないので確証はない。外れていても全送信がネットワークエラーで
-落ちるだけで、まだ誰も使っていないので実害は無い。ただし**見えはするが誰かが試すまで
-気づかない**種類の壊れ方なので、上の2を飛ばさないこと。
+**エンドポイントは検証済み**（`terraform output contact_form_uri` と一致）。URL の
+ハッシュは Cloud Run のプロジェクト単位の値なので、`work-statistics` と同じものが付く。
 
 ヒーローにあったインラインのフォームは繋がずに削除した。項目が2つで本文欄が無く、
 件名の無い問い合わせしか作れなかったので。
@@ -373,7 +355,10 @@ needs a tick regardless of what events exist.
 Cloud Run function と両ロケールの `/contact`。メールは**訪問者との往復ではなく運営者へ
 の私信**で、その前提が以下のほとんどを決めている。
 
-**残っているのは `NEXT_PUBLIC_CONTACT_ENDPOINT` の検証だけ**（上の「No contact route」）。
+**本番で往復まで確認済み。** エンドポイント、CORS、Turnstile、入力検証、SMTP 送信。
+
+このアカウントは Zoho の **JP データセンター**にある。`smtp.zoho.jp` の 465 と 587 が
+通り、`.com` / `.eu` / `.in` は 535 を返す。ホストを動かす理由はない。
 
 以下は解決済みの記録として残す。特に**3層に落とした理由**と**`contact` を `nav` に
 入れない理由**は、どちらも「良くしよう」として戻されやすい。
