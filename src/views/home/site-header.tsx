@@ -61,6 +61,10 @@ export const SiteHeader = ({
         enabled={isRevealed}
       >
         <Link href="/" className="flex items-center gap-2.5">
+          {/* ここは不透明のまま。中身はブランドマークで、透かすと場のドットがマークの
+              上に乗る。面ではなくバッジなので `/75` の対象にしていない。同じ理由で
+              言語切替の `bg-accent` も不透明 — `--on-accent` は「明るい地に乗るインク」
+              として選ばれた値なので、地を薄くするとその前提が崩れる。 */}
           <span className="relative grid size-[3.125rem] place-items-center rounded-full border border-hairline bg-surface">
             {/* Drawn in CSS rather than loaded as `brand.markSrc`. The mark is a
                 conic sweep between two tokens, and those tokens now change with
@@ -90,7 +94,10 @@ export const SiteHeader = ({
       >
         <Inview
           tag="ul"
-          className="flex h-[3.125rem] items-center justify-center gap-8 rounded-full border border-hairline bg-surface px-12"
+          /* デスクトップ側の「メニューの背景」。スマホの幕と同じ `/75` に揃えてある
+             — 不透明だったのはこのピルと幕の2つだけで、カードは全部 `/75` だった。
+             ロゴのバッジと言語ピルは不透明のまま（下の注記）。 */
+          className="flex h-[3.125rem] items-center justify-center gap-8 rounded-full border border-hairline bg-surface/75 px-12"
           from={DROP_OUT}
           to={LIFT_IN}
           config={REVEAL_SPRING}
