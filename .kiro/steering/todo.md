@@ -660,5 +660,31 @@ Cheap fix once the engine is fair game: turn the rule on, or set
   credit and never fires. Left out of Terraform on purpose: `google_billing_budget`
   needs IAM on the billing account, and one budget is not worth widening the CI
   service account beyond the project.
-- **No AAAA records.** IPv6-only clients cannot reach the site. GitHub publishes
-  four: `2606:50c0:800{0,1,2,3}::153`. `www` and the apex A records are set.
+- ~~**No AAAA records.**~~ **入れた（2026-08-19）。** apex に `2606:50c0:800{0,1,2,3}::153`
+  の4本、DNS only。A の4本と併存させたデュアルスタックで、4本それぞれに直接繋いで
+  HTTP 200 と TLS 検証通過を確認済み。
+  > **壊れ方は「繋がらない」ではなかった。** `www` は `auditive-tokyo.github.io` への
+  > CNAME なので GitHub 側の AAAA を最初から引き継いでいて、IPv6 で**接続も TLS も
+  > 成功していた**。その上で 301 を返す先が `public/CNAME` の指す apex で、そこに
+  > AAAA が無かった。つまり IPv6-only のクライアントは**接続に成功してから行き止まりに
+  > 送られていた**。片側だけ見て「www は動くから IPv6 は大丈夫」と判断すると見逃す。
+  >
+  > 検証で `curl -6` は当てにならない。macOS の resolver は AAAA の否定キャッシュを
+  > 持っている間 `::ffff:a.b.c.d` を返し、**IPv4 で繋がったものを IPv6 の成功に見せる**。
+  > `--resolve name:443:[addr]` でアドレスを直に指定するのが確実。
+
+### DNS を Terraform に入れるかは、まだ開いている
+ゾーンは Cloudflare（`craig`/`penny.ns.cloudflare.com`）にあり、**コンソール管理のまま**。
+「コンソールではなく Terraform」という他の全部と逆になっているので、理由を残す。
+
+**ゾーンの半分がメール基盤だから。** MX ×2、SPF、DKIM、`apple-domain` の検証 TXT が
+iCloud のもので、問い合わせの通知はそこへ届く。plan を間違えると**問い合わせが静かに
+届かなくなる** — ステップ7がレートリミッタの節で名指ししている、まさにその壊れ方。
+
+見返りも小さい。IaC の利点は drift が `plan` に出ることだが、**このゾーンは drift しない**。
+apex の A/AAAA は GitHub の固定値、メール系は iCloud の固定値。
+
+やるなら形は決まっている: `cloudflare_record` はレコード単位なので、**このリポジトリが
+所有するもの（apex の A/AAAA、`www` の CNAME）だけを入れて、メール系4件は触らない**。
+ゾーンファイル方式と違い、知らないレコードを消さない。トークンはアカウント全体ではなく
+**このゾーンの `Zone:DNS:Edit` だけ**に絞ること。
