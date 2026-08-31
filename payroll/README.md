@@ -2,8 +2,16 @@
 
 Google スプレッドシートに入力した数値から給与明細の PDF を作り、Google Drive に保存する。
 
-- スプレッドシート: https://docs.google.com/spreadsheets/d/1w4Crj0x0LDCfAMQJtqwJ7sBLlOv3FgKFCp8PROTeJPc/edit
-- 保存先フォルダ: https://drive.google.com/drive/folders/1sPgjazUlptzoS4yFOZLEnOHhtQEebr_E
+スプレッドシートは Drive の「給与明細」フォルダの中。保存先フォルダはその同じフォルダで、
+ID は設定シートに入っている。
+
+**ID をこのリポジトリに書かない。** 資格情報ではない（アクセスを決めるのは Drive の権限）
+が、このリポジトリは public なので、どの文書が存在するかまで公開する理由がない。
+`export_pdf.py` を使うときは環境変数で渡す:
+
+```sh
+PAYSLIP_SPREADSHEET_ID=<シート URL の /d/ と /edit の間> python3 payroll/export_pdf.py out.pdf
+```
 
 ## 前提
 
