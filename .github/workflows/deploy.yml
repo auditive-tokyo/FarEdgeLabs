@@ -20,7 +20,7 @@ jobs:
   # GCP, provisioned with Terraform out of band. The site deploy and the backend
   # are deliberately independent: nothing this workflow does should depend on a
   # function or a bucket existing, and nothing the backend does should need a
-  # site deploy. See `.kiro/steering/todo.md`.
+  # site deploy. See `TODO.md`.
   build-and-deploy:
     runs-on: ubuntu-latest
     # peaceiris/actions-gh-pages pushes the build to the gh-pages branch.

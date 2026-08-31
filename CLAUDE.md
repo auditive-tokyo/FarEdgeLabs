@@ -49,7 +49,7 @@ two directions work differently:
   handler. See "The backend"
 
 Nothing in this repo has ever had an AWS resource of its own — see the warning in
-`.kiro/steering/todo.md` before touching an AWS account from here.
+`TODO.md` before touching an AWS account from here.
 
 ## Two locales, two root layouts
 
@@ -355,12 +355,29 @@ certificate renewal for the apex and `www` (next renewal 2026-10-29). That is al
 why there is no HSTS: the first `http://` hit reads "not secure" for the moment
 before GitHub's 301, which is accepted rather than worked around.
 
+## `payroll/` — サイトとは無関係
+
+役員報酬の給与明細を PDF で発行する仕組み。このリポジトリが会社全般のものなので同居して
+いるだけで、**サイトのビルドにもデプロイにも一切関与しない。** `deploy.yml` も `infra.yml`
+も見ていないし、`npm run build` の対象にも入らない。**配線しようとしないこと。**
+
+実体は Google スプレッドシート1枚と、それに貼った Apps Script。`payroll/payslip.gs` は
+その**写し**であって、ここを編集しても Google 側は変わらない。反映は手で貼り直す
+（clasp は導入していない — 入れるならそれが最初の使用になる）。
+
+`build_sheet.py` はスプレッドシートを組み立てた一度きりのスクリプト。レイアウトの仕様書を
+兼ねているので、シートを失ったときに走らせる。手順と毎月の運用は `payroll/README.md`。
+
 ## Documentation
 
-`.kiro/steering/todo.md` is the outstanding-work list — decided or deliberately
-deferred items, with links to the decision behind each. It is `inclusion: manual`,
-so pull it in with `#todo` rather than expecting it in context. Delete an entry when
-it lands.
+`TODO.md` is the outstanding-work list — decided or deliberately deferred items,
+with links to the decision behind each. It is not auto-loaded: pull it in with the
+`/todo` command rather than expecting it in context. Delete an entry when it lands.
+
+`.claude/` holds the Claude Code configuration — `commands/todo.md` (the `/todo`
+command) and `skills/sonarqube/` (the SonarQube MCP protocol, read when Sonar work
+comes up). This repo used to keep both under `.kiro/steering/` with
+`inclusion: manual`; that directory is gone.
 
 `obsidian/` is an Obsidian vault of longer-form notes, inherited from the template
 and partly retargeted. It is **reference, not law** — this file is the contract,

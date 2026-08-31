@@ -1,18 +1,14 @@
----
-inclusion: manual
----
-
 # TODO — FarEdge Labs
 
-**Loaded on request only.** Pull it in with `#todo` when you want to pick up work
-or check what is outstanding; it stays out of context the rest of the time.
+**Loaded on request only.** Pull it in with `/todo`, or just ask for this file by
+name; it stays out of context the rest of the time.
 
 Not a backlog of everything imaginable — only things that are already *decided or
 deliberately deferred*, so nothing here needs re-litigating from scratch. Where a
 decision exists it is linked. Delete an entry when it lands; that is the whole
 process.
 
-Updated 2026-07-31. The site is live at https://faredgelabs.com (ja) and
+Updated 2026-08-31. The site is live at https://faredgelabs.com (ja) and
 `/en/` (en).
 
 ---
@@ -172,7 +168,7 @@ No Google Workspace was bought.
 | what | where |
 |------|-------|
 | `@faredgelabs.com` mail, receiving and human sending | **iCloud+ custom email domain** |
-| Google / GCP sign-in | the existing **`keigo.miyasaka@icloud.com`** account |
+| Google / GCP sign-in | **`hello@faredgelabs.com`** — 同一アカウントのアドレス変更。元は `keigo.miyasaka@icloud.com`（ステップ9） |
 | project | `faredgelabs`, number `89292293815`, region `asia-northeast1` |
 | billing | `017BDD-E996A4-F6B56B`, created **2026-08-05** |
 | organization | `keigo-miyasaka-org` (`283976129708`) |
@@ -191,9 +187,9 @@ than a domain — along with a `My First Project` that has since been deleted. B
 Its display name cannot be changed: an organization is bound to one domain at
 creation, and a standalone one has no domain. Getting `faredgelabs.com` as the name
 means Cloud Identity Free on the domain, which creates a *second* organization, a
-migration, and a new `@faredgelabs.com` Google identity to sign in as. **Decide that
-on whether you want a company-domain Google identity, not on the name** — the name is
-seen by one person in one console.
+migration, and a new `@faredgelabs.com` Google identity to sign in as. The advice
+here used to be "decide that on whether you want a company-domain Google identity, not
+on the name". **決めた — 立てる。** 名前ではなく復旧経路のため。ステップ9。
 
 > [!warning] The free trial ends 2026-11-03
 > 90 days from the billing account, and **the workloads are shut down when it ends**,
@@ -202,8 +198,10 @@ seen by one person in one console.
 > removes the cliff; the remaining credit stays usable until it expires.
 
 > [!warning] Do not let account recovery form a loop
-> Google sign-in is an iCloud address, so **Google's recovery mail arrives at
-> iCloud**. If Apple's recovery then points at a Google address, the loop closes:
+> Google sign-in is `hello@faredgelabs.com`, which **looks like a company mailbox but
+> is delivered by iCloud+**, so **Google's recovery mail arrives at iCloud** exactly as
+> before. The rename made the hazard harder to see, not smaller.
+> If Apple's recovery then points at a Google address, the loop closes:
 > lose one and you cannot reach the other. GCP billing hangs off this account, so the
 > loop would lock production out.
 >
@@ -562,6 +560,70 @@ Deleting `cdk/` was the whole teardown. See the warning in step 4: there was nev
 a deployed AWS resource belonging to this site, so there is no bill to stop and
 nothing to destroy. The step is kept, struck through, so the question is not asked
 a third time.
+
+### 9. Cloud Identity を立てて org を移す — 決定済み、未着手
+`faredgelabs.com` で **Cloud Identity Free** を立て、そこに現れる新しい org へプロジェクトを
+移す。2026-08-31 決定。急ぎではない。
+
+**org は「作る」ものではない。** `gcloud organizations` には `create` も `delete` も無い
+（`resource-manager folders` には両方ある）。org は Cloud Identity アカウントの**副産物として
+現れる**もので、表示名もそのプライマリドメインから derive される。いまの
+`keigo-miyasaka-org` が意図せず生まれたのと同じ仕組み。
+
+**動機は表示名ではない。** 同日に確認した2つの事実が同じ方向を指している:
+
+- org の `describe` が `owner: {}` を返す（`directoryCustomerId` が空）
+- サインインアカウントの userinfo に **`hd` クレームが無い**
+
+つまり `hello@faredgelabs.com` は Workspace 管理下ではなく、独自アドレスで作った
+**通常の Google アカウント**。org と2プロジェクトと請求アカウントの管理権限が、
+**上位に管理者のいない個人アカウント1つ**に集中している。失ったとき復旧を頼める相手が
+いない。CI 側はサービスアカウントキーを持たない WIF なのに、人間側だけ復旧経路が無い。
+表示名が会社名になるのは副産物。
+
+**サインインアドレスはもう iCloud のものではない。** ステップ2の表にあった
+`keigo.miyasaka@icloud.com` と `hello@faredgelabs.com` は**同一アカウント**
+（`sub` は `100709608036505294284`）で、アドレスだけが変わっている。gcloud はログイン時の
+ラベルを `credentials.db` の主キーとしてキャッシュするため、`gcloud auth list` が古い方を
+表示し続けていた。**設定ファイルの `account =` を書き換えて直そうとしないこと** — あれは
+実体ではなく鍵で、対応する行が無ければ全コマンドが `does not have any valid credentials`
+で落ちる。`gcloud auth login hello@faredgelabs.com` で踏み直し、古い行は revoke 済み。
+
+やるときの順序と罠:
+
+- **Cloud Identity Free は ID だけで、メールボックスを作らない。** だから
+  `@faredgelabs.com` のメールは iCloud+ のまま動く。**MX を触らないこと** — 触ると
+  問い合わせが静かに届かなくなる（「DNS を Terraform に入れるか」の節が名指ししている
+  のと同じ壊れ方）
+- **ドメイン検証の TXT は Cloudflare に足す。** ゾーンはコンソール管理で、半分が iCloud の
+  メール基盤。**追加であって置換ではない**
+- **一番危ないのは競合アカウントの処理。** Cloud Identity がドメインを取ると、そのドメインの
+  アドレスを使っている既存の個人アカウント（= `hello@faredgelabs.com`）は「未管理アカウント」
+  になり、組織への移管か強制リネームを選ばされる。そのアカウントが org と2プロジェクトと
+  請求アカウントを持っている。**ドメイン検証のついでに起きる作業にしてはいけない。**
+  単独の手順として、先に何が起きるかを確かめてから踏む
+- **新しい org は別の org。** プロジェクトの移動には**両方の org** に対する権限が要る。
+  プロジェクト ID は `faredgelabs` のままなので、Terraform state、関数の URL、WIF は
+  影響を受けない — `wif.tf` が固定しているのは **GitHub 側の数値 id** で、GCP の org とは
+  無関係
+- **請求アカウントは旧 org に属している。** プロジェクトとは別に移す必要がある
+- **旧 org は消せない。放置でよい。** `delete` が無いのは、org の寿命が裏の Cloud Identity
+  アカウントに従属しているから。`keigo-miyasaka-org` は standalone で裏にアカウントが無い
+  （`owner: {}`）ため、消すにはサポート依頼になるはず（未検証）。空の org に費用は付かず、
+  コンソールのピッカーに1行残るだけなので、**移行が落ち着くまではむしろ残しておく**
+
+> [!important] `farm-scoring-system` を一緒に連れて行くかは未決
+> あの org には FarEdge とは別の事業のプロジェクトも入っている。`faredgelabs.com` の
+> Cloud Identity 配下に置くと、**別事業のプロジェクトが FarEdge の組織ポリシーと管理者の
+> 下に入る**。移すか、旧 org に残すか、別に立てるかを移行前に決めること。決めずに始めると
+> 「ついでに移した」で決まってしまう。
+
+> [!warning] 無料試用の終了 2026-11-03 とぶつけないこと
+> ステップ2の警告のとおり、終了時点でワークロードは課金ではなく**停止**される。移行と
+> その期限が重なると、切り分けのできない障害になる。**先に試用をアップグレードして崖を
+> 無くしてから移すこと** — この構成は always-free の範囲なので、アップグレード自体に
+> 費用は付かない。
+
 
 ---
 

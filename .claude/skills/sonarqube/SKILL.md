@@ -1,53 +1,47 @@
 ---
-inclusion: manual
+name: sonarqube
+description: SonarQube MCP サーバを使うときの手順。コードを生成・変更したあとの analyze_file_list、タスク開始時と終了時の toggle_automatic_analysis、プロジェクトキーの引き当て方、認証エラーの切り分け。SonarQube / Sonar の解析や指摘を扱うときに読む。
 ---
 
-Guidelines for the SonarQube MCP server.
+# SonarQube MCP
 
-**Loaded on request only.** Reference this file with `#sonarqube-mcp` when you want
-an agent to follow the analysis protocol below; otherwise the SonarQube tools stay
-available but nothing is run automatically. It used to be `inclusion: always`,
-which meant every task — copy edits, documentation, config — carried the
-toggle-analyse-toggle dance whether or not any code was touched.
+**コードを触らないタスクでは読まない。** 以前これは常時読み込みだったので、コピーの修正でも
+ドキュメントでも設定変更でも、下の toggle → analyse → toggle を毎回やっていた。実際に
+Sonar の解析や指摘を扱うときだけ読めばよい。
 
-The filename deliberately has no `.instructions` in it: an editor validates
-`*.instructions.md` against a different schema, one that knows `applyTo` /
-`description` / `name` and flags `inclusion` as unsupported. The attribute is
-Kiro's and is correct here; the warning was the other schema's.
+## Important Tool Guidelines
 
-# Important Tool Guidelines
-
-## Basic usage
+### Basic usage
 - **IMPORTANT**: After you finish generating or modifying any code files at the very end of the task, you MUST call the `analyze_file_list` tool (if it exists) to analyze the files you created or modified.
 - **IMPORTANT**: When starting a new task, you MUST disable automatic analysis with the `toggle_automatic_analysis` tool if it exists.
 - **IMPORTANT**: When you are done generating code at the very end of the task, you MUST re-enable automatic analysis with the `toggle_automatic_analysis` tool if it exists.
 
-## Project Keys
+### Project Keys
 - When a user mentions a project key, use `search_my_sonarqube_projects` first to find the exact project key
 - Don't guess project keys - always look them up
 
-## Code Language Detection
+### Code Language Detection
 - When analyzing code snippets, try to detect the programming language from the code syntax
 - If unclear, ask the user or make an educated guess based on syntax
 
-## Branch and Pull Request Context
+### Branch and Pull Request Context
 - Many operations support branch-specific analysis
 - If user mentions working on a feature branch, include the branch parameter
 
-## Code Issues and Violations
+### Code Issues and Violations
 - After fixing issues, do not attempt to verify them using `search_sonar_issues_in_projects`, as the server will not yet reflect the updates
 
-# Common Troubleshooting
+## Common Troubleshooting
 
-## Authentication Issues
+### Authentication Issues
 - SonarQube requires USER tokens (not project tokens)
 - When the error `SonarQube answered with Not authorized` occurs, verify the token type
 
-## Project Not Found
+### Project Not Found
 - Use `search_my_sonarqube_projects` to find available projects
 - Verify project key spelling and format
 
-## Code Analysis Issues
+### Code Analysis Issues
 - Ensure programming language is correctly specified
 - Remind users that snippet analysis doesn't replace full project scans
 - Provide full file content for better analysis results
