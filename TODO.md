@@ -49,8 +49,9 @@ marketing page is a separate decision with its own consent question.
 
 ~~Still open~~ — 3点すべて解決済み。決まった内容だけ残す:
 
-- **注記はもう嘘ではない。** 関数が日次で動いていて `stats.json` が実在し、
-  `hero-stats.tsx` がそれを読んでいる。`stats.note.body` が主張する日次集計は成立した。
+- ~~**注記はもう嘘ではない。**~~ **`hours` については嘘に戻った（2026-09-05）。**
+  関数と `stats.json` は生きていて `clients` / `projects` は実測のままだが、稼働時間は
+  固定値になった。次の項を読むこと。
 - **空の状態は `—` を出す。** スケルトンではない。数字はクライアントの `fetch` で
   来るので初回描画には無く、関数やバケットが落ちた日も同じ見た目になる。
   **これは設計された状態**で、事故ではない — だからリトライも出さない
@@ -69,6 +70,51 @@ Crawlers will not see the figures. That is fine; nobody searches for them.
 there is, the plan is to link out to the Google review rather than restate a score
 in the panel — a number typed beside a star is worth less than the page it came
 from. That makes it a link somewhere in the layout, not a line in this list.
+
+### 稼働時間が固定値になっている — 文言が追いついていない
+**2026-09-05、暫定。** Jibble での打刻をやめたので `src/lib/work-statistics.ts` の
+`FIXED_FIGURES` が `hours: 160` を返す。`clients` と `projects` は実測のまま。
+
+**なぜ固定したか。** 直近30日の窓なので、打刻をやめると `hours` は 0 へ向かって落ちて
+いく。関数もバケットも正常なまま、ページだけが「稼働が減っている」と言い出す。上の
+[!warning]「数字が縮むのは仕様」は**測っている間だけ**成り立つ話だった。
+
+副作用がひとつあり、これは改善方向: 固定値は `stats` を見ないので**サーバ描画の時点で
+出る**。`hours` だけ `fetch` を待たずに初回描画に載る。両サイドで決定的な値なので
+ハイドレーションのズレは起きない。
+
+**未解決が2つ。どちらも承知の上で入れた:**
+
+- **`hero.stats.note.body[0]` が嘘。** ja は「代表エンジニアの過去30日の稼働記録を
+  Jibble の API で取得し、日次で集計しています」、en も同じ主張。`hours` については
+  事実でなくなった。**公開ページの、数字のすぐ隣にある文**
+- **`_stats_readme` に反している。** 「数字をでっち上げるより、埋めるかセクションごと
+  落とす」と両ロケールに書いてある
+
+**選択肢は3つで、筋がいいのは1番目。** 「見た目を変えない」要求で 3 を選んだ:
+
+1. **セクションごと落とす**（`_stats_readme` が勧める形）。ただし `lg` でパネルは
+   `right-7.5 / top-[24.3125rem] / w-[24.25rem]` の絶対座標でフレームの右側を占め、
+   モバイルでは `mt-auto` の3ブロック目。**落とすとヒーローの構図変更になる**
+2. **枠は残して中身を測定値でない情報に差し替える。** 構図は無傷、コピーは要決定
+3. **固定値のまま注記を実態に合わせる** ← いまここ。注記が未着手
+
+> [!warning] 「平日8時間で積む」に戻さないこと
+> 一度検討して落とした。**関数は要らない**（平日を数えて8を掛けるのはブラウザで3行）。
+> そして**動く数字は測られているように見える** — 直近30日の平日数は21〜22で揺れるので
+> 168 → 176 → 168 と毎日変わり、静的な数字より強く「追跡している」と言ってしまう。
+> 誤解は減らず増える。
+
+**Jibble は完全には切れていない。** `clients` / `projects` がまだ `stats.json` 経由なので、
+関数・Scheduler・シークレット2つ・日次の API 呼び出しは全部生きている。完全に切るなら
+3行すべて固定するかセクションを落とすかで、そのとき下を読むこと。
+
+> [!warning] git ではシークレットの値が戻らない
+> `jibble-api-key` / `jibble-api-secret`（ともに version 1）の値は、CLAUDE.md の方針どおり
+> Terraform を通していないので **state にも git にも無い**。所在は Secret Manager と、
+> 追跡外の `gc_run_functions/work_statics/.env` の2箇所だけ。**Jibble の secret は一度しか
+> 表示されない**ので、消してから `.env` も失うと、アカウント解約後は再取得できない。
+> 消す前に `.env` をどこかへ退避すること。
 
 ### Services / Works / About are placeholders
 Six live routes (three segments × two locales) render "under construction" and

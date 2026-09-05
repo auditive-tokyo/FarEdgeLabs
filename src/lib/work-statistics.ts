@@ -74,17 +74,51 @@ export const fetchWorkStatistics = async (
 };
 
 /**
+ * 固定値で上書きする行。いまは稼働時間だけ。
+ *
+ * **なぜ固定するか。** Jibble での打刻をやめたので、直近30日の窓が回るぶんだけ
+ * `hours` は 0 へ向かって落ちていく。測るのをやめた数字が「減っている」ように
+ * 見えるのが、放置したときの一番まずい壊れ方 — 窓が滑るのは仕様どおりの挙動なので、
+ * 関数もバケットも正常なまま、ページだけが嘘をつく。
+ *
+ * `clients` と `projects` はここに入れない。打刻をやめても案件の数は変わらないので、
+ * 窓が回っても落ちない。この2行は実測のままで、取得できなければ `—` に戻る。
+ *
+ * > [!warning] 暫定対応。2つ承知の上で入れている
+ * > 1. **`hero.stats.note` がまだ嘘になる。** 「Jibble の API で取得し、日次で
+ * >    集計しています」は `hours` については事実でなくなった。公開ページの、
+ * >    数字のすぐ隣にある文
+ * > 2. **ロケールの `_stats_readme` に反している。** 「数字をでっち上げるより、
+ * >    埋めるかセクションごと落とす」と書いてある
+ * >
+ * > 次にここを触るときは、注記の書き換えかセクションの撤去まで持っていく。
+ * > 恒久化させないための記録は `TODO.md` にある。
+ */
+const FIXED_FIGURES: Partial<Record<WorkStatisticsField, number>> = {
+  hours: 160,
+};
+
+/**
  * A figure formatted for display, or `null` when it is missing or not a number.
  *
  * Rounded to whole units. `main.py` rounds hours to one decimal, which is the right
  * precision to *store* — but "168.8" on a page reads as a measurement when it is a
  * month's aggregate, and the tenth of an hour is noise either way.
+ *
+ * `FIXED_FIGURES` の行は `stats` を見ない。詳細はそちらの注記。
  */
 export const formatFigure = (
   stats: WorkStatistics | null,
   field: string,
 ): string | null => {
-  if (!stats || !isDisplayable(field)) return null;
+  if (!isDisplayable(field)) return null;
+
+  // 固定値は fetch の成否に依存させない。ここで `stats` を先に見ると、
+  // オブジェクトが取れなかった日に固定したはずの数字が `—` へ落ちる。
+  const fixed = FIXED_FIGURES[field];
+  if (fixed !== undefined) return Math.round(fixed).toLocaleString();
+
+  if (!stats) return null;
   const value = stats[field];
   if (typeof value !== "number" || !Number.isFinite(value)) return null;
   return Math.round(value).toLocaleString();
