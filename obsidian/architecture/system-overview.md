@@ -14,7 +14,7 @@ scrolling, SEO scaffolding, and cookie consent — ready to drop a design into.
 The frontend is a **static export on GitHub Pages** and holds no server code.
 The backend is separate and lives in `gc_run_functions/`. It is moving to GCP
 (Cloud Run, provisioned with Terraform); the AWS CDK app in `cdk/` was never
-deployed and has been deleted. See [[data-flow]] and `.kiro/steering/todo.md`.
+deployed and has been deleted. See [[data-flow]] and `TODO.md`.
 
 ## Mental model
 

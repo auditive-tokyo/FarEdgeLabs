@@ -42,7 +42,7 @@ const EMPTY: Record<ContactField, string> = {
  *
  * > [!important] 二重送信を止めるのはここ
  * > バックエンドの IP レートリミットは検討して落とした（`contact.tf` と
- * > `.kiro/steering/` の記録）。その判断の前提が
+ * > `TODO.md` の記録）。その判断の前提が
  * > 「二重送信はフォームの disabled で止める」だったので、
  * > **`phase === "sending"` の間ボタンを無効にするのは飾りではない**。
  *
