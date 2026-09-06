@@ -59,6 +59,17 @@ jobs:
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: 0x4AAAAAAER3PIYqn9ys4CQX
           # 権威は `terraform output contact_form_uri`。
           NEXT_PUBLIC_CONTACT_ENDPOINT: https://contact-form-xbu7yir7nq-an.a.run.app
+          # Cloudflare Web Analytics のサイトトークン。上の2つと同じで公開値
+          # （ブラウザが読む）。
+          #
+          # **まだ取得していないのでコメントのまま。** 出どころは Cloudflare の
+          # ダッシュボード → Web Analytics → faredgelabs.com → Manage site が出す
+          # スニペットの中の token。
+          #
+          # ここを生かすまでビーコンは描かれず、サイトは何も計測しない
+          # (src/app/layout-shell.tsx)。**空文字を入れないこと** — zod が min(1) で
+          # 弾いてビルドが落ちる。値が無いうちはコメントのままにする。
+          # NEXT_PUBLIC_CF_BEACON_TOKEN: <dashboard の token>
         run: npm run build
 
       - name: Deploy

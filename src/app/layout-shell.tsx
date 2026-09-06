@@ -1,3 +1,4 @@
+import { cfBeaconToken } from "@/env";
 import { htmlLang, type Locale } from "@/locales";
 import { getSiteStructuredData } from "@/utils/seo/structured-data";
 
@@ -56,6 +57,32 @@ export const LayoutShell = ({
               tag that writes a cookie — see decisions-log ADR-0018. */}
           {children}
         </ScrollLayout>
+
+        {/* Cloudflare Web Analytics。cookieless なので同意バナーが要らない
+            （上の注記と decisions-log ADR-0018）。`</body>` の直前という置き場所は
+            Cloudflare の指定。
+
+            **プロキシは要らない。** 公式が「DNS を変えず、Cloudflare のプロキシも
+            使わずに」と言っているので、CLAUDE.md の「DNS only を維持」と衝突しない。
+            ここを取り違えると、計測のためにオレンジ雲へ変えて apex の証明書更新を
+            壊す方向へ進んでしまう。
+
+            **`next/script` は使っていない。** このリポジトリに前例が無く（CLAUDE.md）、
+            入れれば最初の使用になる。一方このビーコンは誰も待たない撃ち放しで、
+            load を拾う必要も状態も無いので、strategy 制御も重複排除も買うものが無い。
+            同じ `<body>` に生の `<script>`（JSON-LD）がもう1つあるので、前例も
+            このファイルの中にある。
+
+            **トークンが無いときはタグごと描かない。** `undefined` の入った
+            `data-cf-beacon` を出すより無いほうが読める。ローカルで未設定なのは
+            既定の挙動 — 理由は `src/env.ts` の注記。 */}
+        {cfBeaconToken ? (
+          <script
+            defer
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            data-cf-beacon={JSON.stringify({ token: cfBeaconToken })}
+          />
+        ) : null}
       </body>
     </html>
   );

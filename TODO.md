@@ -15,13 +15,33 @@ Updated 2026-08-31. The site is live at https://faredgelabs.com (ja) and
 
 ## Blocking a real launch
 
-### Analytics is decided but not installed
-ADR-0018 chose **Cloudflare Web Analytics** — cookieless, which is why there is no
-consent banner. The snippet has never been added, so right now the site measures
-nothing at all. Needs the site token from the Cloudflare dashboard, then a
-`next/script` tag in `layout-shell.tsx`.
+### Analytics — 配線は入った。残りはトークン1つ
+ADR-0018 が選んだ **Cloudflare Web Analytics**（cookieless なので同意バナーが無い）。
+**2026-09-06 に配線を入れた** — `src/app/layout-shell.tsx` が `</body>` の直前に
+ビーコンを描き、トークンは `src/env.ts` の `NEXT_PUBLIC_CF_BEACON_TOKEN`。
 
-This is the one item where the code contradicts a written decision.
+**残りはトークンの取得だけ。** Cloudflare ダッシュボード → Web Analytics →
+`faredgelabs.com` → Manage site が出すスニペットの中の token を、`deploy.yml` の
+コメントアウトしてある行に入れて生かす。それまでビーコンは描かれず、**サイトは
+何も計測しない** — だからこの項はまだ消せない。
+
+- **プロキシは不要。** 公式が「DNS を変えず、Cloudflare のプロキシも使わずに」と
+  明記している。CLAUDE.md の「DNS only を維持」と衝突しないので、**計測のために
+  オレンジ雲へ変える必要は無い**（変えると apex の証明書更新が壊れる）
+- **トークンは公開値。** ブラウザが読むので Turnstile のサイトキーと同じ扱いで
+  `deploy.yml` にリテラル。repository secret に入れても隠れるのは自分に対してだけ
+- **既定値は置いていない。** リテラルにすると `npm run dev` でもビーコンが飛び、
+  `localhost` のアクセスが本番の計測に混ざる。集めている当のデータが静かに汚れるので、
+  未設定は事故ではなく正しい状態
+- **空文字を入れないこと。** zod の `min(1)` が弾いてビルドが落ちる（実測:
+  `ZodError / Too small`）。値が無いうちはコメントのままにする
+
+> [!note] `next/script` は使わなかった
+> この項の以前の版は「`next/script` タグを入れる」と書いていた。使っていない。
+> CLAUDE.md にあるとおりこのリポジトリに前例が無く、入れれば最初の使用になる。一方
+> ビーコンは誰も待たない撃ち放しで、load を拾う必要も状態も無いので、strategy 制御も
+> 重複排除も買うものが無い。同じ `<body>` に生の `<script>`（JSON-LD）がもう1つあり、
+> 前例はそのファイルの中にあった。
 
 ### ~~`hero.stats` — the panel is built, the figures are not~~ — 繋がった
 **Done:** the template's 2×2 grid of four cards is now **one panel** in the same
