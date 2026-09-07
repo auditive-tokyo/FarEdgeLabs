@@ -56,6 +56,20 @@ const publicSchema = z.object({
    * the layers in `main.py` are.
    */
   NEXT_PUBLIC_CONTACT_ENDPOINT: z.url().optional(),
+  /**
+   * Cloudflare Web Analytics のサイトトークン。
+   *
+   * ブラウザが読む値なので**秘密ではない** — Turnstile のサイトキーと同じ扱いで、
+   * `deploy.yml` にリテラルで置く。repository secret に入れても隠れるのは自分に
+   * 対してだけ。
+   *
+   * **既定値を置かないのが要点。** ここをリテラルにすると `npm run dev` でも
+   * ビーコンが飛び、`localhost` のアクセスが本番の計測に混ざる。集めている当の
+   * データが静かに汚れるので、既定値の無い任意項目にして「未設定ならビーコンを
+   * 出さない」を既定の挙動にしてある。`statsUrl` がリテラルなのと逆の判断で、
+   * 逆にしている理由がこれ。
+   */
+  NEXT_PUBLIC_CF_BEACON_TOKEN: z.string().min(1).optional(),
 });
 
 /** Public env — safe to read anywhere. */
@@ -63,6 +77,7 @@ export const publicEnv = publicSchema.parse({
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
   NEXT_PUBLIC_CONTACT_ENDPOINT: process.env.NEXT_PUBLIC_CONTACT_ENDPOINT,
+  NEXT_PUBLIC_CF_BEACON_TOKEN: process.env.NEXT_PUBLIC_CF_BEACON_TOKEN,
 });
 
 export const turnstileSiteKey =
@@ -70,3 +85,11 @@ export const turnstileSiteKey =
 
 export const contactEndpoint =
   publicEnv.NEXT_PUBLIC_CONTACT_ENDPOINT ?? LOCAL_CONTACT_ENDPOINT;
+
+/**
+ * 未設定なら `undefined`。呼び出し側はそのときビーコンを描かない。
+ *
+ * 他の2つと違って `??` の既定値が無い。動く既定値を与えると開発中のアクセスが
+ * 本番の数字に入るので、**未設定は事故ではなく正しい状態**（上の注記）。
+ */
+export const cfBeaconToken = publicEnv.NEXT_PUBLIC_CF_BEACON_TOKEN;

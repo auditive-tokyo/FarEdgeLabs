@@ -15,13 +15,31 @@ Updated 2026-08-31. The site is live at https://faredgelabs.com (ja) and
 
 ## Blocking a real launch
 
-### Analytics is decided but not installed
-ADR-0018 chose **Cloudflare Web Analytics** — cookieless, which is why there is no
-consent banner. The snippet has never been added, so right now the site measures
-nothing at all. Needs the site token from the Cloudflare dashboard, then a
-`next/script` tag in `layout-shell.tsx`.
+### ~~Analytics is decided but not installed~~ — 入った（2026-09-07）
+ADR-0018 の **Cloudflare Web Analytics**（cookieless なので同意バナーが無い）。
+`src/app/layout-shell.tsx` が `</body>` 直前にビーコンを描き、トークンは
+`deploy.yml` の `NEXT_PUBLIC_CF_BEACON_TOKEN`。**次の production デプロイから
+計測が始まる。**
 
-This is the one item where the code contradicts a written decision.
+判断の理由はコードのコメントに置いた（`layout-shell.tsx` と `src/env.ts`）。
+ここに残すのは、読んでも分からない2点だけ:
+
+> [!warning] 404 は計測されない
+> `out/404.html` は `LayoutShell` を通らない。`<html lang>` も JSON-LD も無いので、
+> ビーコンも無い。**ルートグループ構成の帰結**で、`src/app/layout.tsx` が無いため
+> Next がグローバル not-found に素の HTML を吐く。CLAUDE.md はその追加を明示的に
+> 禁じている（グループ構成が壊れる）ので、これは**直さない既知の穴**。
+> 「404 の流入が 0 に見える」のは計測漏れであって実態ではない。
+
+> [!note] `next/script` は使わなかった
+> この項の以前の版は「`next/script` タグを入れる」と書いていた。CLAUDE.md にある
+> とおり前例が無く、入れれば最初の使用になる一方、ビーコンは誰も待たない撃ち放しで
+> strategy 制御も重複排除も買うものが無い。生の `<script>` の前例（JSON-LD）は同じ
+> ファイルの中にあった。
+>
+> 副作用として ESLint の `@next/next/no-sync-scripts` が誤検知する。`type="module"`
+> が仕様上 defer 相当であることをルールが知らないため。`defer` を足すと黙るが
+> module では無視される属性なので、コメントで抑制してある。
 
 ### ~~`hero.stats` — the panel is built, the figures are not~~ — 繋がった
 **Done:** the template's 2×2 grid of four cards is now **one panel** in the same
