@@ -48,8 +48,19 @@ two directions work differently:
   unauthenticated endpoint in the project, and its defences are all inside its own
   handler. See "The backend"
 
-Nothing in this repo has ever had an AWS resource of its own — see the warning in
-`TODO.md` before touching an AWS account from here.
+> [!warning] This repo has never owned an AWS resource. Do not go looking.
+> Verified against the account, not inferred: there is **no** `faredgelabs-*` anything —
+> no CloudFormation stack, no DynamoDB table, no S3 bucket, no Lambda, no API Gateway,
+> no Cognito pool. The `cdk/` app defined `faredgelabs-lambda` and `faredgelabs-apigw`
+> and was **never deployed**; it was a copy of another project's IaC with the names
+> swapped, and it has been deleted.
+>
+> What *does* exist in that account is `auditive-*` — tables, a bucket, two Lambdas, a
+> REST API and a user pool belonging to **auditive.tokyo, a different site**. An earlier
+> draft claimed the `faredgelabs-*` resources were "live and still billing". That was
+> wrong, and it is a dangerous kind of wrong: anyone acting on it would find the
+> similarly-named `auditive-*` resources and delete another site's data. **Nothing in
+> that account is ours to remove.**
 
 ## Two locales, two root layouts
 
@@ -350,13 +361,29 @@ Federation removes the reason to avoid CI.
   account". Do not fix it by widening the default compute account; that one holds
   Editor on the whole project
 
+> [!warning] The enquiry mail rides a grandfathered Zoho account that cannot be re-created
+> `contact-form` sends over `smtp.zoho.jp:465` as `info@auditive.tokyo`. Zoho's free plan
+> is **closed to new signups**; accounts that already had it keep it. So the dependency is
+> not "a Zoho free account" — it is *this* account, belonging to **another business**, and
+> it is a **mailbox login** rather than a send-only key. Close it, downgrade it, migrate
+> it, or lose it, and there is no way back to the same terms. Treat it as the cheap option
+> it is, not as infrastructure.
+>
+> **Do not move `faredgelabs.com` into Zoho** to make the From match: a hosted domain there
+> wants Zoho's MX, and the apex MX belongs to iCloud. That is exactly why the notification
+> is delivered to the iCloud `@faredgelabs.com` address — replying from there goes out with
+> the right identity. The planned replacement, if it ever stops, is in `TODO.md`.
+
 DNS lives at Cloudflare and **must stay "DNS only"** — proxying breaks GitHub's
 certificate renewal for the apex and `www` (next renewal 2026-10-29). That is also
 why there is no HSTS: the first `http://` hit reads "not secure" for the moment
 before GitHub's 301, which is accepted rather than worked around. And it is why the
 Cloudflare Web Analytics site must be registered as a **manual** install
 (`auto_install: false`) — automatic injection only works on a proxied zone, and a site
-registered as automatic rejects the manually embedded beacon with a 404. See `TODO.md`.
+registered as automatic rejects the manually embedded beacon with a 404 — the two modes
+post to different endpoints (`https://<own domain>/cdn-cgi/rum` for automatic,
+`https://cloudflareinsights.com/cdn-cgi/rum` for manual), so the mismatch is silent
+except for that 404.
 
 ## `payroll/` — サイトとは無関係
 
