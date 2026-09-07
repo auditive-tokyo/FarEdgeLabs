@@ -48,20 +48,6 @@ two directions work differently:
   unauthenticated endpoint in the project, and its defences are all inside its own
   handler. See "The backend"
 
-> [!warning] This repo has never owned an AWS resource. Do not go looking.
-> Verified against the account, not inferred: there is **no** `faredgelabs-*` anything —
-> no CloudFormation stack, no DynamoDB table, no S3 bucket, no Lambda, no API Gateway,
-> no Cognito pool. The `cdk/` app defined `faredgelabs-lambda` and `faredgelabs-apigw`
-> and was **never deployed**; it was a copy of another project's IaC with the names
-> swapped, and it has been deleted.
->
-> What *does* exist in that account is `auditive-*` — tables, a bucket, two Lambdas, a
-> REST API and a user pool belonging to **auditive.tokyo, a different site**. An earlier
-> draft claimed the `faredgelabs-*` resources were "live and still billing". That was
-> wrong, and it is a dangerous kind of wrong: anyone acting on it would find the
-> similarly-named `auditive-*` resources and delete another site's data. **Nothing in
-> that account is ours to remove.**
-
 ## Two locales, two root layouts
 
 `/` is Japanese, `/en/` is English. The default locale sits at the root because a
