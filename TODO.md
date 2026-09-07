@@ -15,33 +15,31 @@ Updated 2026-08-31. The site is live at https://faredgelabs.com (ja) and
 
 ## Blocking a real launch
 
-### Analytics — 配線は入った。残りはトークン1つ
-ADR-0018 が選んだ **Cloudflare Web Analytics**（cookieless なので同意バナーが無い）。
-**2026-09-06 に配線を入れた** — `src/app/layout-shell.tsx` が `</body>` の直前に
-ビーコンを描き、トークンは `src/env.ts` の `NEXT_PUBLIC_CF_BEACON_TOKEN`。
+### ~~Analytics is decided but not installed~~ — 入った（2026-09-07）
+ADR-0018 の **Cloudflare Web Analytics**（cookieless なので同意バナーが無い）。
+`src/app/layout-shell.tsx` が `</body>` 直前にビーコンを描き、トークンは
+`deploy.yml` の `NEXT_PUBLIC_CF_BEACON_TOKEN`。**次の production デプロイから
+計測が始まる。**
 
-**残りはトークンの取得だけ。** Cloudflare ダッシュボード → Web Analytics →
-`faredgelabs.com` → Manage site が出すスニペットの中の token を、`deploy.yml` の
-コメントアウトしてある行に入れて生かす。それまでビーコンは描かれず、**サイトは
-何も計測しない** — だからこの項はまだ消せない。
+判断の理由はコードのコメントに置いた（`layout-shell.tsx` と `src/env.ts`）。
+ここに残すのは、読んでも分からない2点だけ:
 
-- **プロキシは不要。** 公式が「DNS を変えず、Cloudflare のプロキシも使わずに」と
-  明記している。CLAUDE.md の「DNS only を維持」と衝突しないので、**計測のために
-  オレンジ雲へ変える必要は無い**（変えると apex の証明書更新が壊れる）
-- **トークンは公開値。** ブラウザが読むので Turnstile のサイトキーと同じ扱いで
-  `deploy.yml` にリテラル。repository secret に入れても隠れるのは自分に対してだけ
-- **既定値は置いていない。** リテラルにすると `npm run dev` でもビーコンが飛び、
-  `localhost` のアクセスが本番の計測に混ざる。集めている当のデータが静かに汚れるので、
-  未設定は事故ではなく正しい状態
-- **空文字を入れないこと。** zod の `min(1)` が弾いてビルドが落ちる（実測:
-  `ZodError / Too small`）。値が無いうちはコメントのままにする
+> [!warning] 404 は計測されない
+> `out/404.html` は `LayoutShell` を通らない。`<html lang>` も JSON-LD も無いので、
+> ビーコンも無い。**ルートグループ構成の帰結**で、`src/app/layout.tsx` が無いため
+> Next がグローバル not-found に素の HTML を吐く。CLAUDE.md はその追加を明示的に
+> 禁じている（グループ構成が壊れる）ので、これは**直さない既知の穴**。
+> 「404 の流入が 0 に見える」のは計測漏れであって実態ではない。
 
 > [!note] `next/script` は使わなかった
-> この項の以前の版は「`next/script` タグを入れる」と書いていた。使っていない。
-> CLAUDE.md にあるとおりこのリポジトリに前例が無く、入れれば最初の使用になる。一方
-> ビーコンは誰も待たない撃ち放しで、load を拾う必要も状態も無いので、strategy 制御も
-> 重複排除も買うものが無い。同じ `<body>` に生の `<script>`（JSON-LD）がもう1つあり、
-> 前例はそのファイルの中にあった。
+> この項の以前の版は「`next/script` タグを入れる」と書いていた。CLAUDE.md にある
+> とおり前例が無く、入れれば最初の使用になる一方、ビーコンは誰も待たない撃ち放しで
+> strategy 制御も重複排除も買うものが無い。生の `<script>` の前例（JSON-LD）は同じ
+> ファイルの中にあった。
+>
+> 副作用として ESLint の `@next/next/no-sync-scripts` が誤検知する。`type="module"`
+> が仕様上 defer 相当であることをルールが知らないため。`defer` を足すと黙るが
+> module では無視される属性なので、コメントで抑制してある。
 
 ### ~~`hero.stats` — the panel is built, the figures are not~~ — 繋がった
 **Done:** the template's 2×2 grid of four cards is now **one panel** in the same
