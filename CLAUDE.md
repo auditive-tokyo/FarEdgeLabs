@@ -353,7 +353,10 @@ Federation removes the reason to avoid CI.
 DNS lives at Cloudflare and **must stay "DNS only"** — proxying breaks GitHub's
 certificate renewal for the apex and `www` (next renewal 2026-10-29). That is also
 why there is no HSTS: the first `http://` hit reads "not secure" for the moment
-before GitHub's 301, which is accepted rather than worked around.
+before GitHub's 301, which is accepted rather than worked around. And it is why the
+Cloudflare Web Analytics site must be registered as a **manual** install
+(`auto_install: false`) — automatic injection only works on a proxied zone, and a site
+registered as automatic rejects the manually embedded beacon with a 404. See `TODO.md`.
 
 ## `payroll/` — サイトとは無関係
 

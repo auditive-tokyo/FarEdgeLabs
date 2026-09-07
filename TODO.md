@@ -15,14 +15,39 @@ Updated 2026-08-31. The site is live at https://faredgelabs.com (ja) and
 
 ## Blocking a real launch
 
-### ~~Analytics is decided but not installed~~ — 入った（2026-09-07）
+### ~~Analytics is decided but not installed~~ — 計測中（2026-09-08 確認）
 ADR-0018 の **Cloudflare Web Analytics**（cookieless なので同意バナーが無い）。
 `src/app/layout-shell.tsx` が `</body>` 直前にビーコンを描き、トークンは
-`deploy.yml` の `NEXT_PUBLIC_CF_BEACON_TOKEN`。**次の production デプロイから
-計測が始まる。**
+`deploy.yml` の `NEXT_PUBLIC_CF_BEACON_TOKEN`。ダッシュボードに数字が出ている。
 
 判断の理由はコードのコメントに置いた（`layout-shell.tsx` と `src/env.ts`）。
-ここに残すのは、読んでも分からない2点だけ:
+ここに残すのは、読んでも分からない3点だけ:
+
+> [!warning] Web Analytics のサイト登録は `auto_install: false` でなければならない
+> **DNS only の帰結で、これに丸一日溶かした。** コードは最初から正しく、Cloudflare 側の
+> 登録が間違っていた。症状は `POST cloudflareinsights.com/cdn-cgi/rum` が **404**、
+> ダッシュボードは「十分なデータがありません」。
+>
+> 2つのセットアップ方式は**送信先が違う**:
+>
+> | 登録 | ビーコンの送信先 |
+> |---|---|
+> | automatic (`auto_install: true`) | `https://<自ドメイン>/cdn-cgi/rum` — **プロキシ必須** |
+> | manual (`auto_install: false`) | `https://cloudflareinsights.com/cdn-cgi/rum` |
+>
+> サイトは automatic で登録されていたのに、手動埋め込みのページが後者へ送っていたので
+> 拒否された。公式 FAQ が「DNS-only ドメインで automatic は**使えない**、manual にせよ」と
+> 明示している。修正は
+> `PUT /accounts/{account_id}/rum/site_info/{site_id}` に `{"auto_install": false,
+> "host": "faredgelabs.com"}`。**`site_token` は再発行されない**ので再デプロイは不要だった。
+>
+> 副作用で `ruleset.lite` が `true` → `false` に落ちた（送っていないフィールドが既定値へ）。
+> `lite` は**自動注入時に** EU 訪問者へ注入しない設定なので、手動では制御対象が存在せず
+> 無効。戻す意味は無い。
+>
+> 切り分けは Cloudflare MCP (`mcp.cloudflare.com/mcp`) の OpenAPI 検索が速かった。
+> `auto_install` が "orange-clouded 用"、`host` が "gray-clouded 用" というフィールド
+> 説明そのものが答えだった。`.mcp.json` に設定がある。
 
 > [!warning] 404 は計測されない
 > `out/404.html` は `LayoutShell` を通らない。`<html lang>` も JSON-LD も無いので、
