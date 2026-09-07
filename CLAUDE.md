@@ -347,19 +347,6 @@ Federation removes the reason to avoid CI.
   account". Do not fix it by widening the default compute account; that one holds
   Editor on the whole project
 
-> [!warning] The enquiry mail rides a grandfathered Zoho account that cannot be re-created
-> `contact-form` sends over `smtp.zoho.jp:465` as `info@auditive.tokyo`. Zoho's free plan
-> is **closed to new signups**; accounts that already had it keep it. So the dependency is
-> not "a Zoho free account" — it is *this* account, belonging to **another business**, and
-> it is a **mailbox login** rather than a send-only key. Close it, downgrade it, migrate
-> it, or lose it, and there is no way back to the same terms. Treat it as the cheap option
-> it is, not as infrastructure.
->
-> **Do not move `faredgelabs.com` into Zoho** to make the From match: a hosted domain there
-> wants Zoho's MX, and the apex MX belongs to iCloud. That is exactly why the notification
-> is delivered to the iCloud `@faredgelabs.com` address — replying from there goes out with
-> the right identity. The planned replacement, if it ever stops, is in `TODO.md`.
-
 DNS lives at Cloudflare and **must stay "DNS only"** — proxying breaks GitHub's
 certificate renewal for the apex and `www` (next renewal 2026-10-29). That is also
 why there is no HSTS: the first `http://` hit reads "not secure" for the moment
