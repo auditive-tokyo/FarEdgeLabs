@@ -249,6 +249,65 @@ iCloud とは別セレクタなので DMARC の DKIM アラインメントが厳
 
 ---
 
+### CLAUDE.md を分割し、`obsidian/` を畳んでいく
+**方向は決定、やり方は未確定。少しずつ進める（2026-09-08 合意）。**
+
+ルートの `CLAUDE.md` は **394行**。公式の目安は**1ファイル 200行未満**で、
+「長いほどコンテキストを食い、遵守率が下がる」と明記されている。狙いは、
+ルートには構成と全体に効く規約だけを置き、**そのディレクトリを触ったときだけ**
+詳細が読まれる形にすること。
+
+> [!warning] `@path` インポートでは目的を達成できない
+> 分割の手段として最初に思いつくのがこれだが、**起動時に全部読み込まれる**ので
+> コンテキストは1バイトも減らない。公式に "helps organization but doesn't reduce
+> context, since imported files load at launch" とある。
+>
+> オンデマンドで読ませる仕組みは別に2つある:
+>
+> | 仕組み | 読まれるタイミング |
+> |---|---|
+> | サブディレクトリの `CLAUDE.md` | そのディレクトリのファイルを読んだとき |
+> | `.claude/rules/*.md` + `paths:` frontmatter | パターンに一致するファイルを読んだとき |
+>
+> 後者のほうが細かい。`src/components/animation/springs/**` のように
+> **ディレクトリ境界と一致しない規約**はこちらが向く。
+
+**`/doctor` が同じことをする。** チェック済みの `CLAUDE.md` に対して削減案を出し、
+「コードから導ける内容（ディレクトリ構成、依存一覧、アーキテクチャ概要）を落とし、
+落とし穴・理由・ツール既定と違う規約を残す」と説明されている。手で始める前に一度
+かけてみること。
+
+分割の当たりを付けるための現状（節ごとの行数）:
+
+| 節 | 行 | 行き先の候補 |
+|---|---|---|
+| The backend | 70 | `gc_run_functions/CLAUDE.md` か `terraform/CLAUDE.md` |
+| What the page is made of | 56 | `src/views/home/` |
+| Two locales, two root layouts | 42 | `src/app/` |
+| Colour tokens | 39 | `src/app/globals.css` の近く、または rules |
+| フォームと外部スクリプト | 39 | `src/views/contact/` |
+| The one constraint (`output: "export"`) | 37 | **ルートに残す** — 全体に効く |
+| Hard rules | 24 | **ルートに残す** |
+| Deploying | 22 | `.github/workflows/` |
+| コメントは日本語で書く | 18 | **ルートに残す** |
+| payroll | 13 | `payroll/CLAUDE.md` |
+
+> [!warning] `obsidian/meta/` の2つは畳めない
+> `obsidian/` の大半（`architecture/`、`frontend/` のカタログ）は、まさに `/doctor` が
+> 「コードから導ける」として落とす類なので、ディレクトリ CLAUDE.md へ移すか消せる。
+> **ただし `decisions-log.md`(695行) と `changelog.md`(659行) は種類が違う。**
+>
+> ディレクトリ CLAUDE.md は「いまどうなっているか」を書くもので、ADR は「いつ何を
+> 決め、**何を捨てたか**」を書く記録。畳むと**却下した選択肢が消える** — `CLAUDE.md`
+> 自身が「コードを読んでも復元できないのは *why* だ」と言っている、その部分。
+>
+> `frontend/text-engine-reference.md`(683行) も別枠。ヴェンダリングされた
+> アニメーションエンジンの参照資料なので、`src/components/animation/springs/CLAUDE.md`
+> にするか、**skill にして呼ばれたときだけ読ませる**のが合っている。
+
+進め方は1ディレクトリずつ。**移したら元を消す** — 同じことが2箇所にあると、
+公式が言うとおり「矛盾したときに Claude がどちらかを勝手に選ぶ」状態になる。
+
 ## Known rough edges, consciously left
 
 ### The headline bar swallows the accent word in dark mode
