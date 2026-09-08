@@ -7,6 +7,30 @@
     "cloudflare-graphql": {
       "type": "http",
       "url": "https://graphql.mcp.cloudflare.com/mcp"
+    },
+    "sonarqube": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-v",
+        "sonarqube-mcp-storage:/app/storage",
+        "-e",
+        "SONARQUBE_TOKEN",
+        "-e",
+        "SONARQUBE_ORG",
+        "-e",
+        "SONARQUBE_CLOUD_URL",
+        "-e",
+        "SONARQUBE_IDE_PORT",
+        "mcp/sonarqube"
+      ],
+      "env": {
+        "SONARQUBE_ORG": "auditive-tokyo",
+        "SONARQUBE_CLOUD_URL": "https://sonarcloud.io",
+        "SONARQUBE_IDE_PORT": "64122"
+      }
     }
   }
 }
