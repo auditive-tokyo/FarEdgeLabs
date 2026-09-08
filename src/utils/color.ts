@@ -33,7 +33,7 @@ export const parseCssColor = (value: string): Rgb | null => {
   if (hex) {
     const digits = expandShorthand(hex[1]);
     return [0, 2, 4].map((offset) =>
-      parseInt(digits.slice(offset, offset + 2), 16) / 255,
+      Number.parseInt(digits.slice(offset, offset + 2), 16) / 255,
     ) as Rgb;
   }
 

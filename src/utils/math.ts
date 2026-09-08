@@ -67,7 +67,7 @@ export const interpolate = (
       const functionMatch = value.match(/^([a-zA-Z]+)\(([-0-9.]+)([^)]*)\)$/);
       if (functionMatch) {
         return {
-          number: parseFloat(functionMatch[2]),
+          number: Number.parseFloat(functionMatch[2]),
           unit: `${functionMatch[1]}(${functionMatch[3]})`,
         };
       }
@@ -75,7 +75,7 @@ export const interpolate = (
       const match = value.match(/([-0-9.]+)([^0-9.]+)/);
       if (match) {
         return {
-          number: parseFloat(match[1]),
+          number: Number.parseFloat(match[1]),
           unit: match[2],
         };
       }

@@ -5,8 +5,12 @@ import { useEffect } from "react";
 /**
  * Route-segment error boundary. Must be a Client Component. Catches render and
  * data errors in this segment and offers a recovery action via `reset()`.
+ *
+ * 関数名を `Error` にしないこと。**global の `Error` を覆い隠す**ので、下の
+ * `error: Error & { digest?: string }` が何を指しているのかがスコープ次第になる。
+ * Next.js が見るのは default export だけで名前は自由なので、隠す理由が無い。
  */
-export default function Error({
+export default function RouteError({
   error,
   reset,
 }: {
