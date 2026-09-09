@@ -1,4 +1,3 @@
-// 📖 Docs: obsidian/frontend/components/animation-springs.md
 /**
  * @fileoverview Spring animation component that provides configurable animations
  *

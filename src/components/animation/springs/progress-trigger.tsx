@@ -1,4 +1,3 @@
-// 📖 Docs: obsidian/frontend/components/animation-springs.md
 /**
  * @fileoverview Progress trigger component for scroll-based progress tracking
  *

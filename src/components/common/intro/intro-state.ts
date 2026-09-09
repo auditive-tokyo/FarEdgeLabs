@@ -1,6 +1,5 @@
 "use client";
 
-// 📖 Docs: obsidian/frontend/components/common.md
 
 /**
  * When the page starts revealing itself.

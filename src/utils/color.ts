@@ -3,7 +3,7 @@
  *
  * WebGL uniforms take normalised floats, while the design system keeps every
  * colour as a CSS token. These helpers bridge the two so a shader can read a
- * token instead of hardcoding a value (see obsidian/frontend/design-system.md).
+ * token instead of hardcoding a value.
  */
 
 /** Normalised 0–1 RGB triplet — the form a `vec3` colour uniform expects. */

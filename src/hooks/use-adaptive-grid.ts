@@ -8,7 +8,6 @@
  * displays. At or below `baseWidth` the inline font-size is cleared and the
  * `vw` media queries in `globals.css` take over.
  *
- * 📖 Docs: obsidian/frontend/hooks.md
  */
 
 import { useCallback, useEffect } from "react";

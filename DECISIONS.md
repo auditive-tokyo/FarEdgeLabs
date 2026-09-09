@@ -1,12 +1,66 @@
----
-tags: [meta, decision]
-updated: 2026-07-15
----
-
 # Decisions Log (ADRs)
 
-Architecture Decision Records. Each entry captures a choice, its context, and its
-consequences. Use [[templates/adr-note]] for new entries. Newest first.
+いつ何を決め、**何を却下したか**の記録。新しいものが上。コードを読んでも復元できないのは
+「採らなかった案とその理由」なので、そこが本体。
+
+> [!note] `obsidian/` から移してきた（2026-09-10）
+> 元は `obsidian/meta/decisions-log.md` で、vault ごと削除したときにここだけ残した
+> （ADR-0021）。本文中の `[[…]]` は Obsidian の内部リンクで、**指す先はもう無い**。
+> 履歴の一部として残してあるだけなので、読み替えは不要。新しい項では使わないこと。
+
+---
+
+## ADR-0021 — テンプレート由来の資料を捨て、ディレクトリごとに自分の言葉で書く
+
+- **Status:** Accepted — supersedes ADR-0001, ADR-0006, ADR-0007
+- **Date:** 2026-09-10
+
+**Context.** `obsidian/` の vault は ADR-0001 で導入し、ADR-0006 で「唯一の情報源」と
+定め、ADR-0007 で Claude Code の hooks に更新を強制させていた。その hooks が失われた後、
+運用だけが残って誰も更新しなくなった。
+
+実測すると劣化は明確だった。28ファイルのほぼ全部が **2026-07-29 の1日で書かれ、コミット
+1回きり**。カタログは**実在しない `Preloader` を載せ、実在する `intro/` を載せていない**。
+`Turnstile` `contact-form` `Jibble` `Secret Manager` `terraform` はいずれも0ファイル —
+**8月以降の仕事を1文字も知らない**。`changelog.md` は 2026-07-15 で止まり、見出しは
+`(latest+15)` というテンプレート相対の採番だった。`workflows/ai-agent-guide.md` は
+**存在しない `AGENTS.md` に「取って代わられた」と自称**していた。
+
+腐ったのではなく、**置き換わっていた**。8月以降の判断は実際には `CLAUDE.md`・`TODO.md`・
+コードのコメントに書かれており、vault はその事実に追いついていなかっただけ。
+
+**Decision.** vault を削除し、資料は3か所に分ける。
+
+| 何を | どこに |
+|---|---|
+| 全体に効く制約 | ルートの `CLAUDE.md` |
+| そのディレクトリだけの約束 | `<dir>/CLAUDE.md`（読んだときだけ自動で載る） |
+| 決定と却下 | このファイル |
+
+**継承した指示は守らない**を明文化した。テンプレートに付いてきたルールは読んでもいない
+他人の判断であって、こちらが必要と認めたものだけが残る。日本語で、実装のたびに書く
+（`/docs`）。
+
+**Rejected: `@path` インポートで分割する。** 分割の手段として最初に思いつくが、
+**起動時に全部読み込まれる**のでコンテキストは1バイトも減らない。オンデマンドで載るのは
+ネストした `CLAUDE.md` と `.claude/rules/` + `paths:` の2つだけ。
+
+**Rejected: `text-engine-reference.md`(683行) を skill として残す。** 一度は残す判断を
+したが撤回した。読んでいない他人の資料で、6週間参照された形跡が無い。必要になったら
+git 履歴から掘り、**そのとき理解した分だけ**書き直すほうが方針に合う。
+
+**Rejected: カタログをディレクトリ `CLAUDE.md` へ移植する。** 中身の大半はコードから
+導ける（構成・エクスポート一覧・依存）。移しても腐り方が変わらないうえ、腐っても誰も
+気づかない。
+
+**Consequences.** 約2,300行が消え、参照していた **21箇所の `📖 Docs:` ヘッダも不要に
+なった**（ネストした `CLAUDE.md` は自動で載るので、ポインタという概念自体が要らない）。
+ハードルール2の根拠も差し替えた — `upstream` が存在しない以上「ヴェンダリングだから
+触るな」は成立せず、残すべきは「直感が外れる領域だから測れ」のほう。
+
+失うものもある。**強制する仕組みが無い**（ADR-0007 の hooks は戻さない）。`/docs` は
+手順であって強制ではないので、同じ劣化はまた起こりうる。それでも hooks に戻さないのは、
+強制が消えた瞬間に運用だけが残って腐る、というのを一度やったから。
 
 ---
 
@@ -565,7 +619,7 @@ config rule (ADR-0004) forbids generating the media queries from JS.
 
 ## ADR-0007 — Automate the vault workflow with Claude Code hooks
 
-- **Status:** Accepted
+- **Status:** Accepted — **superseded by ADR-0021**
 - **Date:** 2026-05-21
 
 **Context.** The "read the vault first, follow the relevant guide, update the docs
@@ -590,7 +644,7 @@ opening `/hooks`). See [[ai-agent-guide]].
 
 ## ADR-0006 — The vault is the single source of truth
 
-- **Status:** Accepted
+- **Status:** Accepted — **superseded by ADR-0021**
 - **Date:** 2026-05-21
 
 **Context.** ADR-0001 left dense spec files (`project-specs.md`, `text-engine-docs.md`)
@@ -633,7 +687,7 @@ transition layer exists; if one is needed later, revisit with a new ADR.
 
 ## ADR-0001 — Adopt an Obsidian vault as the project brain
 
-- **Status:** Accepted — amended by ADR-0006
+- **Status:** Accepted — amended by ADR-0006 — **superseded by ADR-0021**
 - **Date:** 2026-05-21
 
 **Context.** Project knowledge was scattered across root markdown files

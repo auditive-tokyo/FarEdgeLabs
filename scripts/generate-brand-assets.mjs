@@ -4,8 +4,6 @@
  *
  *   node scripts/generate-brand-assets.mjs
  *
- * 📖 Docs: obsidian/frontend/seo-metadata.md
- *
  * ## Why a recipe and not a resize
  *
  * `public/assets/hero/logo-mark.png` was the template's 56×56 mark. Upscaling

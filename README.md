@@ -1,158 +1,49 @@
-# next16-claude-starter
+# FarEdge Labs
 
-A **Next.js 16 starter** for animation-heavy marketing & landing sites — built
-by [Textura](https://textura.agency) so that AI agents (Claude Code, Cursor)
-generate **clean, production-ready code on the first pass**.
+日英2言語のコーポレートサイト。**Next.js 16 App Router を静的 HTML に書き出し、
+GitHub Pages が配信**している。<https://faredgelabs.com>（`/en/` が英語）。
 
-Every motion is spring-based (`@react-spring/web`), text animation runs through
-`spring-text-engine`, scrolling is smoothed with Lenis, styling is Tailwind
-v4, and a rem-based adaptive grid scales the design across every viewport.
+バックエンドは別で、GCP の Cloud Run functions（`gc_run_functions/`）を Terraform
+（`terraform/`）で管理している。
 
----
-
-## ⭐ How to use this starter (with AI)
-
-The real value here isn't the boilerplate — it's the **documentation +
-enforcement system** wrapped around it. An [Obsidian vault](./obsidian/README.md)
-holds every convention, a set of Claude Code hooks forces agents to read it
-before writing and update it after, and a small set of hard rules keeps every
-generated component on-style.
-
-### Hooks do the enforcement for you
-
-`.claude/settings.json` ships **three hooks** that turn the workflow on
-automatically — you don't have to ask for any of this in your prompt:
-
-| Hook | When it fires | What it does |
-|------|---------------|--------------|
-| `SessionStart` | new chat / resume | Points the agent at the vault before it does anything |
-| `UserPromptSubmit` | every request | Reminds the agent to consult the relevant guide before acting |
-| `Stop` | end of every turn | Blocks once to confirm the vault was updated to match the change |
-
-Inspect, edit, or disable them anytime with `/hooks` in Claude Code. ADR:
-[`obsidian/meta/decisions-log.md`](./obsidian/meta/decisions-log.md) (ADR-0007).
-
-### How to write a good request
-
-Because the conventions live in the vault, your prompts get to focus on **what**
-you want — not **how** to write it. A good request:
-
-- **Says what to build, not how.** *"Add a Testimonials section to the home
-  page with a horizontal scroll carousel"* — not *"use react-spring with a
-  parallel hook and a `mode="forward"` Inview…"*. The vault tells the agent how.
-- **Names the page / view / component clearly.** Routes delegate to
-  `src/views/`; reference that file when iterating.
-- **Cites a vault note only to *override* a convention** (rare). Most of the
-  time the hooks will pull in the right guide on their own.
-- **For a brand-new page**, point the agent at the
-  [`new-page`](./obsidian/workflows/new-page.md) playbook or fill in
-  [`generic-layout-prompt`](./obsidian/workflows/generic-layout-prompt.md).
-- **Trust the hard rules.** Spring-based motion only, design tokens, no `any`,
-  server components by default, semantic HTML, routes → views. These are
-  enforced — you don't have to repeat them in every prompt.
-
-The payoff: animation-heavy pages that ship lint-clean, typed, accessible, and
-on-token — without the usual "now make it production-ready" second pass.
-
-### 💸 Cost expectations
-
-This starter is **token-intensive by design**. Every prompt fans out into the
-vault (architecture, conventions, the relevant topic note), and the hooks
-re-inject context on every turn. That bought-clean code costs tokens.
-
-> **Minimum recommended plan: [Claude Max (5×)](https://www.anthropic.com/pricing).**
-> A standard Claude.ai Pro plan will hit usage limits quickly on a real
-> session.
-
----
-
-## Getting started
-
-1. **Clone the template**
-   ```bash
-   git clone https://github.com/textura/next16-claude-starter.git my-project
-   cd my-project
-   ```
-
-2. **Detach from this repo's history.** The bundled `.git` folder is hidden;
-   on macOS, with the folder open in Finder, press `⇧ + ⌘ + .` (Shift + Cmd + .)
-   to reveal hidden files, then drag `.git` to the bin. Or from the terminal:
-   ```bash
-   rm -rf .git
-   ```
-
-3. **Initialise your own GitHub repo.** Create an empty repo on GitHub first
-   (no README/`.gitignore` — the template already has them), then:
-   ```bash
-   git init
-   git add .
-   git commit -m "chore: initial commit"
-   git branch -M main
-   git remote add origin <your-new-repo-url>
-   git push -u origin main
-   ```
-
-4. **Install and run**
-   ```bash
-   yarn install
-   yarn dev      # http://localhost:3000
-   ```
-
-| Script | Purpose |
-|--------|---------|
-| `yarn dev` | Development server |
-| `yarn build` | Production build |
-| `yarn start` | Serve the production build |
-| `yarn lint` | ESLint |
-
-## 🚀 Deploy to Vercel
-
-The fastest path to production — Next.js is Vercel's home framework, so the
-defaults Just Work. From the project root:
+## 動かす
 
 ```bash
-npm i -g vercel@latest    # one-time, if you don't have it
-vercel                    # links the repo and ships a preview deploy
-vercel --prod             # promotes to production
+npm ci
+npm run dev        # http://localhost:3000
 ```
 
-Or from the dashboard: open [vercel.com/new](https://vercel.com/new), import
-the GitHub repo you created in step 3, accept the defaults — the Next.js
-preset auto-configures the build, output, and image optimisation. No
-`vercel.json` required.
+| コマンド | 何をするか |
+|---|---|
+| `npm run dev` | 開発サーバ |
+| `npm run build` | 静的書き出し（`out/`） |
+| `npm run lint` | ESLint |
+| `npx tsc --noEmit` | 型検査。**lint だけでは死んだ import が見つからない** |
+| `npm run brand` | アイコンと OG カードの再生成。ビルドには含まれないので、変えたら手で実行して PNG をコミットする |
 
-When you add environment variables (e.g. `NEXT_PUBLIC_SITE_URL`, see
-[`obsidian/architecture/environment-variables.md`](./obsidian/architecture/environment-variables.md)),
-set them in **Project Settings → Environment Variables** on Vercel, then sync
-them locally with:
+## デプロイ
 
-```bash
-vercel env pull .env.local
-```
+`main` → 自動で作られるリリース PR → `production` へマージ → ビルド → `out/` が
+`gh-pages` へ push される。
 
-## 📖 Documentation
+- **サイト**は `.github/workflows/deploy.yml`
+- **バックエンド**は `.github/workflows/infra.yml`（`production` への push で `terraform apply`）
+- 両者は独立している。サイトのデプロイが関数の存在に依存してはいけないし、その逆も同じ
 
-Full project documentation lives in the **`obsidian/`** Obsidian vault — open
-that folder in [Obsidian](https://obsidian.md) for a linked, navigable second
-brain covering architecture, the animation system, conventions, and workflows.
+## 資料
 
-Start at [`obsidian/README.md`](./obsidian/README.md).
+| 何を | どこに |
+|---|---|
+| 全体に効く制約・ハードルール | [`CLAUDE.md`](./CLAUDE.md) ← **これが契約** |
+| そのディレクトリだけの約束 | `<dir>/CLAUDE.md` |
+| いつ何を決め、何を却下したか | [`DECISIONS.md`](./DECISIONS.md) |
+| 残っている作業 | [`TODO.md`](./TODO.md) |
 
-## For AI agents
+`CLAUDE.md` は Claude Code が毎回自動で読む。ディレクトリごとの `CLAUDE.md` は、その
+ディレクトリのファイルを読んだときだけ載る。実装が終わったら `/docs` で更新する。
 
-> ⚠️ This is **not** the Next.js you may know — APIs and conventions differ
-> from older versions. Read [`CLAUDE.md`](./CLAUDE.md) before writing code.
-
-**[`CLAUDE.md`](./CLAUDE.md) is the contract.** It carries the hard rules and the
-constraints that shape the project, and it is auto-loaded into every agent's
-context. Where it and any other document disagree, it wins.
-
-[`TODO.md`](./TODO.md) is the outstanding-work list — decided or deliberately
-deferred items, with the reasoning behind each. It is not auto-loaded; pull it in
-with the `/todo` command.
-
-`obsidian/` is a vault of longer-form notes. It is **reference, not law**, and
-parts of it are stale — it still describes the starter template this project grew
-out of. The part worth keeping current is
-[`obsidian/meta/decisions-log.md`](./obsidian/meta/decisions-log.md), which records
-*why*, the one thing that cannot be recovered by reading the code.
+> [!note] この repo はテンプレート（`next16-claude-starter`）から始まった
+> アニメーションまわりには当時のコードが残っているが、コピー・ルーティング・配色・
+> サーバ側は全部書き直してある。テンプレートが持ち込んだ資料は 2026-09-10 に削除した
+> （`DECISIONS.md` の ADR-0021）。**古い README は Vercel へのデプロイを案内していたが、
+> 実際は GitHub Pages。** 同種の記述を見つけたら疑うこと。

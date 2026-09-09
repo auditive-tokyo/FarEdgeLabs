@@ -1,6 +1,5 @@
 "use client";
 
-// 📖 Docs: obsidian/frontend/components/common.md
 
 import { useSpring } from "@react-spring/web";
 import { useEffect, useRef, useState } from "react";

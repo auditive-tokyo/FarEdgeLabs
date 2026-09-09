@@ -1,6 +1,5 @@
 "use client";
 
-// 📖 Docs: obsidian/frontend/components/common.md
 
 import { useAdaptiveGrid } from "@/hooks/use-adaptive-grid";
 

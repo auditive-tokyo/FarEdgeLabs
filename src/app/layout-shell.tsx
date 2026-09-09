@@ -42,7 +42,7 @@ export const LayoutShell = ({
             breakpoint, and the single unbounded `vw` rule in globals.css never
             hands over — it scales the same way at every width. Mounting it
             would only damp the scale-up away from the design's proportions.
-            See obsidian/meta/decisions-log.md ADR-0015. */}
+            See DECISIONS.md ADR-0015. */}
         <ScrollLayout>
           <ReducedMotion />
           {/* Renders nothing — it starts the entrance. The template's

@@ -1,5 +1,3 @@
-// 📖 Docs: obsidian/frontend/components/common.md
-
 /**
  * Adaptive scaling grid configuration.
  *

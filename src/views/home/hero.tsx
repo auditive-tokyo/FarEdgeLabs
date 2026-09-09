@@ -20,7 +20,7 @@ export interface HeroProps {
  * The hero composition — Figma "Get Layers" 681:256, a 1440×800 frame.
  *
  * Laid out in `rem` against that frame so the adaptive grid scales the whole
- * thing as one unit (see obsidian/frontend/design-system.md). The header pins
+ * thing as one unit. The header pins
  * to the top and this section's bottom row pins to the bottom, so a taller
  * viewport grows the middle rather than stranding the pills mid-screen.
  *

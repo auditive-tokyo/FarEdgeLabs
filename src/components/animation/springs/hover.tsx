@@ -1,4 +1,3 @@
-// 📖 Docs: obsidian/frontend/components/animation-springs.md
 /**
  * @fileoverview Hover animation component for mouse interaction animations
  *
