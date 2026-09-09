@@ -1,93 +1,18 @@
 # TODO — FarEdge Labs
 
-**Loaded on request only.** Pull it in with `/todo`, or just ask for this file by
-name; it stays out of context the rest of the time.
+**Loaded on request only.** Pull it in with `/todo` when you want to pick up work or
+check what is outstanding; it stays out of context the rest of the time.
 
-Not a backlog of everything imaginable — only things that are already *decided or
-deliberately deferred*, so nothing here needs re-litigating from scratch. Where a
-decision exists it is linked. Delete an entry when it lands; that is the whole
-process.
+**残っている作業だけを置く。** 済んだものは消す — それがこの文書の運用の全部。判断の
+理由で残す価値があるものは、消す前に行き先を決める: 恒久的な制約は `CLAUDE.md`、
+アーキテクチャの選択は `obsidian/meta/decisions-log.md`、コードを読めば分かる話は
+その場のコメント。ここに残すのは**まだ手が要るもの**に限る。
 
-Updated 2026-08-31. The site is live at https://faredgelabs.com (ja) and
-`/en/` (en).
+Updated 2026-09-08.
 
 ---
 
 ## Blocking a real launch
-
-### ~~Analytics is decided but not installed~~ — 入った（2026-09-07）
-ADR-0018 の **Cloudflare Web Analytics**（cookieless なので同意バナーが無い）。
-`src/app/layout-shell.tsx` が `</body>` 直前にビーコンを描き、トークンは
-`deploy.yml` の `NEXT_PUBLIC_CF_BEACON_TOKEN`。**次の production デプロイから
-計測が始まる。**
-
-判断の理由はコードのコメントに置いた（`layout-shell.tsx` と `src/env.ts`）。
-ここに残すのは、読んでも分からない2点だけ:
-
-> [!warning] 404 は計測されない
-> `out/404.html` は `LayoutShell` を通らない。`<html lang>` も JSON-LD も無いので、
-> ビーコンも無い。**ルートグループ構成の帰結**で、`src/app/layout.tsx` が無いため
-> Next がグローバル not-found に素の HTML を吐く。CLAUDE.md はその追加を明示的に
-> 禁じている（グループ構成が壊れる）ので、これは**直さない既知の穴**。
-> 「404 の流入が 0 に見える」のは計測漏れであって実態ではない。
-
-> [!note] `next/script` は使わなかった
-> この項の以前の版は「`next/script` タグを入れる」と書いていた。CLAUDE.md にある
-> とおり前例が無く、入れれば最初の使用になる一方、ビーコンは誰も待たない撃ち放しで
-> strategy 制御も重複排除も買うものが無い。生の `<script>` の前例（JSON-LD）は同じ
-> ファイルの中にあった。
->
-> 副作用として ESLint の `@next/next/no-sync-scripts` が誤検知する。`type="module"`
-> が仕様上 defer 相当であることをルールが知らないため。`defer` を足すと黙るが
-> module では無視される属性なので、コメントで抑制してある。
-
-### ~~`hero.stats` — the panel is built, the figures are not~~ — 繋がった
-**Done:** the template's 2×2 grid of four cards is now **one panel** in the same
-footprint, a `<dl>` of label-and-figure lines plus a `<details>` disclosure
-answering "what are these figures?". Rows are data, so the count is no longer a
-layout question — a figure is a line added or removed. `Rating` is gone (see
-below), leaving Projects / Clients / Uptime.
-
-Dropped with the grid: the per-card `accented` flag in both locale files, and
-`REVEAL_DELAY.statStep`. Neither has meaning for a single object.
-
-**Decided:** fill it from the Jibble time tracker's API, refreshed daily by the
-scheduled function in the migration below. Jibble treats *client* as a grouping
-dimension alongside project and activity, so one Tracked Time Report call can
-yield hours, distinct clients and distinct projects.
-
-**The three figures are settled:** clients, projects and hours tracked, each over
-the **trailing 30 days**. The window is said once as the panel's caption
-(`stats.scope`) rather than prefixed onto all three labels, and the panel is a
-`role="group"` named by that caption so the period is attached to the figures for
-a screen reader rather than sitting loose beside them.
-
-No client is named. The aggregate is the point, and naming engagements on a
-marketing page is a separate decision with its own consent question.
-
-~~Still open~~ — 3点すべて解決済み。決まった内容だけ残す:
-
-- ~~**注記はもう嘘ではない。**~~ **`hours` については嘘に戻った（2026-09-05）。**
-  関数と `stats.json` は生きていて `clients` / `projects` は実測のままだが、稼働時間は
-  固定値になった。次の項を読むこと。
-- **空の状態は `—` を出す。** スケルトンではない。数字はクライアントの `fetch` で
-  来るので初回描画には無く、関数やバケットが落ちた日も同じ見た目になる。
-  **これは設計された状態**で、事故ではない — だからリトライも出さない
-  （`fetchWorkStatistics` は失敗を全部 `null` に潰す）。
-- **時間の接尾辞はロケールごと。** `時間` と `h`。数字とは**別の `span`** に置き、
-  一段小さく、**italic を付けない**。単位が数字と同じ大きさだと数字と競い、
-  CJK に italic をかけると字が剪断される。カウント2つには接尾辞が無い。
-
-> [!warning] 数字が縮むのは仕様
-> 直近30日の窓なので、休むと下がる。累計に切り替えれば下がらないが、累計は「いま」を
-> 何も語らない。**見栄えのために黙って累計へ変えないこと。**
-
-Crawlers will not see the figures. That is fine; nobody searches for them.
-
-**`Rating` is not coming back as a figure.** There is nothing rated yet, and when
-there is, the plan is to link out to the Google review rather than restate a score
-in the panel — a number typed beside a star is worth less than the page it came
-from. That makes it a link somewhere in the layout, not a line in this list.
 
 ### 稼働時間が固定値になっている — 文言が追いついていない
 **2026-09-05、暫定。** Jibble での打刻をやめたので `src/lib/work-statistics.ts` の
@@ -142,490 +67,33 @@ When one becomes real: write its `page.tsx`, drop `noindex`, drop its entry from
 `PLACEHOLDER_SEGMENTS` in `src/views/under-construction/pages.ts`, and **add it to
 `src/app/sitemap.ts`** — placeholders are deliberately absent from the sitemap.
 
-### ~~No contact route~~ — `/contact` は両ロケールにある
-`src/views/contact.tsx` と `src/views/contact/form.tsx`、ルートは
-`src/app/(ja)/contact/` と `src/app/(en)/en/contact/`。バックエンドは
-`gc_run_functions/contact_form/main.py`（`terraform/contact.tf` がデプロイ）。
-
-項目は **会社名（任意）→ お名前 → メールアドレス → 本文**。会社名が名前の上にあるのは
-日本の法人向けフォームの並び（名刺と同じ順）で、既定ロケールが日本語だから。値があれば
-**件名にも入る** — 受信箱の一覧で誰から来たのか分かるのがこの項目を集めている理由なので、
-本文の中だけでは半分しか役に立たない。
-
-**エンドポイントは検証済み**（`terraform output contact_form_uri` と一致）。URL の
-ハッシュは Cloud Run のプロジェクト単位の値なので、`work-statistics` と同じものが付く。
-
-ヒーローにあったインラインのフォームは繋がずに削除した。項目が2つで本文欄が無く、
-件名の無い問い合わせしか作れなかったので。
-
-`contact` は `nav` の5項目目で、専用の CTA は無い。ヘッダーの幅がどれだけ残っているかと、
-**IP レートリミットを作ってから消した理由**はステップ7に。後者はここで最も再提案され
-やすい判断。
 
 ---
 
-## The GCP migration, in order
+## 期限とアカウント
 
-**Decided:** the backend moves to GCP, provisioned with **Terraform**, as **two
-Cloud Run functions**. The stats one goes first — it proves the whole chain
-(Terraform, Secret Manager, Cloud Run, Scheduler, GCS, CORS) with a trivial
-payload, no form UI, no email deliverability and no spam surface. The contact form
-then lands on ground that is known to work.
+### 無料トライアルが 2026-11-03 に切れる
+課金開始日から90日。**切れるとワークロードは課金ではなく停止する。** 復帰は
+アップグレードで30日の猶予、その後は削除。
 
-Both are functions, not services and not jobs. A **function defaults to a
-concurrency of 1**, which is the Lambda-shaped execution model this code was
-written for, and it deploys from source with no Dockerfile. A Cloud Run *service*
-defaults to 80 concurrent requests per instance — a difference that matters, see
-step 7. A **job** would suit the stats side on paper (it runs to completion and
-needs no URL) but it is a second deployment shape, a second Terraform pattern and a
-second mental model for two lines of IAM saved. Not worth it at this size.
+いま全部 always-free tier の中に収まっているので**早期アップグレードの費用はゼロ**で、
+残クレジットも期限まで使えます。つまり待つ理由が費用ではない。
 
-Ordered by dependency, not by size. Steps 1 and 2 can run in parallel; everything
-after 2 is a chain.
+保留の理由は「AI をページに載せるかもしれず、その運用コストの実額を見てから決めたい」
+（2026-09-05）。ただし**それを測る道具が下の予算アラートで、まだ無い**。
 
-**Reversed: this does run in GitHub Actions**, in its own workflow `infra.yml`. An
-earlier version of this entry said it must not, on the grounds that a long-lived
-service account key in repository secrets was too high a price. Two things changed
-that. Manual `terraform apply` was rejected as the standing procedure, and Workload
-Identity Federation removes the key entirely — CI gets a short-lived token bound to
-this repository, so the objection no longer applies to anything.
+### アカウント復旧をループさせない
+Google のサインインは `hello@faredgelabs.com` で、**会社のメールボックスに見えて実体は
+iCloud+ が配送している**。つまり Google の復旧メールは iCloud に届く。改名でこの危険は
+見えにくくなっただけで、小さくなっていない。
 
-What survives from the original reasoning is the *separation*: `deploy.yml` publishes
-the site, `infra.yml` applies the backend, both gated on `paths`, neither aware of the
-other. The stats function writes an object and the page reads it; no deploy waits on
-the other.
+Apple 側の復旧先が Google のアドレスを指していると輪が閉じる。片方を失うともう片方に
+到達できず、**GCP の課金がこのアカウントにぶら下がっているので本番から締め出される。**
 
-`infra.yml` has **one trigger that matters** — a push to `production` — and it plans and
-applies in the same job. Several things were tried and removed on the way there, all of
-them machinery that ran but achieved nothing: a `pull_request` trigger (the release PR
-raises no event), a step commenting the plan on that PR, a plan on `main` pushes to
-substitute for it, an `exitcode` capture reading `tee`'s status instead of Terraform's,
-and `always()` on the summary step, which only covered the case where the plan failed
-and wrote its error to stderr where `tee` never saw it. The reasons are in comments at
-the top of the workflow so the same options are not re-derived.
+**両側にメール以外の要素を置くこと** — 電話番号、Apple の復旧用連絡先、Google の
+バックアップコード。
 
-### 1. Probe the Jibble API — **done**
-`probe.py` dumps every response and prints the computed figures. Credentials are
-OAuth2 client-credentials against `https://identity.prod.jibble.io/connect/token`;
-Jibble's dashboard calls the pair API Key ID and API Key Secret, and **the secret is
-shown once**.
-
-Reading the responses first was the point, and it earned itself twice:
-
-- **`TrackedTimeReport` returns an unassigned bucket as an ordinary row** — `id: ""`,
-  `subject.name: null`, neither omitted nor flagged. Counting rows reports two clients
-  where there is one. Off by exactly one, and entirely plausible on the page.
-- **Break time lands in that bucket**, because the break button selects no project.
-  So the clocked total (296 h/month) is not worked time (174 h). Excluded — with the
-  caveat that "no project" means "cannot tell", not "break": work logged without a
-  project is counted as break by this rule and disappears. `probe.py` also asks
-  `TimesheetsSummary` for Jibble's own worked-versus-break split; **that output has
-  not been compared yet**, and if it agrees it should be preferred, because it does not
-  depend on a habit.
-
-`groupBy=Activity` is fetched and returns nothing but the unassigned bucket — no
-activities are in use. Kept so the number exists the day they are.
-
-### 2. Mail and identity → GCP project → billing — **done**
-No Google Workspace was bought.
-
-| what | where |
-|------|-------|
-| `@faredgelabs.com` mail, receiving and human sending | **iCloud+ custom email domain** |
-| Google / GCP sign-in | **`hello@faredgelabs.com`** — 同一アカウントのアドレス変更。元は `keigo.miyasaka@icloud.com`（ステップ9） |
-| project | `faredgelabs`, number `89292293815`, region `asia-northeast1` |
-| billing | `017BDD-E996A4-F6B56B`, created **2026-08-05** |
-| organization | `keigo-miyasaka-org` (`283976129708`) |
-
-iCloud+ allows up to five custom domains and three addresses per domain per person,
-and the domain can both send and receive. Human correspondence goes out from the same
-address that receives it.
-
-**An organization exists, and it was not planned.** An earlier version of this entry
-recorded "organization resource: none" and reasoned about Cloud Identity Free as the
-way to get one. Creating the billing account produced a **standalone organization**
-automatically — Google does that when you sign up with a Google email address rather
-than a domain — along with a `My First Project` that has since been deleted. Both
-`faredgelabs` and `farm-scoring-system` were moved under it.
-
-Its display name cannot be changed: an organization is bound to one domain at
-creation, and a standalone one has no domain. Getting `faredgelabs.com` as the name
-means Cloud Identity Free on the domain, which creates a *second* organization, a
-migration, and a new `@faredgelabs.com` Google identity to sign in as. The advice
-here used to be "decide that on whether you want a company-domain Google identity, not
-on the name". **決めた — 立てる。** 名前ではなく復旧経路のため。ステップ9。
-
-> [!warning] The free trial ends 2026-11-03
-> 90 days from the billing account, and **the workloads are shut down when it ends**,
-> not billed. 30 days of grace to reinstate by upgrading, then they are deleted.
-> Upgrading early costs nothing here (this all sits inside the always-free tier) and
-> removes the cliff; the remaining credit stays usable until it expires.
-
-> [!warning] Do not let account recovery form a loop
-> Google sign-in is `hello@faredgelabs.com`, which **looks like a company mailbox but
-> is delivered by iCloud+**, so **Google's recovery mail arrives at iCloud** exactly as
-> before. The rename made the hazard harder to see, not smaller.
-> If Apple's recovery then points at a Google address, the loop closes:
-> lose one and you cannot reach the other. GCP billing hangs off this account, so the
-> loop would lock production out.
->
-> Put a **non-email** factor on both sides — phone number, Apple recovery contact,
-> Google backup codes.
-
-### 3. Terraform bootstrap — **done**
-`terraform/` holds 48 resources in five files: `versions.tf` (constraints, backend,
-provider), `variables.tf`, `outputs.tf`, `wif.tf`, `main.tf`. Terraform concatenates
-every `.tf` in a directory before evaluating any of it, so the split is for readers
-only — `wif.tf` stays separate because it is the security boundary and changes for
-different reasons than the function.
-
-No shell bootstrap script was written, and none is needed: the pool, provider,
-service accounts and IAM are all Terraform resources. Putting the `attribute_condition`
-in a script would have moved the security-critical line outside the tool that
-describes the infrastructure, where drift is invisible.
-
-**State is in `gs://faredgelabs-tfstate`.** The one genuine circularity — a bucket
-cannot hold its own state before it exists — was resolved by applying with local
-state, then enabling the backend block and `terraform init -migrate-state`. Done
-once; the backend block stays enabled. The bucket carries `prevent_destroy`.
-
-Everything is enabled in Terraform rather than the console. A missing
-"authentication required" is invisible in a console and a visible diff in a plan.
-
-### 4. Restructure the directories — **done**
-`cdk/` is deleted. `lambda_functions/` is now `gc_run_functions/`, and
-`content_crud` went with it — it served the old admin CMS, which the static
-rebuild removed. Only `contact_form` survives, and only for its logic: it is still
-the AWS handler and has to be rewritten for Cloud Run in step 7.
-
-`terraform/` does not exist yet; it arrives with step 3.
-
-The directory name is correct as it stands: both pieces are Cloud Run **functions**,
-so `gc_run_functions/` says what is in it. An earlier note here suggested renaming
-it if a job moved in — no job is coming, so leave it alone.
-
-> [!warning] This repo has never owned an AWS resource. Do not go looking.
-> Verified against the account, not inferred: there is **no** `faredgelabs-*`
-> anything — no CloudFormation stack, no DynamoDB table, no S3 bucket, no Lambda,
-> no API Gateway, no Cognito pool. The CDK app defined `faredgelabs-lambda` and
-> `faredgelabs-apigw` and was **never deployed**; `cdk/` was a copy of another
-> project's IaC with the names swapped.
->
-> What *does* exist in that account is `auditive-*` — tables, a bucket, two
-> Lambdas, a REST API and a user pool belonging to **auditive.tokyo, a different
-> site**. An earlier draft of this file claimed the `faredgelabs-*` resources were
-> "live and still billing". That was wrong, and it is a dangerous kind of wrong:
-> anyone acting on it would find the similarly-named `auditive-*` resources and
-> delete another site's data. **Nothing in this account is ours to remove.**
-
-### 5. The stats function — **deployed and verified**
-`work-statistics`, a Cloud Run function on `python312`, entry point
-`refresh_work_statistics`, invoked daily at 06:00 Asia/Tokyo by Cloud Scheduler.
-Confirmed end to end: the scheduler run wrote the object, and the function's URL
-answers **403** to an unauthenticated caller.
-
-Jibble credentials come from Secret Manager as environment variables. The runtime
-service account may read those two secrets and write to the one public bucket — that
-is the whole list.
-
-`probe.py` imports from `main.py` rather than reimplementing, because the two places
-a wrong-but-plausible number comes from — parsing ISO 8601 durations and excluding
-the unassigned bucket — must have one implementation.
-
-> [!important] Three things that were only found by deploying
-> - **`date.today()` reads the container's clock, and Cloud Run runs in UTC.**
->   Scheduling for the JST morning would put the window a whole day behind what the
->   Jibble dashboard shows, permanently. `WINDOW_TIMEZONE` fixes it, and a JST laptop
->   hides the bug completely.
-> - **`zoneinfo` ships no timezone data.** It reads the host database and raises
->   without one, so `tzdata` is a runtime dependency, not an optional extra.
-> - **Cloud Build needs its own service account.** Google changed the default and the
->   first apply failed with "missing permission on the build service account". Fixed
->   with a dedicated builder, *not* by widening the default compute account — that one
->   carries Editor on the whole project.
-
-> [!warning] A function has a URL. It is locked down in Terraform, not by hand.
-> 1. No unauthenticated invocations
-> 2. `roles/run.invoker` granted **on the underlying Cloud Run service** to the
->    scheduler's account only — `cloudfunctions.invoker` is how a gen2 function keeps
->    answering 403 to the caller you meant to allow
-> 3. Scheduler attaches an **OIDC token** whose audience is the function's URL
->
-> Get it wrong and the endpoint is world-callable while still looking like it works.
-> The damage is strangers burning Jibble API calls, tripping its rate limit so the
-> figures stop updating, and running up invocations.
-
-What it aggregates, over the **trailing 30 days** and nothing else:
-
-- distinct clients
-- distinct projects
-- hours tracked
-
-Counts and a total — **no client or project names leave Jibble.** The panel shows
-aggregates, so the function should not fetch identities it has no use for.
-
-No database. Three scalars, no queries, no history — Firestore or anything like it
-would be ceremony. It earns a place only if a trend line is ever wanted.
-
-### 6. Publish the object — **done**. Wire the frontend — **done**
-Live and checked with `curl`:
-
-```
-https://storage.googleapis.com/faredgelabs-public/stats.json
-  200  cache-control: public, max-age=1800  content-type: application/json
-  Origin: https://faredgelabs.com  → access-control-allow-origin returned
-  Origin: https://example.com      → no CORS headers
-```
-
-GCS serves it directly and answers preflights itself, so there is no gateway to
-build — that piece only existed in the AWS sketch because the S3 bucket was fully
-private.
-
-Two traps, both handled, both worth keeping written down:
-
-- A public object with **no explicit `Cache-Control` is served
-  `public, max-age=3600`**, so a fresh write can read stale for an hour. Set
-  deliberately to 1800.
-- The anonymous URL is `storage.googleapis.com/<bucket>/<object>`.
-  `storage.cloud.google.com` demands authentication even for public objects.
-
-**フロントエンドも繋がった。** `src/lib/work-statistics.ts` がこのオブジェクトを取り、
-`hero-stats.tsx` が描く。空の状態は `—`（上の `hero.stats` の項）。Scheduler は
-06:00 JST の日次で、OIDC トークン付きで私物の関数を叩く（ステップ5）。
-
-`statsUrl` は環境変数ではなく `src/lib/site.ts` にリテラルで置いてある。バケットは
-1つで Terraform が名前を決めているので、設定可能にすると**忘れる余地が増えるだけ**で、
-しかも忘れたときの症状が「パネルが永久に埋まらない」という静かなもの。代償はバケットを
-改名したらここも直すこと。`NEXT_PUBLIC_SITE_URL` が localhost を既定にして「忘れたら
-騒がしい」側に倒してあるのと逆の判断で、逆にしてある理由がこれ。
-
-**A webhook will not replace the cron.** Jibble publishes none — the third-party
-"Jibble webhook" integrations are polling in costume. And it would not help anyway:
-a *trailing 30-day* figure changes when the clock moves, not when data does, so it
-needs a tick regardless of what events exist.
-
-### 7. Port the contact form — **done**、残り1点
-Cloud Run function と両ロケールの `/contact`。メールは**訪問者との往復ではなく運営者へ
-の私信**で、その前提が以下のほとんどを決めている。
-
-**本番で往復まで確認済み。** エンドポイント、CORS、Turnstile、入力検証、SMTP 送信。
-
-このアカウントは Zoho の **JP データセンター**にある。`smtp.zoho.jp` の 465 と 587 が
-通り、`.com` / `.eu` / `.in` は 535 を返す。ホストを動かす理由はない。
-
-以下は解決済みの記録として残す。特に**3層に落とした理由**と**`contact` を `nav` に
-入れない理由**は、どちらも「良くしよう」として戻されやすい。
-
-#### フロントエンド側で決めたこと
-
-- **`contact` は `nav` の5項目目。** 一度ヘッダーの CTA ピルとして特別扱いにして、
-  戻した。行き先の1つであって別種のものではないので、専用のボタンを与えると
-  「これは違う何かだ」と言ってしまう。CTA スロットは元どおり言語切替。
-  > **ja のピルは 672px で、1024px のときロゴとの余白が 8.8px。** 中央のピルは
-  > ビューポートに対して中央寄せかつ中身に合わせて伸びるので、ラベル1つで両側が同時に
-  > 詰まる。実フォントのメトリクスから測った値で（4項目なら 508px）、収まってはいるが
-  > **ヘッダーが一番詰まる状態**。1024px より広ければ増分の半分ずつ両側に付く。
-  > **6項目目やラベルの延長は目分量ではなく測り直すこと。** en は "Contact" で
-  > 624.9px / 余白 +32.3px。`_measure.py` 相当の計算は
-  > `src/views/home/site-header.tsx` の注記にある数字で足りる。
-- **Turnstile は明示レンダリング。** `class="cf-turnstile"` + `data-callback` の暗黙
-  レンダリングは、トークンの受け取りが**グローバル関数名**になる。`?render=explicit` と
-  `turnstile.render()` ならコールバックがクロージャで済む。`src/hooks/use-turnstile.ts`。
-- **トークンは使い捨てなので、送信が失敗したら `reset()`。** 忘れると
-  「1通目は届くが2通目から必ず `timeout-or-duplicate` で落ちる」という、手で1回試す
-  だけでは見つからない壊れ方をする。
-- **`aria-invalid:` は Tailwind の既定バリアントに無い**（`checked` や `disabled` は
-  ある）。`aria-[invalid=true]:` と書く。そのまま書くと**静かに効かない**。
-- **サイトキーは公開値。** `deploy.yml` にリテラルで置く。repository secret に入れても
-  隠れるのは自分に対してだけ。既定値は Cloudflare のテスト用キーで、本番で設定を忘れて
-  も**本番の secret がダミートークンを拒否するので抜け道にならない**。
-
-#### Settled
-
-- **The notification goes to the iCloud `@faredgelabs.com` address**, never to the
-  personal `@icloud.com` one. Replying in iCloud Mail then goes out as the
-  faredgelabs identity. Deliver it to a personal address and every reply carries a
-  personal or unrelated From to a prospect.
-- **No auto-reply to the visitor.** It doubles the send volume, and — more
-  importantly — it turns a form that only ever mails *you* into one that mails
-  addresses **strangers typed in**. That is where sender reputation starts to
-  matter and where the form becomes a way to make you mail a third party.
-- **An enquiry must survive a failed send** — but only the failed ones are worth
-  keeping. An earlier draft here said to persist every submission before notifying;
-  that was narrowed, correctly, because a stored copy of a mail that arrived is a
-  second copy of something you already have, with a TTL to manage. **Log the content
-  to Cloud Logging on send failure only.** No Firestore, no TTL, and no personal data
-  in logs on the normal path — which also fixes the old handler's
-  `print(json.dumps(event))`, currently dumping every name, address and message.
-
-#### Protection: three layers, cheapest and most effective first
-
-> [!important] There were four. The IP rate limiter was built, then deleted — read this
-> before rebuilding it
-> It was written: Firestore, TTL policy, sliding window, three in five minutes. It came
-> out again because putting numbers on it broke the argument for it.
->
-> - **Three in five minutes still passes 864 a day.** That does not protect Zoho's
->   daily cap, which is the asset this section names as the thing that matters
-> - **Distribute the source and per-IP misses entirely** — and distribution is the
->   natural shape of a flood, not an exotic one
-> - What remained was "a naive loop that already passed Turnstile", plus double
->   submits. The first is bot-shaped, so it is layer 1's job; the second belongs in the
->   form's own disabled-button state, not the backend
->
-> Against that, the standing cost was **`roles/datastore.user` on the whole project**
-> (Firestore has no per-collection IAM, so the narrowest predefined role still reaches
-> every document in every collection), a **fail-closed path that takes the form down
-> when Firestore is unwell**, `google-cloud-firestore` in the cold start, and three
-> Terraform resources. A permanent widening bought against a low-probability event.
->
-> **The accepted risk:** if Turnstile is beaten, Zoho's daily cap drains and real
-> enquiries then fail — the failure this section opens by naming. It is *not* silent
-> though: layer 3 logs every send failure, so it is visible in Cloud Logging. Nobody
-> is watching those logs, which is a different problem with a cheaper fix. **A
-> log-based alert on the send-failure line is the next thing to add, ahead of
-> rebuilding the limiter.**
->
-> Rebuilding is cheap if it ever earns its place. Firestore's location is fixed *after*
-> creation; creating it later in `asia-northeast1` costs nothing extra. The code is in
-> git history.
->
-> This also removed a task: **measuring `X-Forwarded-For` is no longer needed.** The
-> only consumer of a trustworthy client IP was the limiter. `remoteip` on `siteverify`
-> is optional, and passing a *wrong* IP is worse than omitting it, so it is omitted.
-> The trap below is kept because it is what makes rebuilding safe, not because
-> anything currently depends on it.
-
-The function has to accept unauthenticated requests from strangers — a static page has
-no credential to present, so `allow_unauthenticated` is unavoidable and every control
-lives in what the function does.
-
-> [!warning] CORS will not protect this, and it is the natural mistake to make here
-> A `POST` from `curl` ignores CORS entirely; it is enforced by browsers, on browsers.
-> The bucket's CORS rule protects nothing either — see step 6.
-
-**What actually breaks when it is abused** is not the invocation bill. It is **Zoho's
-daily sending cap**: a flood exhausts it, and then *real* enquiries fail silently and
-the way you notice is that nobody is contacting you. So the goal is protecting the
-channel, not blocking requests.
-
-1. **Cloudflare Turnstile.** Managed mode is free for unlimited use and works on any
-   site regardless of whether it is proxied through Cloudflare — which matters, since
-   DNS here must stay "DNS only". Bots are the overwhelming majority of contact-form
-   abuse, so this is where volume actually stops. Tokens last five minutes and are
-   verified server-side against `siteverify`.
-2. **Cap the input.** Lengths on name, email and message, and a shape check on the
-   address. The current handler has **no caps at all** — a 10 MB body would be accepted
-   and mailed.
-3. **Log the content on send failure only.** No personal data in logs on the normal
-   path — see "Settled" above. This is also the only place a drained Zoho cap becomes
-   visible, which is why the alert mentioned above hangs off it.
-
-~~**Rate limit per IP.**~~ **Removed — see the note above.** The traps are kept below
-because they are what a rebuild would need, and every one of them is a real CVE class:
-   - **IPv6 must be bucketed by prefix, not address.** An ISP hands a household at
-     least a **/64 — 2^64 addresses** (RIPE suggests /56 for home users, /48 for
-     businesses). Keyed on the full /128, a client rotates addresses for free and the
-     limiter is decoration. Bucket on **/64**.
-   - **Do not mask IPv4 the same way.** IPv4-mapped IPv6 (`::ffff:a.b.c.d`) has 80
-     leading zero bits, so a /56 mask collapses **every IPv4 client into one bucket** —
-     one abuser then returns 429 to everyone else. Separate masks, and normalise the
-     mapped form first.
-   - **Normalise the text before keying.** One address has several valid
-     representations; comparing strings lets the same client look like many.
-   - And **fail closed.** The old handler returned `True` when the table errored, so a
-     broken limiter meant no limit.
-   - **Measure what Cloud Run puts in `X-Forwarded-For`** rather than reasoning about
-     it: send a request with a forged header and log what arrives. The header is
-     append-only and the left end is attacker-controlled; leftmost parsing is its own
-     vulnerability class.
-~~**Firestore for the counter, with its built-in TTL policy.**~~ Also removed. If it
-returns, the caveat that shaped it still holds: **TTL deletion happens within 24 hours
-of expiry, not at expiry.** A "3 in 5 minutes" window cannot rely on the document being
-gone — compare timestamps in code and let TTL do housekeeping only.
-
-**Not doing: Cloud Armor.** A real WAF with edge rate limiting, but it needs a global
-load balancer in front of Cloud Run, which bills hourly whether or not anyone visits.
-Disproportionate for one form.
-
-**What bounds the bill instead is `max_instance_count = 3`** on the function. It stops
-nothing, but it converts "the invocation bill grows without limit" into "requests get
-429 or 503" — free, and for a site this size the only cost control that matters. Raise
-it knowing that is what you are raising.
-
-Order matters, and it is why the limiter lost: Turnstile removes the traffic the limiter
-was meant to catch, and the limiter was the only stateful piece. Building the stateful
-thing first and skipping the free effective one is exactly the shape of the handler that
-was replaced — a DynamoDB rate limiter, no CAPTCHA and no input caps.
-
-#### Who sends it: the existing Zoho mailbox
-**Settled by test, not by reading.** The live contact form on auditive.tokyo was
-submitted and the mail arrived, so `info@auditive.tokyo` over `smtp.zoho.jp:465`
-works today. The handler already speaks it, and GCP restricts neither 465 nor 587.
-
-Its real attraction: **nothing is added to `faredgelabs.com`'s DNS.** The apex stays
-purely iCloud — no DKIM, no send subdomain, no second sender to keep aligned.
-
-> [!warning] This is a grandfathered plan. It cannot be re-created.
-> Zoho's free plan is **closed to new signups**; accounts that already had it keep
-> it. So the dependency is not "a Zoho free account" — it is *this* Zoho account.
-> Close it, downgrade it, migrate it, or lose it, and there is no going back to the
-> same terms.
->
-> Combined with the coupling it introduces — FarEdge's enquiry path resting on
-> another business's credential, and a **mailbox login** rather than a send-only
-> key — treat this as the cheap option it is, not as infrastructure. Which is why
-> the fallback below is worth keeping written down.
-
-**Do not try to move `faredgelabs.com` into Zoho** to make the From match. A hosted
-domain there wants Zoho's MX, and the apex MX belongs to iCloud. The notification
-carries the auditive identity, and that is exactly why it must be delivered to the
-iCloud `@faredgelabs.com` address — see "Settled" above.
-
-#### Fallback if Zoho ever stops: Resend
-Free tier is **100/day and 3,000/month**, and the quota counts **received as well as
-sent**, each To/CC/BCC recipient separately.
-
-The DNS objection people expect does not apply: Resend puts its **SPF and MX on a
-`send.` subdomain** (its Return-Path), so verifying the apex leaves iCloud's apex MX
-and SPF untouched. Only the DKIM TXT sits on the apex, under a different selector
-from iCloud's, and that gives strict DKIM alignment for DMARC. **No SPF merging is
-needed.** (If it ever were: one SPF TXT per name, and a 10-DNS-lookup ceiling above
-which SPF permerrors and fails outright.)
-
-Switching is roughly fifteen lines — `smtplib` out, one HTTPS call in. Keep the mail
-send behind a single function so that stays true.
-
-#### ~~The existing handler is AWS-shaped — budget a rewrite, not a copy~~ — done
-
-`app.py` is gone; `gc_run_functions/contact_form/main.py` replaced it, and
-`terraform/contact.tf` deploys it. The rewrite was the right budget — two of the
-findings were bugs that only appear on Cloud Run, and the reasoning for each now lives
-next to the code that fixes it rather than here:
-
-- **`_request_origin` was a module-level global mutated per request.** Correct under
-  Lambda's one-request-per-container model; on Cloud Run two concurrent submissions
-  swap each other's `Access-Control-Allow-Origin`
-- **The subject line interpolated the raw name**, so `\r\n` in it injects SMTP headers
-  — `Bcc:` turns the form into someone else's sending relay
-- `lambda_handler(event, context)` → an HTTP handler that answers `OPTIONS` itself,
-  since there is no API Gateway to do it
-- `print("Received event:", json.dumps(event))` was writing every name, address and
-  message to Cloud Logging on the normal path
-- No length caps, no address-shape check, and `smtplib` with no timeout
-- `ALLOWED_ORIGINS` pointed at `auditive-tokyo.github.io` and Vite's 5173
-
-フロントエンドも済んだ。このリポジトリで**最初の `<form>`、最初の `<label>`、最初の
-外部スクリプト**なので、形を決めたのはここ — 前例が無かった。`src/views/contact/form.tsx`
-と `src/hooks/use-turnstile.ts`。
-
-### 8. ~~Tear down AWS~~ — nothing to tear down
-Deleting `cdk/` was the whole teardown. See the warning in step 4: there was never
-a deployed AWS resource belonging to this site, so there is no bill to stop and
-nothing to destroy. The step is kept, struck through, so the question is not asked
-a third time.
-
-### 9. Cloud Identity を立てて org を移す — 決定済み、未着手
+### Cloud Identity を立てて org を移す — 決定済み、未着手
 `faredgelabs.com` で **Cloud Identity Free** を立て、そこに現れる新しい org へプロジェクトを
 移す。2026-08-31 決定。急ぎではない。
 
@@ -645,7 +113,7 @@ a third time.
 いない。CI 側はサービスアカウントキーを持たない WIF なのに、人間側だけ復旧経路が無い。
 表示名が会社名になるのは副産物。
 
-**サインインアドレスはもう iCloud のものではない。** ステップ2の表にあった
+**サインインアドレスはもう iCloud のものではない。** 旧来の
 `keigo.miyasaka@icloud.com` と `hello@faredgelabs.com` は**同一アカウント**
 （`sub` は `100709608036505294284`）で、アドレスだけが変わっている。gcloud はログイン時の
 ラベルを `credentials.db` の主キーとしてキャッシュするため、`gcloud auth list` が古い方を
@@ -683,13 +151,127 @@ a third time.
 > 「ついでに移した」で決まってしまう。
 
 > [!warning] 無料試用の終了 2026-11-03 とぶつけないこと
-> ステップ2の警告のとおり、終了時点でワークロードは課金ではなく**停止**される。移行と
+> 上の「無料トライアルが 2026-11-03 に切れる」のとおり、終了時点でワークロードは課金
+> ではなく**停止**される。移行と
 > その期限が重なると、切り分けのできない障害になる。**先に試用をアップグレードして崖を
 > 無くしてから移すこと** — この構成は always-free の範囲なので、アップグレード自体に
 > 費用は付かない。
 
 
 ---
+
+
+---
+
+## 監視が無い
+
+### 予算アラートが無い
+トライアル中は $300 が失敗を静かに吸収する。無認証の関数を叩かれているときに一番
+望ましくない挙動。
+
+`faredgelabs` プロジェクト（番号 `89292293815`）に絞り、
+**`--credit-types-treatment=exclude-all-credits` を付ける** — 付けないとクレジット控除
+*後*の支出を測るので、トライアル中は永久に鳴らない。
+
+Terraform に入れないのは意図的で、`google_billing_budget` は請求先アカウントへの IAM を
+要求する。予算1つのために CI のサービスアカウントをプロジェクトの外へ広げる価値は無い。
+
+**これは単独の項目ではない。** 上のトライアルの判断（実額を見てから）も、`main.tf` の
+「イメージの増え方は予算アラートが教えてくれる」という注記も、これがある前提で書かれて
+いる。無いあいだ、両方が宙に浮いている。
+
+### 送信失敗のログベースアラートが無い
+`contact-form` の IP レートリミッタを外したときの**受け入れたリスクの前提**がこれ。理由は
+`gc_run_functions/contact_form/main.py` の冒頭にある。
+
+要旨: Turnstile が破られると Zoho の日次上限が枯れ、そのあと本物の問い合わせが失敗する。
+その失敗は *silent ではない* — 送信失敗は必ず Cloud Logging に出る、というのが受け入れの
+根拠だった。**しかし誰も見ていないので実質 silent。**
+
+送信失敗の行に対するログベースアラートを1本張れば前提が成立する。**リミッタを作り直すより
+先にこれ。**
+
+
+---
+
+## 次に作るもの
+
+### ヒーローの man に話しかけられるようにする
+**設計は固まった、未着手（2026-09-08 合意）。** 画面中央の man をクリックすると音声で
+会話でき、**代表の履歴書を根拠に**「何ができて何ができないか」を答える。
+
+| 項目 | 決定 |
+|---|---|
+| プロバイダ | **OpenAI Realtime**（ネイティブ音声、ブラウザからは **WebRTC**） |
+| 認証 | **SDP 中継。** ブラウザには API キーも一時トークンも渡さない |
+| 関数 | Python、依存は `functions-framework` のみ、**OpenAI SDK なし** |
+| グラウンディング | 履歴書を `instructions` に入れる。**RAG も vector store も無し** |
+| 濫用対策 | 中継の門に Turnstile。モデルと `instructions` はサーバ側で固定 |
+| 当たり判定 | 計算した頭の位置に**見えるボタン** |
+
+```
+ブラウザ ──POST application/sdp──▶ Cloud Run function ──▶ api.openai.com/v1/realtime/calls
+                                     （API キーはここ）
+ブラウザ ⇄ OpenAI で音声が直結。自分のインフラはメディア経路に入らない
+```
+
+**STUN も TURN も signaling サーバも要らない。** 関数の仕事は「ボディを受けて上流に
+POST して返す」だけで、`contact-form` と同じ形。会話の開始ごとに1回、数百ミリ秒。
+
+> [!important] これは**2つ目の無認証エンドポイント**になる
+> `CLAUDE.md` は現在 `contact-form` を "the one unauthenticated endpoint in the
+> project" と書いている。**着手したらその記述が嘘になる**ので直すこと。
+>
+> ただし性質は `contact-form` より良い。キーもモデルも `instructions` も**サーバ側**に
+> あるので、濫用者にできるのは「会話を始めること」だけ。支出は OpenAI 側の GUI で
+> 上限を設定して止める（GCP の予算アラートは*通知*しかしないので、こちらのほうが強い）。
+
+#### 却下した案と、その理由
+
+再提案されやすい順に。
+
+| 案 | 却下の理由 |
+|---|---|
+| **Vertex AI を使う** | **一時トークンが無い**（[js-genai#766](https://github.com/googleapis/js-genai/issues/766) は 2025-07 からオープン、優先度 p3）。ブラウザから使うには**自前の WS プロキシ**が要り、`contact.tf` の「concurrency > 1 には `available_cpu >= 1`」に当たる。`max_instance_count = 3` が費用の上限ではなく**同時会話数の上限**に変わり、音声が全部自分の関数を通る |
+| **Vertex AI Vector Search** | **ノード時間課金でゼロにスケールしない。** 中規模で月 $700〜800。誰も来なくても課金される点で、Cloud Armor を却下したのと同じ形 |
+| **vector search / RAG を入れる** | 履歴書は数千トークン。`instructions` に入れれば1往復も増えず、**濫用対策とグラウンディングが同じ仕掛けで済む**。検索が要るのは窓に入らなくなってから |
+| **SSE + 逐次 TTS** | テキストをチャンクして TTS に回す形は、**境界の判断が言語ごとに変わり音声が途切れる**（実経験）。ネイティブ音声ならこの問題自体が存在しない |
+| **Gemini Live** | ブラウザからは**生の WebSocket** のみ（WebRTC は LiveKit 等のパートナー経由）。**エコーキャンセルもジッタバッファも自前**になる。スピーカーで喋る訪問者が相手なので、ここは音質より手前の問題 |
+| **一時トークン方式** | 動くが、SDP 中継のほうが良い。**短命であれブラウザに何も渡さない**、かつセッション設定を中継の瞬間に確定できる。TTL を何分にするかという悩みも消える |
+| **`min_instance_count` でコールドスタートを消す** | **常時課金。** Cloud Armor / Vector Search と同じ理由で却下。`startup_cpu_boost` は Cloud Run *service* にしか無く、関数から service へ移るのは「関数を選んだ理由」を捨てること |
+| **Go で書く** | 3つ目の言語かつ2つ目のデプロイ形。**コールドスタートの正体は言語ではなく import** で、この関数は依存が `functions-framework` だけなので Python の不利がほぼ出ない |
+| **OpenAI SDK を入れる** | 上の利点が消える。`urllib.request` で足りる（`application/sdp` のバイト列を素通しするだけで JSON パースすら不要）。**入れたくなるが入れない** |
+
+#### 着手前に決めること
+
+- **man は何を答えるのか。** `instructions` はサーバ側で固定できるので、範囲を絞るのは
+  技術的には簡単。**難しいのは何と答えさせるか**。マーケティングサイトで幻覚は負債
+- **日本語の音声品質。** 既定ロケールが日本語。読んで決められないので実際に喋らせる。
+  対象は `GPT-Realtime-2`（reasoning の強度を設定できる音声モデル）
+- 両ロケール対応
+
+#### 当たり判定の実装メモ
+
+図形は**動かない**。3フレーム（0/50/100%）を実測して、頭は横 0.37〜0.60、肩まで含めて
+0.15〜0.85（962×720 の正規化座標）に収まり、**首から上が回転しているだけで body は
+移動しない**。だから毎フレームの座標追跡は不要。
+
+ただし**画面座標は固定ではない**:
+
+- `fixed inset-0` + `object-cover` なので、**ビューポートのアスペクト比で切り取られ方が
+  変わる**。`max(W/962, H/720)` のカバー倍率から計算する。ピクセルを焼かない
+- **`mirror` が有効**なので横方向は反転する
+- **スマホでは頭がコピーカードの真後ろ**に来る。breakpoint ごとに置き場が変わる
+
+> [!warning] canvas に不可視のヒットテストを置かないこと
+> 3つ衝突する。**(1)** フィールドは `-z-10` かつ `aria-hidden="true"` — 支援技術から
+> 隠された要素をインタラクティブにはできない。**(2)** `pointerdown` は既にスクラブを
+> 動かしている（`hero-field.tsx`）ので、タッチでは「タップ = スクラブ」と奪い合う。
+> **(3)** WebGL2 が無いとヒーローは空なので、透明なボタンだけが浮く。
+>
+> そして何より、**誰も背景をクリックしない。** 見える affordance にすれば3つとも消える。
+
+マイク許可は避けられない（合意済み）。ボタンを押してから求める導線にはできる。
 
 ## Decisions still open
 
@@ -705,6 +287,105 @@ Revisit the two-palette decision when the logo is designed.
 with the same change.
 
 ---
+
+### DNS を Terraform に入れるかは、まだ開いている
+ゾーンは Cloudflare（`craig`/`penny.ns.cloudflare.com`）にあり、**コンソール管理のまま**。
+「コンソールではなく Terraform」という他の全部と逆になっているので、理由を残す。
+
+**ゾーンの半分がメール基盤だから。** MX ×2、SPF、DKIM、`apple-domain` の検証 TXT が
+iCloud のもので、問い合わせの通知はそこへ届く。plan を間違えると**問い合わせが静かに
+届かなくなる** — `gc_run_functions/contact_form/main.py` 冒頭がレートリミッタを外した
+理由として名指ししている、まさにその壊れ方。
+
+見返りも小さい。IaC の利点は drift が `plan` に出ることだが、**このゾーンは drift しない**。
+apex の A/AAAA は GitHub の固定値、メール系は iCloud の固定値。
+
+やるなら形は決まっている: `cloudflare_record` はレコード単位なので、**このリポジトリが
+所有するもの（apex の A/AAAA、`www` の CNAME）だけを入れて、メール系4件は触らない**。
+ゾーンファイル方式と違い、知らないレコードを消さない。トークンはアカウント全体ではなく
+**このゾーンの `Zone:DNS:Edit` だけ**に絞ること。
+
+### Zoho が止まったときの移行先は Resend
+`contact-form` は `smtp.zoho.jp:465` から `info@auditive.tokyo` として送っている。**Zoho の
+無料プランは新規受付を終了していて、既存アカウントだけが持ち続けている。** つまり依存先は
+「Zoho の無料枠」ではなく*この*アカウントで、しかも**別事業のもの**、かつ送信専用鍵ではなく
+メールボックスのログイン。解約・ダウングレード・移行・喪失のどれでも同じ条件には戻れない。
+
+止まる可能性がゼロではないので、移行先だけ決めてある。
+
+無料枠は **100/日・3,000/月**で、**受信も送信と同じ枠を消費**し、To/CC/BCC は宛先ごとに
+1通と数える。
+
+**DNS の懸念は当たらない。** Resend は SPF と MX を `send.` サブドメイン（Return-Path）に
+置くので、apex の iCloud MX と SPF はそのまま。apex に乗るのは DKIM の TXT だけで、
+iCloud とは別セレクタなので DMARC の DKIM アラインメントが厳密に取れる。**SPF の統合は
+不要。**（必要になった場合: SPF TXT は1名前に1本、かつ DNS ルックアップ10回の上限を
+超えると permerror で落ちる。）
+
+差し替えは15行程度 — `smtplib` を抜いて HTTPS 呼び出し1本。**そうあり続けるよう、メール
+送信は1つの関数の内側に閉じておくこと。**
+
+
+---
+
+### CLAUDE.md を分割し、`obsidian/` を畳んでいく
+**方向は決定、やり方は未確定。少しずつ進める（2026-09-08 合意）。**
+
+ルートの `CLAUDE.md` は **394行**。公式の目安は**1ファイル 200行未満**で、
+「長いほどコンテキストを食い、遵守率が下がる」と明記されている。狙いは、
+ルートには構成と全体に効く規約だけを置き、**そのディレクトリを触ったときだけ**
+詳細が読まれる形にすること。
+
+> [!warning] `@path` インポートでは目的を達成できない
+> 分割の手段として最初に思いつくのがこれだが、**起動時に全部読み込まれる**ので
+> コンテキストは1バイトも減らない。公式に "helps organization but doesn't reduce
+> context, since imported files load at launch" とある。
+>
+> オンデマンドで読ませる仕組みは別に2つある:
+>
+> | 仕組み | 読まれるタイミング |
+> |---|---|
+> | サブディレクトリの `CLAUDE.md` | そのディレクトリのファイルを読んだとき |
+> | `.claude/rules/*.md` + `paths:` frontmatter | パターンに一致するファイルを読んだとき |
+>
+> 後者のほうが細かい。`src/components/animation/springs/**` のように
+> **ディレクトリ境界と一致しない規約**はこちらが向く。
+
+**`/doctor` が同じことをする。** チェック済みの `CLAUDE.md` に対して削減案を出し、
+「コードから導ける内容（ディレクトリ構成、依存一覧、アーキテクチャ概要）を落とし、
+落とし穴・理由・ツール既定と違う規約を残す」と説明されている。手で始める前に一度
+かけてみること。
+
+分割の当たりを付けるための現状（節ごとの行数）:
+
+| 節 | 行 | 行き先の候補 |
+|---|---|---|
+| The backend | 70 | `gc_run_functions/CLAUDE.md` か `terraform/CLAUDE.md` |
+| What the page is made of | 56 | `src/views/home/` |
+| Two locales, two root layouts | 42 | `src/app/` |
+| Colour tokens | 39 | `src/app/globals.css` の近く、または rules |
+| フォームと外部スクリプト | 39 | `src/views/contact/` |
+| The one constraint (`output: "export"`) | 37 | **ルートに残す** — 全体に効く |
+| Hard rules | 24 | **ルートに残す** |
+| Deploying | 22 | `.github/workflows/` |
+| コメントは日本語で書く | 18 | **ルートに残す** |
+| payroll | 13 | `payroll/CLAUDE.md` |
+
+> [!warning] `obsidian/meta/` の2つは畳めない
+> `obsidian/` の大半（`architecture/`、`frontend/` のカタログ）は、まさに `/doctor` が
+> 「コードから導ける」として落とす類なので、ディレクトリ CLAUDE.md へ移すか消せる。
+> **ただし `decisions-log.md`(695行) と `changelog.md`(659行) は種類が違う。**
+>
+> ディレクトリ CLAUDE.md は「いまどうなっているか」を書くもので、ADR は「いつ何を
+> 決め、**何を捨てたか**」を書く記録。畳むと**却下した選択肢が消える** — `CLAUDE.md`
+> 自身が「コードを読んでも復元できないのは *why* だ」と言っている、その部分。
+>
+> `frontend/text-engine-reference.md`(683行) も別枠。ヴェンダリングされた
+> アニメーションエンジンの参照資料なので、`src/components/animation/springs/CLAUDE.md`
+> にするか、**skill にして呼ばれたときだけ読ませる**のが合っている。
+
+進め方は1ディレクトリずつ。**移したら元を消す** — 同じことが2箇所にあると、
+公式が言うとおり「矛盾したときに Claude がどちらかを勝手に選ぶ」状態になる。
 
 ## Known rough edges, consciously left
 
@@ -762,55 +443,3 @@ Cheap fix once the engine is fair game: turn the rule on, or set
   export. **Never accept `npm audit fix --force`** here — it proposes `next@9.3.3`.
 
 ---
-
-## Small and mechanical
-
-- ~~**`infra.yml` has never run.**~~ **走った。WIF の鎖は実証済み** — production への
-  push で7回、うち5回成功。認証・`attribute_condition`・`tf-deployer` の権限は、もう
-  疑う対象ではない。落ちた2回はどちらも設定の中身の問題で、経路の問題ではなかった。
-  > **ローカルで `terraform plan` を強制終了すると CI が止まる。** GCS に
-  > `default.tflock` が残り、次の plan が 412 で落ちる。`plan` のロックなので state を
-  > 書いている途中ではなく、外して壊れるものは無い。ただし **GCS バックエンドの
-  > `force-unlock` は UUID ではなくオブジェクトの `generation` を要求する** —
-  > ロック情報が表示する `ID:` がそれで、`gcloud storage objects describe …
-  > --format='value(generation)'` で取れる。tflock の中身に載っている UUID を渡すと
-  > `Lock ID should be numerical value` で拒否される。
-  >
-  > **これが Apply で `Failed to load "tfplan"` として現れていた理由は
-  > `infra.yml` の `defaults.run.shell` の注記にある。** 症状と原因が別のステップに
-  > 出るので、片方だけ直すともう片方が次の事故で同じ形で戻ってくる。
-- **No budget alert.** During the trial the $300 absorbs a mistake silently, which is
-  the opposite of what is wanted from an unauthenticated function being hammered.
-  Scope it to the `faredgelabs` project (number `89292293815`) and set
-  `--credit-types-treatment=exclude-all-credits`, or it measures spend *after* the
-  credit and never fires. Left out of Terraform on purpose: `google_billing_budget`
-  needs IAM on the billing account, and one budget is not worth widening the CI
-  service account beyond the project.
-- ~~**No AAAA records.**~~ **入れた（2026-08-19）。** apex に `2606:50c0:800{0,1,2,3}::153`
-  の4本、DNS only。A の4本と併存させたデュアルスタックで、4本それぞれに直接繋いで
-  HTTP 200 と TLS 検証通過を確認済み。
-  > **壊れ方は「繋がらない」ではなかった。** `www` は `auditive-tokyo.github.io` への
-  > CNAME なので GitHub 側の AAAA を最初から引き継いでいて、IPv6 で**接続も TLS も
-  > 成功していた**。その上で 301 を返す先が `public/CNAME` の指す apex で、そこに
-  > AAAA が無かった。つまり IPv6-only のクライアントは**接続に成功してから行き止まりに
-  > 送られていた**。片側だけ見て「www は動くから IPv6 は大丈夫」と判断すると見逃す。
-  >
-  > 検証で `curl -6` は当てにならない。macOS の resolver は AAAA の否定キャッシュを
-  > 持っている間 `::ffff:a.b.c.d` を返し、**IPv4 で繋がったものを IPv6 の成功に見せる**。
-  > `--resolve name:443:[addr]` でアドレスを直に指定するのが確実。
-
-### DNS を Terraform に入れるかは、まだ開いている
-ゾーンは Cloudflare（`craig`/`penny.ns.cloudflare.com`）にあり、**コンソール管理のまま**。
-「コンソールではなく Terraform」という他の全部と逆になっているので、理由を残す。
-
-**ゾーンの半分がメール基盤だから。** MX ×2、SPF、DKIM、`apple-domain` の検証 TXT が
-iCloud のもので、問い合わせの通知はそこへ届く。plan を間違えると**問い合わせが静かに
-届かなくなる** — ステップ7がレートリミッタの節で名指ししている、まさにその壊れ方。
-
-見返りも小さい。IaC の利点は drift が `plan` に出ることだが、**このゾーンは drift しない**。
-apex の A/AAAA は GitHub の固定値、メール系は iCloud の固定値。
-
-やるなら形は決まっている: `cloudflare_record` はレコード単位なので、**このリポジトリが
-所有するもの（apex の A/AAAA、`www` の CNAME）だけを入れて、メール系4件は触らない**。
-ゾーンファイル方式と違い、知らないレコードを消さない。トークンはアカウント全体ではなく
-**このゾーンの `Zone:DNS:Edit` だけ**に絞ること。

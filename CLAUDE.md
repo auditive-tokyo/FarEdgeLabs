@@ -48,9 +48,6 @@ two directions work differently:
   unauthenticated endpoint in the project, and its defences are all inside its own
   handler. See "The backend"
 
-Nothing in this repo has ever had an AWS resource of its own — see the warning in
-`TODO.md` before touching an AWS account from here.
-
 ## Two locales, two root layouts
 
 `/` is Japanese, `/en/` is English. The default locale sits at the root because a
@@ -353,7 +350,13 @@ Federation removes the reason to avoid CI.
 DNS lives at Cloudflare and **must stay "DNS only"** — proxying breaks GitHub's
 certificate renewal for the apex and `www` (next renewal 2026-10-29). That is also
 why there is no HSTS: the first `http://` hit reads "not secure" for the moment
-before GitHub's 301, which is accepted rather than worked around.
+before GitHub's 301, which is accepted rather than worked around. And it is why the
+Cloudflare Web Analytics site must be registered as a **manual** install
+(`auto_install: false`) — automatic injection only works on a proxied zone, and a site
+registered as automatic rejects the manually embedded beacon with a 404 — the two modes
+post to different endpoints (`https://<own domain>/cdn-cgi/rum` for automatic,
+`https://cloudflareinsights.com/cdn-cgi/rum` for manual), so the mismatch is silent
+except for that 404.
 
 ## `payroll/` — サイトとは無関係
 

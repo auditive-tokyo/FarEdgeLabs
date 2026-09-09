@@ -18,9 +18,9 @@ const devOrigins = (process.env.NEXT_DEV_ORIGIN ?? "")
   .filter(Boolean);
 
 const nextConfig: NextConfig = {
-  // Static HTML export — GitHub Pages serves files only, there is no Node
-  // runtime. This disables Route Handlers, middleware, ISR, and on-demand
-  // image optimisation by design; the backend is AWS (API Gateway + Lambda).
+  // 静的 HTML export。GitHub Pages はファイルしか返さないので Node ランタイムが無い。
+  // Route Handlers・middleware・ISR・画像最適化が落ちるのは副作用ではなく前提で、
+  // サーバが要る処理は `gc_run_functions/` の Cloud Run functions（GCP）側に置く。
   output: "export",
 
   // Hosts allowed to request `/_next/*` from the dev server. Without the LAN
