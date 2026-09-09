@@ -6,7 +6,6 @@ on:
       - main
     paths-ignore:
       - ".gitignore"
-      - "README.md"
       - "LICENSE.md"
       - "CLAUDE.md"
 

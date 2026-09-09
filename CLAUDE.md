@@ -11,6 +11,21 @@ copy, the routing, the colour system and everything server-shaped have been
 rewritten. Where this guide and the template's own conventions disagree, this
 guide wins.
 
+## 動かす
+
+```bash
+npm ci
+npm run dev        # http://localhost:3000
+```
+
+| コマンド | 何をするか |
+|---|---|
+| `npm run dev` | 開発サーバ |
+| `npm run build` | 静的書き出し（`out/`） |
+| `npm run lint` | ESLint |
+| `npx tsc --noEmit` | 型検査。**lint だけでは死んだ import が見つからない**（ハードルール7） |
+| `npm run brand` | アイコンと OG カードの再生成。ビルドに含まれないので、変えたら手で実行して PNG をコミットする |
+
 ## The one constraint that shapes everything
 
 `next.config.ts` sets `output: "export"`. **There is no server at runtime.** Not
@@ -134,12 +149,12 @@ Sans is **Latin-only** — a Japanese OG card needs a font with the glyphs added
 
 例外メッセージとログ出力は日本語でよい。Cloud Logging は日本語で検索できる。ただし外部から受け取った文字列を混ぜる行は、その部分だけ原文のまま残す。
 
-このファイルと `DECISIONS.md` にはまだ英語が残っている。触るついでに直す。急がない。
+このファイルにはまだ英語が残っている。触るついでに直す。急がない。
 
 ## Colour tokens: which ink goes on which ground
 
 The site follows the OS through `prefers-color-scheme` — **light is pink, dark is
-green**, with no toggle and nothing stored (ADR-0019, ADR-0020).
+green**, with no toggle and nothing stored.
 
 This is where the same bug was introduced twice, so it is worth stating plainly.
 A token names **the ink for a specific ground**, not "black" or "white":
@@ -186,7 +201,7 @@ The hero's entrance is sequenced by one signal: `<IntroReveal>` fires
 `markIntroRevealed()` on mount, every section holds at rest until
 `useIntroRevealed()` flips, then plays on the delays in
 `src/views/home/reveal.ts`. There is no loader — the template's counted a fixed
-2200ms and measured nothing (ADR-0019). Because the signal now fires immediately,
+2200ms and measured nothing. Because the signal now fires immediately,
 **every millisecond in `reveal.ts` is one the visitor waits**; treat the budget as
 something to spend down.
 
@@ -375,6 +390,15 @@ except for that 404.
 `build_sheet.py` はスプレッドシートを組み立てた一度きりのスクリプト。レイアウトの仕様書を
 兼ねているので、シートを失ったときに走らせる。手順と毎月の運用は `payroll/README.md`。
 
+## 作業の進め方
+
+**`git add` から先はやらない。** 変更を作って**コミットメッセージ案を一文で**出すところで
+止める。`add` / `commit` / `push` は人がやる — **そうしないと本人が変更を把握できなくなる**
+ため。メッセージだけ欲しいときは `/commit-message`。
+
+例外は**明示的に頼まれたときだけ**。リモートで作業していて手元の差分が見えない、という
+状況では push まで依頼されることがある。頼まれていないのに進めないこと。
+
 ## 資料をどこに書くか
 
 **継承した資料は持たない。** テンプレートに付いてきた `obsidian/` の vault は削除した
@@ -390,8 +414,18 @@ except for that 404.
 |---|---|
 | 全体に効く制約・ハードルール | **このファイル**（ルートの `CLAUDE.md`） |
 | そのディレクトリだけの約束 | `<dir>/CLAUDE.md` |
-| いつ何を決め、**何を却下したか** | `DECISIONS.md` |
+| **何を却下したか** | **それが関係する場所の真横**（コードのコメント、該当ディレクトリの `CLAUDE.md`） |
 | まだ手が要ること | `TODO.md`（`/todo` で読む。落ちたら消す） |
+
+**却下した案を別ファイルにまとめない。** `DECISIONS.md`（元 `obsidian/meta/decisions-log.md`）
+を試して畳んだ（2026-09-10）。理由は2つ。最後の実質的な記入が 2026-07-30 で、**それ以降の
+判断は全部コードのコメントと `CLAUDE.md` に書かれていた** — 記録が腐ったのではなく、
+実務が勝手に良い場所を選んでいた。そして畳むとき中身を確かめたら、コード側のコメントは
+**すでに理由を完結して書いていて、ADR 番号は末尾の脚注**でしかなかった。
+
+警告は踏む場所に置くほうが届く。レートリミッタを戻すなという話は
+`gc_run_functions/contact_form/main.py` の冒頭に、正規表現を「厳密化」するなという話は
+`src/utils/math.ts` のその行の上にある。
 
 ネストした `CLAUDE.md` は**そのディレクトリのファイルを読んだときだけ**自動で載る。
 だから「詳細はあちらを見よ」というポインタは要らない — 勝手に届く。テンプレートが

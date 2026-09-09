@@ -7,8 +7,8 @@
  *
  * `0` is now the first visible frame. It used to be roughly 650ms before it: the
  * signal fired when a full-screen loader's curtains *began* to lift, so the
- * early delays were spent behind them. That loader is gone (decisions-log
- * ADR-0019) and the signal fires on mount, which means every millisecond here is
+ * early delays were spent behind them. That loader is gone and the signal fires
+ * on mount, which means every millisecond here is
  * a millisecond the visitor spends watching. The whole sequence now runs about
  * 1.1s — long for a page someone came to read. Treat these as a budget to spend
  * down rather than one to fill.

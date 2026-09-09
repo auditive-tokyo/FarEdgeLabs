@@ -10,7 +10,7 @@
  * the renderer only re-uploads when `sourceKey` changes.
  *
  * Raw WebGL2 rather than a 3D library: this is one fullscreen quad, so a scene
- * graph would be all cost and no benefit. ADR: DECISIONS.md (ADR-0014).
+ * graph would be all cost and no benefit.
  *
  */
 

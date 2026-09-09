@@ -5,8 +5,7 @@ check what is outstanding; it stays out of context the rest of the time.
 
 **残っている作業だけを置く。** 済んだものは消す — それがこの文書の運用の全部。判断の
 理由で残す価値があるものは、消す前に行き先を決める: 恒久的な制約は `CLAUDE.md`、
-アーキテクチャの選択は `DECISIONS.md`、コードを読めば分かる話は
-その場のコメント。ここに残すのは**まだ手が要るもの**に限る。
+却下した案はそれが関係する場所の真横。コードを読めば分かる話は書かない。ここに残すのは**まだ手が要るもの**に限る。
 
 Updated 2026-09-10.
 
@@ -279,7 +278,7 @@ POST して返す」だけで、`contact-form` と同じ形。会話の開始ご
 The mark is a placeholder — a conic gradient, drawn in CSS in the header and baked
 into every icon by `scripts/generate-brand-assets.mjs`.
 
-ADR-0020 gave it a palette per colour scheme (pink light / green dark) *because* it
+配色は colour scheme ごとに与えてある（light=pink / dark=green）が、それは *because* it
 is a placeholder. A brand that intends to be recognised may well want one hue.
 Revisit the two-palette decision when the logo is designed.
 
@@ -329,10 +328,10 @@ iCloud とは別セレクタなので DMARC の DKIM アラインメントが厳
 ---
 
 ### CLAUDE.md をディレクトリごとに分割する
-**~~`obsidian/` を畳む~~ は完了（2026-09-10、ADR-0021）。残りは分割そのもの。**
+**~~`obsidian/` を畳む~~ は完了（2026-09-10）。残りは分割そのもの。**
 
-vault の削除、`DECISIONS.md` への移設、`/docs` コマンド、ハードルール2の書き換え、
-`📖 Docs:` 21箇所と README の始末は済んでいる。**まだ誰も `<dir>/CLAUDE.md` を書いて
+vault の削除、`/docs` コマンド、ハードルール2の書き換え、
+`📖 Docs:` 21箇所の除去、README と HOW_TO_USE の削除も済んでいる。**まだ誰も `<dir>/CLAUDE.md` を書いて
 いない**のがここ。
 
 ルートの `CLAUDE.md` は **約400行**。公式の目安は**1ファイル 200行未満**で、
@@ -383,7 +382,6 @@ vault の削除、`DECISIONS.md` への移設、`/docs` コマンド、ハード
 
 | 対象 | 行き先 |
 |---|---|
-| `meta/decisions-log.md`（695行） | **ルートへ `DECISIONS.md`。** 20件中17件は自分の ADR で、価値は「何を却下したか」。コードから復元できない |
 | `frontend/text-engine-reference.md`（683行） | **skill 化**（`.claude/skills/text-engine/`）。`animation-springs.md` の80行も併合 |
 | 残り25ファイル（約2,300行） | **削除。** git に残る |
 
@@ -409,7 +407,7 @@ vault の削除、`DECISIONS.md` への移設、`/docs` コマンド、ハード
 > テンプレートがポインタを必要としたのは vault が別の場所にあって自動で載らなかったから
 > で、その前提が消える。「資料はあちらにあります」というコメント自体が不要になる。
 >
-> 本文中の参照6箇所は文ごと整理、`decisions-log ADR-00XX` の3箇所は `DECISIONS.md` へ。
+> 本文中の参照と ADR の引用は、理由がコメント内に完結していたので番号ごと落とした。
 
 > [!warning] ハードルール2（`springs/` を変更するな）は根拠が死んでいる
 > **`upstream` リモートが無い。** 元は使い捨てのスターターテンプレートで、取り込み直す

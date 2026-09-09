@@ -151,7 +151,7 @@ const assertRenderable = (strings, fonts) => {
 
 /**
  * The mark's conic sweep, per colour scheme. Keep in sync with
- * `--mark-sweep-from` / `--mark-sweep-to` in globals.css (ADR-0020).
+ * `--mark-sweep-from` / `--mark-sweep-to` in globals.css.
  *
  * Two palettes because the page has two: pink on a light ground, green on a dark
  * one. Which asset gets which is not a free choice — see `main()`.

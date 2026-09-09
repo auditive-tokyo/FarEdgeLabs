@@ -6,7 +6,6 @@ on:
       - production
     paths-ignore:
       - ".gitignore"
-      - "README.md"
       - "LICENSE.md"
       - "CLAUDE.md"
   workflow_dispatch:

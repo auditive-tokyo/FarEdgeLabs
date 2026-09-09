@@ -41,25 +41,24 @@ export const LayoutShell = ({
         {/* No <AdaptiveGrid />: it exists to take over *above* the largest
             breakpoint, and the single unbounded `vw` rule in globals.css never
             hands over — it scales the same way at every width. Mounting it
-            would only damp the scale-up away from the design's proportions.
-            See DECISIONS.md ADR-0015. */}
+            would only damp the scale-up away from the design's proportions. */}
         <ScrollLayout>
           <ReducedMotion />
           {/* Renders nothing — it starts the entrance. The template's
               full-screen loader is gone: it counted a fixed 2200ms without
               measuring a single byte, and the page it was hiding was already
-              there. See decisions-log ADR-0019. */}
+              there. */}
           <IntroReveal />
           {/* No consent banner: the site stores nothing on the visitor's device
               beyond what it needs to render. Analytics is Cloudflare Web
               Analytics, which is cookieless, so there is no non-essential
               storage to ask about. Reinstate one before adding GA4 or any other
-              tag that writes a cookie — see decisions-log ADR-0018. */}
+              tag that writes a cookie. */}
           {children}
         </ScrollLayout>
 
         {/* Cloudflare Web Analytics。cookieless なので同意バナーが要らない
-            （上の注記と decisions-log ADR-0018）。`</body>` の直前という置き場所は
+            （上の注記のとおり）。`</body>` の直前という置き場所は
             Cloudflare の指定。
 
             **プロキシは要らない。** 公式が「DNS を変えず、Cloudflare のプロキシも
