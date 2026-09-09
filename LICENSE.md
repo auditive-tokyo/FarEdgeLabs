@@ -1,6 +1,6 @@
 # Elastic License 2.0
 
-**Copyright (c) 2022 Keigo Miyasaka**
+**Copyright (c) 2026 FarEdge Labs**
 
 ## Acceptance
 
