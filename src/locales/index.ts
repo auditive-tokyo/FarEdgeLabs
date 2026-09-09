@@ -49,7 +49,15 @@ export const getCopy = (locale: Locale) => dictionaries[locale];
  * claiming a URL that does not exist.
  */
 export const localeHref = (locale: Locale, path = ""): string => {
-  const segment = path.replace(/^\/+|\/+$/g, "");
+  // 正規表現を使わないのは意図的。`/^\/+|\/+$/` の `\/+$` は、スラッシュが並んだ
+  // 入力に対して**入力長の二乗で遅くなる**（Sonar S8786）— 各位置から貪欲に食べては
+  // `$` に届かず戻る、を繰り返すため。JS には所有量指定子が無いので、正規表現のまま
+  // 直す手が無い。
+  //
+  // 分割して空要素を捨てれば線形で、しかも意図がそのまま読める。副作用として
+  // **途中の連続スラッシュも畳まれる**（`"a//b"` → `"a/b"`）が、ここに来るのは
+  // `""` / `"contact"` / `"services"` などの単一セグメントだけなので実際には起きない。
+  const segment = path.split("/").filter(Boolean).join("/");
   const prefix = locale === DEFAULT_LOCALE ? "" : `/${locale}`;
   return segment ? `${prefix}/${segment}/` : `${prefix}/`;
 };
