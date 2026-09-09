@@ -401,7 +401,7 @@ Options not yet tried, best first:
 3. Accept 3:1 (the headline is large text by WCAG) and use ~50% alpha.
 
 ### Empty hero on browsers without WebGL2
-Deliberate — see the `[!important]` block in `AGENTS.md`. **Do not add a bare
+Deliberate — see the `[!important]` block in `CLAUDE.md`. **Do not add a bare
 `<video>` fallback.** If revisited, the shape is a still of the subject facing
 forward (what `progress: 0.5` shows) as a `poster`.
 

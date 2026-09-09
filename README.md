@@ -141,9 +141,18 @@ Start at [`obsidian/README.md`](./obsidian/README.md).
 ## For AI agents
 
 > ⚠️ This is **not** the Next.js you may know — APIs and conventions differ
-> from older versions. Read `AGENTS.md` and the `obsidian/` vault before
-> writing code.
+> from older versions. Read [`CLAUDE.md`](./CLAUDE.md) before writing code.
 
-Entry points `AGENTS.md` · `CLAUDE.md` · `.cursorrules` all lead into the
-`obsidian/` vault — the single source of truth for this project. Full rules of
-engagement: [`obsidian/workflows/ai-agent-guide.md`](./obsidian/workflows/ai-agent-guide.md).
+**[`CLAUDE.md`](./CLAUDE.md) is the contract.** It carries the hard rules and the
+constraints that shape the project, and it is auto-loaded into every agent's
+context. Where it and any other document disagree, it wins.
+
+[`TODO.md`](./TODO.md) is the outstanding-work list — decided or deliberately
+deferred items, with the reasoning behind each. It is not auto-loaded; pull it in
+with the `/todo` command.
+
+`obsidian/` is a vault of longer-form notes. It is **reference, not law**, and
+parts of it are stale — it still describes the starter template this project grew
+out of. The part worth keeping current is
+[`obsidian/meta/decisions-log.md`](./obsidian/meta/decisions-log.md), which records
+*why*, the one thing that cannot be recovered by reading the code.

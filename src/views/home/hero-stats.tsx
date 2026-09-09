@@ -88,7 +88,7 @@ const SCOPE_ID = "hero-stats-scope";
  *   `font-mulish` render 過去30日の identically; only the digits would differ.
  * - **Accent-coloured text is not one.** The green passes easily on the dark
  *   surface and the pink lands near 3:1 on the light one, which fails at caption
- *   size. That is the trap the colour-token table in `AGENTS.md` is about.
+ *   size. That is the trap the colour-token table in `CLAUDE.md` is about.
  *
  * A pill sidesteps both: `--on-accent` exists precisely for ink on an accent
  * ground and is dark in *both* schemes, so contrast is settled by the token
