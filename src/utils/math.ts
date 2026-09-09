@@ -64,7 +64,16 @@ export const interpolate = (
     if (typeof value === "number") return { number: value, unit: null };
     if (typeof value === "string") {
       // Handle CSS transform functions like translate(10px) or rotate(45deg)
-      const functionMatch = value.match(/^([a-zA-Z]+)\(([-0-9.]+)([^)]*)\)$/);
+      //
+      // 単位を `[a-zA-Z%]` に絞っているのは意図的。以前は `[^)]*` で、直前の
+      // `[-0-9.]+` と文字集合が重なっていた。"10.5" をどこで切るかが何通りにもなり、
+      // **入力長に対して非線形に遅くなる**（Sonar S8786）。単位は英字か % しか
+      // 取らないので、そう書けば曖昧さが消える。広げ直さないこと。
+      //
+      // **引数が複数の transform は元から扱えていない。** `translate(10px, 20px)` は
+      // 以前も unit が `"translate(px, 20px)"` という無意味な文字列になっていた。
+      // 絞ったことで結果は変わるが、どちらも壊れている。**単引数専用**と思うこと。
+      const functionMatch = /^([a-zA-Z]+)\(([-0-9.]+)([a-zA-Z%]*)\)$/.exec(value);
       if (functionMatch) {
         return {
           number: Number.parseFloat(functionMatch[2]),
@@ -72,7 +81,10 @@ export const interpolate = (
         };
       }
       // Handle regular values with units like 45deg or 100px
-      const match = value.match(/([-0-9.]+)([^0-9.]+)/);
+      //
+      // ここも同じ理由。`[^0-9.]` は **`-` を含む**ので前半の `[-0-9.]+` と重なり、
+      // ハイフンの並びで戻りが膨らんでいた。
+      const match = /([-0-9.]+)([a-zA-Z%]+)/.exec(value);
       if (match) {
         return {
           number: Number.parseFloat(match[1]),
