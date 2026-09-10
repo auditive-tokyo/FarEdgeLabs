@@ -32,6 +32,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+from instruction import build_instructions
+
 # --------------------------------------------------------------------------- #
 # 設定
 # --------------------------------------------------------------------------- #
@@ -151,38 +153,11 @@ def verify_turnstile(token: str) -> bool:
 
 # --------------------------------------------------------------------------- #
 # セッション設定 — ここがサーバ側にある意味
+#
+# モデル・音声・`instructions` は**中継の瞬間にサーバで組む**。ブラウザは SDP しか
+# 送ってこないので、訪問者がモデルを差し替えたり指示文を書き換えたりする経路が無い。
+# 原稿は `instruction.py`。
 # --------------------------------------------------------------------------- #
-
-
-def build_instructions() -> str:
-    """履歴書を根拠にした指示文。
-
-    履歴書は `RESUME` 環境変数から来る（Secret Manager 経由）。**リポジトリには入って
-    いない** — public なので `.gitignore` してある。ソース zip に同梱できないから
-    Secret Manager を通す、というのがここの経路の理由。GCS から読む案もあるが、
-    それだとクライアントライブラリが要って依存ゼロが崩れる。
-
-    文面はまだ暫定。**何を答えさせるかは製品側の判断**で、技術的な制約ではない。
-    """
-    resume = os.environ.get("RESUME", "").strip()
-    if not resume:
-        # 履歴書が無いまま喋らせない。根拠を持たない状態で経歴を聞かれるのが
-        # 一番まずい（もっともらしく作る）。
-        raise KeyError("RESUME")
-
-    return (
-        "あなたは FarEdge Labs のサイトに置かれた案内役です。"
-        "代表エンジニアの経歴について、下の資料に**書かれていることだけ**を根拠に答えます。\n"
-        "\n"
-        "- 資料に無いことは「資料には無い」と答える。**推測で補わない**\n"
-        "- 料金・期間・受注可否は答えない。「お問い合わせフォームからご連絡ください」と案内する\n"
-        "- 相手が使った言語で答える（日本語には日本語、英語には英語）\n"
-        "- 簡潔に。聞かれていないことまで並べない\n"
-        "\n"
-        "--- 資料ここから ---\n"
-        f"{resume}\n"
-        "--- 資料ここまで ---"
-    )
 
 
 def build_session() -> dict:
@@ -290,7 +265,7 @@ def start_realtime_call(request):
     try:
         answer = relay_offer(sdp)
     except KeyError as err:
-        # `OPENAI_API_KEY` か `RESUME` が無い。設定漏れなので何が無いかは出す。
+        # `OPENAI_API_KEY` が無い。設定漏れなので何が無いかは出す。
         print(f"必要な環境変数が設定されていない: {err}", file=sys.stderr)
         return _error(CALL_FAILED, 500, origin)
     except urllib.error.HTTPError as err:
