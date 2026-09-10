@@ -1,7 +1,6 @@
 /**
  * GLSL sources for the halftone video shader.
  *
- * 📖 Docs: obsidian/frontend/components/common.md
  */
 
 export const VERTEX_SHADER = /* glsl */ `#version 300 es

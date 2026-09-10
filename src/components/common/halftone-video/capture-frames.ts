@@ -12,7 +12,6 @@
  * size is only ~107 cells across), so full-resolution frames would cost a lot
  * of memory to carry detail that is thrown away on the first draw.
  *
- * 📖 Docs: obsidian/frontend/components/common.md
  */
 
 /** Capture width, px. Height follows the source's aspect. */

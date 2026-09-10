@@ -20,5 +20,24 @@
   // language, which is deliberately **not** set here: that language id comes from the
   // extension, so on a machine without it every stylesheet would lose its
   // highlighting. Losing syntax highlighting to silence one warning is a bad trade.
-  "css.lint.unknownAtRules": "ignore"
+  "css.lint.unknownAtRules": "ignore",
+  // Python はリポジトリ直下の `.venv` 1つ。`gc_run_functions/*` は3つとも
+  // Cloud Run functions で、ランタイムは Terraform 側が `python312` に固定して
+  // いる (`main.tf` / `contact.tf` の `runtime`)。ここを 3.12 で作ってあるのは
+  // それに合わせるため。
+  //
+  // 関数ごとに venv を分けない。ルートが Next.js のリポジトリで関数ごとに
+  // インタプリタを切り替えるのは苦痛なわりに、得られるのは「requirements.txt に
+  // 書き忘れた import がローカルでも落ちる」という程度で、その失敗はデプロイ直後の
+  // ImportError で即出る。
+  //
+  // この venv はローカルで叩くためだけのもので、デプロイとは無関係。zip は
+  // ディレクトリではなく main.py と requirements.txt の**明示リスト**から作られる
+  // ので (`main.tf` の Source archive の注記)、`.venv` が混入する経路が無い。
+  //
+  //   uv venv --python 3.12
+  //   uv pip install -r gc_run_functions/*/requirements.txt
+  //   .venv/bin/functions-framework --target=submit_contact_form --port=8080
+  "python-envs.defaultEnvManager": "ms-python.python:venv",
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python"
 }

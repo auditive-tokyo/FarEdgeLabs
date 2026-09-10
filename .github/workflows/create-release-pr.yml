@@ -6,9 +6,8 @@ on:
       - main
     paths-ignore:
       - ".gitignore"
-      - "README.md"
       - "LICENSE.md"
-      - "AGENTS.md"
+      - "CLAUDE.md"
 
 jobs:
   create-pr:

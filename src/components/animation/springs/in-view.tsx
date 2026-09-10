@@ -1,4 +1,3 @@
-// 📖 Docs: obsidian/frontend/components/animation-springs.md
 /**
  * @fileoverview Inview animation component for scroll-based reveal animations
  *

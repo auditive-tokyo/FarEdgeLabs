@@ -2,7 +2,7 @@
  * Home page content — assets and layout here, words in `src/locales/`.
  *
  * Components take content through props; the view imports this and passes it
- * down. See obsidian/frontend/component-conventions.md.
+ * down.
  *
  * The split is deliberate. Every string lives in `src/locales/<locale>.json`,
  * which `scripts/generate-brand-assets.mjs` also reads — the script runs in plain

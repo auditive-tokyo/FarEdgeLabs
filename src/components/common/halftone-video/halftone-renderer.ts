@@ -10,10 +10,8 @@
  * the renderer only re-uploads when `sourceKey` changes.
  *
  * Raw WebGL2 rather than a 3D library: this is one fullscreen quad, so a scene
- * graph would be all cost and no benefit. ADR: obsidian/meta/decisions-log.md
- * (ADR-0014).
+ * graph would be all cost and no benefit.
  *
- * 📖 Docs: obsidian/frontend/components/common.md
  */
 
 import type { Rgb } from "@/utils/color";

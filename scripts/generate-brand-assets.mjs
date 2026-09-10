@@ -4,8 +4,6 @@
  *
  *   node scripts/generate-brand-assets.mjs
  *
- * 📖 Docs: obsidian/frontend/seo-metadata.md
- *
  * ## Why a recipe and not a resize
  *
  * `public/assets/hero/logo-mark.png` was the template's 56×56 mark. Upscaling
@@ -153,7 +151,7 @@ const assertRenderable = (strings, fonts) => {
 
 /**
  * The mark's conic sweep, per colour scheme. Keep in sync with
- * `--mark-sweep-from` / `--mark-sweep-to` in globals.css (ADR-0020).
+ * `--mark-sweep-from` / `--mark-sweep-to` in globals.css.
  *
  * Two palettes because the page has two: pink on a light ground, green on a dark
  * one. Which asset gets which is not a free choice — see `main()`.

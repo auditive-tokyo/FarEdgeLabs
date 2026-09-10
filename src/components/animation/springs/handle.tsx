@@ -1,4 +1,3 @@
-// 📖 Docs: obsidian/frontend/components/animation-springs.md
 /**
  * @fileoverview Handle component for smooth content transitions
  *

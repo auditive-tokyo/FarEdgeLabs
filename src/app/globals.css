@@ -52,7 +52,7 @@
   --mark-sweep-from: var(--accent);
   --mark-sweep-to: #b14fd8;
 
-  /* Halftone video field — see obsidian/frontend/components/common.md. The
+  /* Halftone video field. The
      three inks are a ramp interpolated across the frame, not three independent
      choices: light -> mid -> deep must climb in that order or the field stops
      reading as one surface. The hue travels across them (lime -> green -> deep

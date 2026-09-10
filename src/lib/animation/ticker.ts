@@ -9,7 +9,6 @@
  * (`cancelAnimationFrame`) when the last one leaves, so an idle page costs
  * nothing. Each subscriber is throttled independently by its own framerate.
  *
- * 📖 Docs: obsidian/frontend/animation-system.md
  */
 
 export type TickerCallback = (time: number) => void;

@@ -2,7 +2,7 @@
  * Home view — a Server Component.
  *
  * Sections are built as client leaves so this view stays a Server Component
- * (hard rule #6). See obsidian/workflows/new-page.md.
+ * (hard rule #6).
  *
  * Takes the locale rather than reading it: there is no middleware and no request
  * context in a static export, so the route decides the language and hands it

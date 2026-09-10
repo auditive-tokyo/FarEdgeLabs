@@ -33,7 +33,7 @@ export const generalSans = localFont({
   display: "swap",
 });
 
-/** Used by the design for stat labels only — see obsidian/frontend/design-system.md. */
+/** Used by the design for stat labels only. */
 export const mulish = Mulish({
   variable: "--font-mulish",
   subsets: ["latin"],

@@ -5,10 +5,9 @@ check what is outstanding; it stays out of context the rest of the time.
 
 **残っている作業だけを置く。** 済んだものは消す — それがこの文書の運用の全部。判断の
 理由で残す価値があるものは、消す前に行き先を決める: 恒久的な制約は `CLAUDE.md`、
-アーキテクチャの選択は `obsidian/meta/decisions-log.md`、コードを読めば分かる話は
-その場のコメント。ここに残すのは**まだ手が要るもの**に限る。
+却下した案はそれが関係する場所の真横。コードを読めば分かる話は書かない。ここに残すのは**まだ手が要るもの**に限る。
 
-Updated 2026-09-08.
+Updated 2026-09-10.
 
 ---
 
@@ -197,8 +196,12 @@ Terraform に入れないのは意図的で、`google_billing_budget` は請求�
 ## 次に作るもの
 
 ### ヒーローの man に話しかけられるようにする
-**設計は固まった、未着手（2026-09-08 合意）。** 画面中央の man をクリックすると音声で
-会話でき、**代表の履歴書を根拠に**「何ができて何ができないか」を答える。
+**バックエンドは書けた。残りはフロントエンド（2026-09-11）。** 画面中央の man をクリック
+すると音声で会話でき、**会社の能力を根拠に**「何ができて何ができないか」を答える。
+
+済: `gc_run_functions/realtime_call/`（中継 + 指示文）、`terraform/realtime.tf`。
+残: フロントエンド。順番は **(1) `use-realtime-call.ts` → (2) ボタンと位置計算 →
+(3) 状態表示とロケール**。1 が唯一「動くか分からない」部分なので最初に潰す。
 
 | 項目 | 決定 |
 |---|---|
@@ -225,6 +228,48 @@ POST して返す」だけで、`contact-form` と同じ形。会話の開始ご
 > ただし性質は `contact-form` より良い。キーもモデルも `instructions` も**サーバ側**に
 > あるので、濫用者にできるのは「会話を始めること」だけ。支出は OpenAI 側の GUI で
 > 上限を設定して止める（GCP の予算アラートは*通知*しかしないので、こちらのほうが強い）。
+
+#### いま入れていないもの（費用と体験の余地）
+
+流入がまだ無いので後回しにした。**実害が出る前に手を打つ順**に並べる。
+
+| 手 | 効果 | いつ入れるか |
+|---|---|---|
+| **`max_output_tokens` を `build_session()` に入れる** | 1通話の**出力音声**を直接縛る。出力は $64/1M で入力の倍なので、ここが一番効く | 値（何分喋らせるか）を決めたら |
+| **`gpt-realtime-2.1-mini` に落とす** | 音声 in/out が **$32/$64 → $10/$20**（約3分の1） | 聴き比べて、会社案内の受け答えに flagship が要らないと判断できたら |
+| **ブラウザ側で N 分で hangup** | 事故（切り忘れ、長話）を止める。**インフラゼロ** | フロントエンドを書くとき一緒に |
+
+> [!warning] localStorage の UUID + Firestore でスロットリング、は採らない
+> AWS の Lambda + DynamoDB でよくやる形を検討した（2026-09-11）。**止めたいものが
+> 止まらない。**
+>
+> **localStorage の UUID は識別子ではなく、クライアントが選ぶ値。** 消すのも作り直すのも
+> JS 1行なので、止まるのは二度押し・長話・興味本位の連続利用だけで、**予算を焼こうと
+> する相手には無力**。`contact_form` で IP レートリミッタを落としたときの分析
+> （"distributing the source misses per-IP entirely"）と同じ形で、**あちらより弱い** —
+> 分散させる必要すらなく、文字列を作り直すだけで済む。
+>
+> そして代償がこの関数では特に高い。**`google-cloud-firestore` がコールドスタートに
+> 乗る** — 依存を `functions-framework` だけに保っているのは「押してから鳴るまで」が
+> ほぼコールドスタートだからで、最適化した当の指標を悪化させる。加えて Firestore に
+> コレクション単位の IAM が無いので `roles/datastore.user` がプロジェクト全体に付く。
+>
+> 上の表の3つ目（ブラウザ側の hangup）が、**同じ事故対策をインフラゼロで**達成する。
+> サーバ側のカウンタが正当になるのは「Turnstile を突破する相手が実際に現れたとき」で、
+> それはまだ観測されていない。
+
+> [!note] 会話は通話をまたいで続かない。そしてそれでよい
+> Realtime に**セッション再開は無い**（`previous_response_id` 相当は Responses API 側の
+> Conversations API で、別 surface）。リロード・離脱で会話は消え、次はゼロから。
+>
+> **1回の通話の中では完全にステートフル**で、そこは普通に会話が続く。コンテキストは
+> 128k、音声は毎秒25トークン程度なので、切り捨てが始まるのは2時間以上先。案内役として
+> 足りないことはない。
+>
+> 跨いで覚えるには履歴を自前で保存するしかなく、それは**訪問者が何を聞いたかの記録を
+> 持つ**ということ。ADR で cookieless を選んで同意バナーを置かない構成にしている以上、
+> その前提に触る。いまは**我々のインフラが会話を1バイトも持たない**（状態は OpenAI 側の
+> WebRTC 接続に紐づく）。この一貫性のほうが価値がある。
 
 #### 却下した案と、その理由
 
@@ -279,7 +324,7 @@ POST して返す」だけで、`contact-form` と同じ形。会話の開始ご
 The mark is a placeholder — a conic gradient, drawn in CSS in the header and baked
 into every icon by `scripts/generate-brand-assets.mjs`.
 
-ADR-0020 gave it a palette per colour scheme (pink light / green dark) *because* it
+配色は colour scheme ごとに与えてある（light=pink / dark=green）が、それは *because* it
 is a placeholder. A brand that intends to be recognised may well want one hue.
 Revisit the two-palette decision when the logo is designed.
 
@@ -328,10 +373,14 @@ iCloud とは別セレクタなので DMARC の DKIM アラインメントが厳
 
 ---
 
-### CLAUDE.md を分割し、`obsidian/` を畳んでいく
-**方向は決定、やり方は未確定。少しずつ進める（2026-09-08 合意）。**
+### CLAUDE.md をディレクトリごとに分割する
+**~~`obsidian/` を畳む~~ は完了（2026-09-10）。残りは分割そのもの。**
 
-ルートの `CLAUDE.md` は **394行**。公式の目安は**1ファイル 200行未満**で、
+vault の削除、`/docs` コマンド、ハードルール2の書き換え、
+`📖 Docs:` 21箇所の除去、README と HOW_TO_USE の削除も済んでいる。**まだ誰も `<dir>/CLAUDE.md` を書いて
+いない**のがここ。
+
+ルートの `CLAUDE.md` は **約400行**。公式の目安は**1ファイル 200行未満**で、
 「長いほどコンテキストを食い、遵守率が下がる」と明記されている。狙いは、
 ルートには構成と全体に効く規約だけを置き、**そのディレクトリを触ったときだけ**
 詳細が読まれる形にすること。
@@ -371,18 +420,54 @@ iCloud とは別セレクタなので DMARC の DKIM アラインメントが厳
 | コメントは日本語で書く | 18 | **ルートに残す** |
 | payroll | 13 | `payroll/CLAUDE.md` |
 
-> [!warning] `obsidian/meta/` の2つは畳めない
-> `obsidian/` の大半（`architecture/`、`frontend/` のカタログ）は、まさに `/doctor` が
-> 「コードから導ける」として落とす類なので、ディレクトリ CLAUDE.md へ移すか消せる。
-> **ただし `decisions-log.md`(695行) と `changelog.md`(659行) は種類が違う。**
+#### `obsidian/` の畳み方 — 決定済み（2026-09-10）
+
+**方針: 継承した指示は守らない。** テンプレートに付いてきたルールと文書は、読んでもいない
+他人の判断であって、こちらが必要と認めたものだけが残る。**自分の言葉で、日本語で、その
+ディレクトリを触るたびに書く。**
+
+| 対象 | 行き先 |
+|---|---|
+| `frontend/text-engine-reference.md`（683行） | **skill 化**（`.claude/skills/text-engine/`）。`animation-springs.md` の80行も併合 |
+| 残り25ファイル（約2,300行） | **削除。** git に残る |
+
+削除の根拠は実測:
+
+- ほぼ全部が **2026-07-29 の1日で書かれ、コミット1回きり**
+- カタログが**実在しない `Preloader` を載せ、実在する `intro/` を載せていない**
+- **8月以降を1文字も知らない**（`Turnstile` `contact-form` `Jibble` `Secret Manager` `terraform` すべて0ファイル）
+- `changelog.md` は 2026-07-15 で止まり、見出しが `(latest+15)` という**テンプレート相対の採番**
+- `workflows/ai-agent-guide.md` は**存在しない `AGENTS.md` に「取って代わられた」と自称**
+
+> [!note] なぜ skill で、command でも rule でもないのか
+> このリポジトリに両方の実例がある。`/todo` が **command** なのは「何が残ってる？」が
+> *人の*意図だから。`sonarqube` が **skill** なのは「いま Sonar を扱っているか」の判断が
+> *Claude 側*にあるから。テキストエンジンの資料は後者 — 「資料を読もう」が目的になる
+> ことはなく、「このアニメーションを直したい」の結果として必要になる。
 >
-> ディレクトリ CLAUDE.md は「いまどうなっているか」を書くもので、ADR は「いつ何を
-> 決め、**何を捨てたか**」を書く記録。畳むと**却下した選択肢が消える** — `CLAUDE.md`
-> 自身が「コードを読んでも復元できないのは *why* だ」と言っている、その部分。
+> `.claude/rules/` + `paths:` なら自動で載るが、**683行が毎回載る**。公式も「常時載せる
+> 必要がないものは skill」と言っている。
+
+> [!important] `📖 Docs:` の21箇所は**付け替えではなく削除**
+> ネストした `CLAUDE.md` は**そのディレクトリのファイルを読んだ時点で自動的に読まれる**。
+> テンプレートがポインタを必要としたのは vault が別の場所にあって自動で載らなかったから
+> で、その前提が消える。「資料はあちらにあります」というコメント自体が不要になる。
 >
-> `frontend/text-engine-reference.md`(683行) も別枠。ヴェンダリングされた
-> アニメーションエンジンの参照資料なので、`src/components/animation/springs/CLAUDE.md`
-> にするか、**skill にして呼ばれたときだけ読ませる**のが合っている。
+> 本文中の参照と ADR の引用は、理由がコメント内に完結していたので番号ごと落とした。
+
+> [!warning] ハードルール2（`springs/` を変更するな）は根拠が死んでいる
+> **`upstream` リモートが無い。** 元は使い捨てのスターターテンプレートで、取り込み直す
+> 先が存在しない。「上流と差分を保つ」というヴェンダリング本来の目的が成立していない。
+> 履歴上も**保護対象は1コミット（初回取り込み）から一度も変わっていない**（全体81、
+> `src/` 39 に対して1）。
+>
+> 代償は積み上がっている: `SpringTrigger` は**参照ゼロなのに消せず**、Sonar の保守性
+> 13件（未使用 PropType）も TODO の「未使用 import 5件」も「触れないから」で止まっている。
+>
+> **条文ごと `src/components/animation/springs/CLAUDE.md` に書き直す。** 残すべき警告は
+> 「ヴェンダリングだから」ではなく**「直感が外れる領域だから、挙動を変えるなら測れ」**。
+> 実例: 正規表現の `\d*\.?\d+` は「より厳密」に見えて**二次のまま**だった（実測 x15.9）。
+> 掃除（死んだコード・コメント・未使用 import）は対象外にする。
 
 進め方は1ディレクトリずつ。**移したら元を消す** — 同じことが2箇所にあると、
 公式が言うとおり「矛盾したときに Claude がどちらかを勝手に選ぶ」状態になる。
@@ -401,7 +486,7 @@ Options not yet tried, best first:
 3. Accept 3:1 (the headline is large text by WCAG) and use ~50% alpha.
 
 ### Empty hero on browsers without WebGL2
-Deliberate — see the `[!important]` block in `AGENTS.md`. **Do not add a bare
+Deliberate — see the `[!important]` block in `CLAUDE.md`. **Do not add a bare
 `<video>` fallback.** If revisited, the shape is a still of the subject facing
 forward (what `progress: 0.5` shows) as a `poster`.
 

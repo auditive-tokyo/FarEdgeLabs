@@ -38,7 +38,13 @@ yarn-error.log*
 next-env.d.ts
 
 # personal documents — this repository is public
-履歴書.txt
+# 個人情報。**public リポジトリなので絶対に入れない。**
+#
+# ファイル名で列挙するのをやめた。以前は `履歴書.txt` と1行だけ書いてあり、
+# `職務経歴書_RISE版.md` へ改名された時点で**保護が外れていた**（気づいたのは偶然）。
+# 名前は変わるものなので、パターンと置き場所の両方で受ける。
+職務経歴書*
+/private/
 resume*
 cv*
 

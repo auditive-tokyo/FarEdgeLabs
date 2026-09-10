@@ -11,6 +11,21 @@ copy, the routing, the colour system and everything server-shaped have been
 rewritten. Where this guide and the template's own conventions disagree, this
 guide wins.
 
+## 動かす
+
+```bash
+npm ci
+npm run dev        # http://localhost:3000
+```
+
+| コマンド | 何をするか |
+|---|---|
+| `npm run dev` | 開発サーバ |
+| `npm run build` | 静的書き出し（`out/`） |
+| `npm run lint` | ESLint |
+| `npx tsc --noEmit` | 型検査。**lint だけでは死んだ import が見つからない**（ハードルール7） |
+| `npm run brand` | アイコンと OG カードの再生成。ビルドに含まれないので、変えたら手で実行して PNG をコミットする |
+
 ## The one constraint that shapes everything
 
 `next.config.ts` sets `output: "export"`. **There is no server at runtime.** Not
@@ -95,8 +110,12 @@ Sans is **Latin-only** — a Japanese OG card needs a font with the glyphs added
 1. **All motion is spring-based** — `@react-spring/web` via the components in
    `src/components/animation/springs/`. Text animation uses `spring-text-engine`.
    No CSS transitions, no CSS keyframes, no `framer-motion`.
-2. **Do not modify** `src/components/animation/springs/` or `src/hooks/animation/`
-   without explicit sign-off — they are the vendored animation engine.
+2. **`src/components/animation/springs/` と `src/hooks/animation/` の挙動を変える変更は、
+   測ってから。** ここは直感が外れる領域で、「より正しく」書いたつもりが逆効果になる
+   （実例: 正規表現を `\d*\.?\d+` へ「厳密化」したら計算量が二次のままだった）。
+   死んだコード・コメント・未使用 import の掃除は対象外。
+   以前この条文は「ヴェンダリングされたエンジンだから触るな」だったが、**取り込み直す
+   上流が存在しない**（`upstream` リモート無し、使い捨てのスターター）ので根拠を差し替えた。
 3. **Never `mode="manual"`** on `TextEngine` — use `always` / `once` / `forward` /
    `progress`.
 4. **No hardcoded values** — design tokens in `globals.css` for styles; props for
@@ -130,12 +149,12 @@ Sans is **Latin-only** — a Japanese OG card needs a font with the glyphs added
 
 例外メッセージとログ出力は日本語でよい。Cloud Logging は日本語で検索できる。ただし外部から受け取った文字列を混ぜる行は、その部分だけ原文のまま残す。
 
-この文書と `obsidian/` はまだ英語。移すかどうかはコードとは別の判断で、いまは触らない。
+このファイルにはまだ英語が残っている。触るついでに直す。急がない。
 
 ## Colour tokens: which ink goes on which ground
 
 The site follows the OS through `prefers-color-scheme` — **light is pink, dark is
-green**, with no toggle and nothing stored (ADR-0019, ADR-0020).
+green**, with no toggle and nothing stored.
 
 This is where the same bug was introduced twice, so it is worth stating plainly.
 A token names **the ink for a specific ground**, not "black" or "white":
@@ -182,7 +201,7 @@ The hero's entrance is sequenced by one signal: `<IntroReveal>` fires
 `markIntroRevealed()` on mount, every section holds at rest until
 `useIntroRevealed()` flips, then plays on the delays in
 `src/views/home/reveal.ts`. There is no loader — the template's counted a fixed
-2200ms and measured nothing (ADR-0019). Because the signal now fires immediately,
+2200ms and measured nothing. Because the signal now fires immediately,
 **every millisecond in `reveal.ts` is one the visitor waits**; treat the budget as
 something to spend down.
 
@@ -371,24 +390,53 @@ except for that 404.
 `build_sheet.py` はスプレッドシートを組み立てた一度きりのスクリプト。レイアウトの仕様書を
 兼ねているので、シートを失ったときに走らせる。手順と毎月の運用は `payroll/README.md`。
 
-## Documentation
+## 作業の進め方
 
-`TODO.md` is the outstanding-work list — decided or deliberately deferred items,
-with links to the decision behind each. It is not auto-loaded: pull it in with the
-`/todo` command rather than expecting it in context. Delete an entry when it lands.
+**`git add` から先はやらない。** 変更を作って**コミットメッセージ案を一文で**出すところで
+止める。`add` / `commit` / `push` は人がやる — **そうしないと本人が変更を把握できなくなる**
+ため。メッセージだけ欲しいときは `/commit-message`。
 
-`.claude/` holds the Claude Code configuration — `commands/todo.md` (the `/todo`
-command) and `skills/sonarqube/` (the SonarQube MCP protocol, read when Sonar work
-comes up). This repo used to keep both under `.kiro/steering/` with
-`inclusion: manual`; that directory is gone.
+例外は**明示的に頼まれたときだけ**。リモートで作業していて手元の差分が見えない、という
+状況では push まで依頼されることがある。頼まれていないのに進めないこと。
 
-`obsidian/` is an Obsidian vault of longer-form notes, inherited from the template
-and partly retargeted. It is **reference, not law** — this file is the contract,
-and where the vault still describes Stack.Side or a Vercel deployment, it is
-stale. `obsidian/meta/decisions-log.md` is the part worth keeping current: it
-records *why*, which is the thing that cannot be recovered by reading the code.
+## 資料をどこに書くか
 
-After making changes: dependency changes → `tech-stack.md` + `changelog.md`;
-architectural choices → an ADR in `decisions-log.md`; new component/hook/util →
-the relevant catalog note. Update this file when a hard rule or a constraint
-changes.
+**継承した資料は持たない。** テンプレートに付いてきた `obsidian/` の vault は削除した
+（2026-09-10）。読んでもいない他人の判断を権威として抱えるより、**自分が理解したことを、
+そのとき、日本語で書く**ほうが実態に追従する。消した中身は git 履歴に残っているので、
+必要になったら掘って、そのとき理解した分だけ書き直せばよい。
+
+消した理由は感触ではなく実測だった: ほぼ全部が 2026-07-29 の1日で書かれてコミット1回、
+カタログは**実在しない `Preloader` を載せ実在する `intro/` を載せておらず**、8月以降の
+仕事（GCP バックエンド、問い合わせフォーム、アナリティクス）を1文字も知らなかった。
+
+| 何を | どこに |
+|---|---|
+| 全体に効く制約・ハードルール | **このファイル**（ルートの `CLAUDE.md`） |
+| そのディレクトリだけの約束 | `<dir>/CLAUDE.md` |
+| **何を却下したか** | **それが関係する場所の真横**（コードのコメント、該当ディレクトリの `CLAUDE.md`） |
+| まだ手が要ること | `TODO.md`（`/todo` で読む。落ちたら消す） |
+
+**却下した案を別ファイルにまとめない。** `DECISIONS.md`（元 `obsidian/meta/decisions-log.md`）
+を試して畳んだ（2026-09-10）。理由は2つ。最後の実質的な記入が 2026-07-30 で、**それ以降の
+判断は全部コードのコメントと `CLAUDE.md` に書かれていた** — 記録が腐ったのではなく、
+実務が勝手に良い場所を選んでいた。そして畳むとき中身を確かめたら、コード側のコメントは
+**すでに理由を完結して書いていて、ADR 番号は末尾の脚注**でしかなかった。
+
+警告は踏む場所に置くほうが届く。レートリミッタを戻すなという話は
+`gc_run_functions/contact_form/main.py` の冒頭に、正規表現を「厳密化」するなという話は
+`src/utils/math.ts` のその行の上にある。
+
+ネストした `CLAUDE.md` は**そのディレクトリのファイルを読んだときだけ**自動で載る。
+だから「詳細はあちらを見よ」というポインタは要らない — 勝手に届く。テンプレートが
+全ファイルの先頭に `📖 Docs:` を置いていたのは vault が自動で載らなかったからで、
+その前提はもう無い。**1ファイル 200行未満**が目安。
+
+> [!important] 実装が終わったら `/docs` を実行する
+> 触ったディレクトリの `CLAUDE.md` を、その変更に合わせて更新するためのコマンド
+> （`.claude/commands/docs.md`）。**忘れると、いま消したのと同じ「実態とズレた資料」が
+> また育つ。** 一度そうなった原因は、資料の更新を hooks で強制していて、その hooks が
+> 消えたあと運用だけが残ったこと。強制が無い以上、手順として置いておく。
+
+`.claude/` は Claude Code の設定 — `commands/`（`/todo`、`/docs`）と
+`skills/sonarqube/`（Sonar を扱うときだけ読む手順）。

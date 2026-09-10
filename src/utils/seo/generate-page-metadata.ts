@@ -125,7 +125,7 @@ export function generateMetadata({
     },
     icons: {
       // One favicon per colour scheme. The mark's sweep is pink on light and
-      // green on dark (ADR-0020), and a `<link rel="icon">` accepts `media` — so
+      // green on dark, and a `<link rel="icon">` accepts `media` — so
       // unlike the PWA tiles and the OG card, which are referenced by bare URL,
       // the tab icon *can* follow the scheme. Both sets come out of
       // `scripts/generate-brand-assets.mjs`.
