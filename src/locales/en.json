@@ -79,6 +79,23 @@
           "They may still serve as a rough indicator if you are considering an engagement."
         ]
       }
+    },
+    "voice": {
+      "start": "Talk to him",
+      "stop": "End",
+      "label": "Talk to the site's guide by voice",
+      "states": {
+        "verifying": "Checking",
+        "requestingMic": "Allow microphone access",
+        "connecting": "Connecting",
+        "live": "Listening"
+      },
+      "errors": {
+        "micDenied": "The microphone was not available. Allow it in your browser settings and try again.",
+        "rejected": "The check did not pass. A browser extension may be blocking it.",
+        "unavailable": "Could not connect just now. Please try again in a moment.",
+        "connectionLost": "The connection dropped."
+      }
     }
   }
 }
