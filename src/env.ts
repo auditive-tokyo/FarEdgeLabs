@@ -34,6 +34,14 @@ const TEST_TURNSTILE_SITE_KEY = "1x00000000000000000000AA";
 /** Where `functions-framework --target submit_contact_form` listens. */
 const LOCAL_CONTACT_ENDPOINT = "http://localhost:8080";
 
+/**
+ * Where `functions-framework --target start_realtime_call` listens.
+ *
+ * 8080 ではないのは、問い合わせと通話中継を**同時に立てられる**ようにするため。
+ * 片方ずつしか動かせないと、フォームを触りながら通話を試すたびに落とすことになる。
+ */
+const LOCAL_REALTIME_ENDPOINT = "http://localhost:8081";
+
 const publicSchema = z.object({
   NEXT_PUBLIC_SITE_URL: z.url().optional(),
   /**
@@ -57,6 +65,14 @@ const publicSchema = z.object({
    */
   NEXT_PUBLIC_CONTACT_ENDPOINT: z.url().optional(),
   /**
+   * 通話中継の URL。`terraform output realtime_call_uri` と一致していること。
+   *
+   * `NEXT_PUBLIC_CONTACT_ENDPOINT` と同じで**秘密ではない**。無認証のエンドポイントで、
+   * 守っているのは URL を知られていないことではなく `main.py` の門と OpenAI 側の
+   * 支出上限。**一致を検査する仕組みは無い**ので、片方だけ動かすと静かに壊れる。
+   */
+  NEXT_PUBLIC_REALTIME_ENDPOINT: z.url().optional(),
+  /**
    * Cloudflare Web Analytics のサイトトークン。
    *
    * ブラウザが読む値なので**秘密ではない** — Turnstile のサイトキーと同じ扱いで、
@@ -77,6 +93,7 @@ export const publicEnv = publicSchema.parse({
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
   NEXT_PUBLIC_CONTACT_ENDPOINT: process.env.NEXT_PUBLIC_CONTACT_ENDPOINT,
+  NEXT_PUBLIC_REALTIME_ENDPOINT: process.env.NEXT_PUBLIC_REALTIME_ENDPOINT,
   NEXT_PUBLIC_CF_BEACON_TOKEN: process.env.NEXT_PUBLIC_CF_BEACON_TOKEN,
 });
 
@@ -85,6 +102,9 @@ export const turnstileSiteKey =
 
 export const contactEndpoint =
   publicEnv.NEXT_PUBLIC_CONTACT_ENDPOINT ?? LOCAL_CONTACT_ENDPOINT;
+
+export const realtimeEndpoint =
+  publicEnv.NEXT_PUBLIC_REALTIME_ENDPOINT ?? LOCAL_REALTIME_ENDPOINT;
 
 /**
  * 未設定なら `undefined`。呼び出し側はそのときビーコンを描かない。

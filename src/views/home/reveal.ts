@@ -40,6 +40,14 @@ export const REVEAL_DELAY = {
   /** The figures panel. One object, so there is no per-item step. */
   stats: 560,
   body: 620,
+  /**
+   * 話しかけるボタン。**最後**。
+   *
+   * ここは埋める枠ではなく使う予算（上の注記）なので、足すなら理由が要る。理由は
+   * 順番のほう: 誘いであって内容ではないので、**読むものが出揃ってから**現れる。
+   * 先に出すと、まだ何の会社か分からないうちに「話しかけろ」と言うことになる。
+   */
+  voice: 680,
   /** Late on purpose: the bar arrives under a word that has already landed. */
   headlineBar: 1100,
   /**

@@ -1,12 +1,15 @@
 import type { HomeContent } from "@/data/mocks/home";
+import type { Locale } from "@/locales";
 
 import { HeroCopy } from "./hero-copy";
 import { HeroHeadline } from "./hero-headline";
-
 import { HeroStats } from "./hero-stats";
+import { HeroVoice } from "./hero-voice";
 
 export interface HeroProps {
   hero: HomeContent["hero"];
+  /** Turnstile のウィジェットの言語に要る。`<ContactForm>` と同じ渡し方。 */
+  locale: Locale;
   /**
    * Italics on the accent word. Off for Japanese: the CJK fonts a browser falls
    * back to carry no italic cut, so the engine shears the glyphs instead —
@@ -36,7 +39,7 @@ export interface HeroProps {
  * frame's absolute coordinates. Source order is therefore also the mobile
  * reading order — keep them in the order they should be read.
  */
-export const Hero = ({ hero, italicAccent = true }: HeroProps) => {
+export const Hero = ({ hero, locale, italicAccent = true }: HeroProps) => {
   return (
     <section
       aria-labelledby="hero-title"
@@ -64,6 +67,8 @@ export const Hero = ({ hero, italicAccent = true }: HeroProps) => {
       <HeroCopy lead={hero.lead} body={hero.body} />
 
       <HeroStats stats={hero.stats} />
+
+      <HeroVoice copy={hero.voice} locale={locale} />
     </section>
   );
 };
