@@ -5,8 +5,8 @@
 ここは経路に入らない。だから仕事は「1回の HTTP を代理する」だけで、会話が何分続こうと
 インスタンスは掴まれない。
 
-    ブラウザ ──POST application/sdp──▶ この関数 ──▶ api.openai.com/v1/realtime/calls
-                                        （API キーはここ。ブラウザには渡らない）
+    ブラウザ ──POST {"sdp"}──▶ この関数 ──▶ api.openai.com/v1/live/sessions
+                                  （API キーはここ。ブラウザには渡らない）
     ブラウザ ⇄ OpenAI が WebRTC で直結
 
 > [!important] 一時トークン方式は採らなかった
@@ -16,23 +16,25 @@
 > 濫用者にできるのは「会話を始めること」だけになる。
 
 > [!warning] 依存を増やさないこと
-> `requirements.txt` は `functions-framework` だけ。multipart を手で組んでいるのは
-> そのため。`requests` や `openai` を入れた瞬間にコールドスタートが伸びる — この関数は
-> 「話しかける」を押してから鳴るまでの待ち時間そのものなので、そこが効く。
-> 標準ライブラリで足りている。
+> `requirements.txt` は `functions-framework` だけ。`requests` や `openai` を入れた
+> 瞬間にコールドスタートが伸びる — この関数は「話しかける」を押してから鳴るまでの
+> 待ち時間そのものなので、そこが効く。標準ライブラリで足りている。
+>
+> 以前は `/v1/realtime/calls` が **multipart/form-data** を要求したので、本文を手で
+> 組んでいた。`/v1/live/sessions` は JSON なので、その一式（`_multipart()` と
+> `secrets` の import）は消えた。**依存を増やさない方針の側が正しかった**ことになる。
 
 STUN も TURN も signaling サーバも要らない。SDP の交換がこの1往復で完結する。
 """
 
 import json
 import os
-import secrets
 import sys
 import urllib.error
 import urllib.parse
 import urllib.request
 
-from instruction import build_instructions
+from instruction import BACKEND_INSTRUCTIONS, VOICE_INSTRUCTIONS
 
 # --------------------------------------------------------------------------- #
 # 設定
@@ -48,37 +50,41 @@ ALLOWED_ORIGINS = frozenset(
     }
 )
 
-REALTIME_CALLS_URL = "https://api.openai.com/v1/realtime/calls"
-REALTIME_TIMEOUT = 30
+LIVE_SESSIONS_URL = "https://api.openai.com/v1/live/sessions"
+LIVE_TIMEOUT = 30
 
 #: **モデル ID は動く。** ここを更新し忘れると、古い ID が消えた日に 404 で止まる。
 #: 症状は「話しかけても無音」なので、まずここを疑うこと。
 #:
-#: flagship の `gpt-realtime-2.1` ではなく mini。**値段が3倍違う** — 音声が
-#: $32/$64 に対し $10/$20、テキストは $4.00/$24.00 に対し $0.60/$2.40（per 1M、
-#: 2026-09-14 に確認）。会社案内の受け答えに flagship が要るかは読んで決められる
-#: 類ではないので、まず安いほうで喋らせて判断する。
+#: ## 2つのモデルに分かれている理由
 #:
-#: **窓が狭い。** mini は **32k / 出力上限 4,096** で、flagship の 128k より一桁近く
-#: 小さい。ただし `instruction.py` は 3,935 文字で、上振れに見積もっても窓の 12% ほど。
-#: 会社案内の受け答えなら詰まる前に会話が終わる。`build_session()` が
-#: `max_output_tokens` を送っていないので、4,096 の上限と衝突する設定も無い。
-#: **戻すときに効くのは値段より窓のほう**なので、長い相談をされて話が飛ぶようなら
-#: ここを疑う。
-REALTIME_MODEL = "gpt-realtime-2.1-mini"
+#: `gpt-live-1` は**喋ることだけ**を担う全二重の音声モデルで、知識と推論は
+#: `delegation` で背後のモデルへ投げる。以前は `gpt-realtime-2.1-mini` 1つに
+#: 「全部知っている」と「自然に短く喋る」を同時にやらせていて、**長々と喋るのは
+#: その構造が原因**だった。音声層が会社案内を読んでいなければ、読み上げようがない。
+#:
+#: ## 値段
+#:
+#: 音声層は **$0.05/分（秒課金）**。`gpt-realtime-2.1-mini` の実効 $0.027/分より
+#: **高い**（2026-09-15 時点で確認）。安くするための変更ではなく、全二重と委譲を
+#: 買う変更。戻す判断をするときはここを見ること。
+#: バックエンドは別課金で、Luna は in $0.20 / cached $0.02 / out $1.20 per 1M。
+LIVE_MODEL = "gpt-live-1"
 
-#: 音声。選べるのは10種類で、公式が薦めているのは **`marin` と `cedar` の2つ**だけ。
-#: 残り8つ（`alloy` `ash` `ballad` `coral` `echo` `sage` `shimmer` `verse`）は
-#: `gpt-4o` 世代からの継続で、期待値は下がる方向。
+#: 委譲先。**一番安い層で足りる**という判断。ここがやるのは、file_search で引いた
+#: 資料を会話向けに短くまとめて返すことだけで、難しい推論は要らない。
+#: 足りなければ `gpt-5.6-terra`（in $2.00 / out $12.00）へ上げる。
+BACKEND_MODEL = "gpt-5.6-luna"
+
+#: 音声。被写体が男性なので男性の声から選ぶ:
+#: `ripple` `vesper` `stone` `meridian` `tempo` `beacon` `cinder`
 #:
-#: **voice を変えてもモデルの発音品質は戻らない。** Realtime API は speech-to-speech で
-#: 音声をモデル自身が生成するため、声は独立した TTS ではない。`gpt-realtime-2.1` から
-#: mini に落として発音が劣化したのはモデル側の話で、10種類どれを選んでも mini は
-#: mini の品質で鳴る。**戻したければ `REALTIME_MODEL` を触ること。**
-#:
-#: `marin` で日本語を実際に聴いたうえで `cedar` を試している（2026-09-14）。
-#: どちらが良いかは聴いて決める類で、読んで決められない。
-REALTIME_VOICE = "cedar"
+#: > [!warning] フィールドの位置が未確認
+#: > 公式のセッション設定例に `voice` が出てこない。Realtime 2.x と同じ
+#: > `audio.output.voice` に置いてあるが、**裏は取れていない**。外れていれば上流が
+#: > 400 を返し、エラー本文の先頭500文字が Cloud Logging に出る（`start_realtime_call`
+#: > の `HTTPError` 節）。そこにフィールド名が書いてあるはず。
+LIVE_VOICE = "vesper"
 
 #: SDP offer の上限。実際の offer は数 KB で、これは桁で言えば十分に緩い。
 #: 上限が無いと 10MB の本文をそのまま上流へ中継してしまう。
@@ -182,64 +188,64 @@ def verify_turnstile(token: str) -> bool:
 
 
 def build_session() -> dict:
+    """音声層と委譲先の設定を1つにまとめる。
+
+    `instructions` が2つあるのが要点。**喋り方の規則は音声層、根拠の規則は委譲先**で、
+    以前1つのプロンプトに同居して互いを薄めていたものを分けてある（`instruction.py`）。
+    """
     return {
-        "type": "realtime",
-        "model": REALTIME_MODEL,
-        "instructions": build_instructions(),
-        "audio": {"output": {"voice": REALTIME_VOICE}},
+        "model": LIVE_MODEL,
+        "instructions": VOICE_INSTRUCTIONS,
+        "audio": {"output": {"voice": LIVE_VOICE}},
+        "delegation": {
+            "type": "responses",
+            "responses": {
+                "model": BACKEND_MODEL,
+                "instructions": BACKEND_INSTRUCTIONS,
+                # 資料は**コードの中に無い**。ベクトルストアに置いてあり、更新に
+                # デプロイが要らない。それが積み込みではなく file_search を選んだ
+                # 理由で、費用ではない（$2.50/1k calls 対 実質ゼロ）。
+                "tools": [
+                    {
+                        "type": "file_search",
+                        "vector_store_ids": [os.environ["OPENAI_VECTOR_STORE_ID"]],
+                    }
+                ],
+                "tool_choice": "auto",
+            },
+        },
     }
 
 
-# --------------------------------------------------------------------------- #
-# 上流への中継
-# --------------------------------------------------------------------------- #
-
-
-def _multipart(sdp: bytes, session: dict) -> tuple[bytes, str]:
-    """`sdp` と `session` の2フィールドを multipart/form-data に組む。
-
-    手で組んでいる理由は冒頭の注記（依存を増やさない）。boundary は本文に現れない
-    ことが要るので、推測不能な値にしている。
-    """
-    boundary = f"----faredge{secrets.token_hex(16)}"
-    sep = f"--{boundary}\r\n".encode()
-
-    body = b"".join(
-        [
-            sep,
-            b'Content-Disposition: form-data; name="sdp"\r\n\r\n',
-            sdp,
-            b"\r\n",
-            sep,
-            b'Content-Disposition: form-data; name="session"\r\n',
-            b"Content-Type: application/json\r\n\r\n",
-            json.dumps(session, ensure_ascii=False).encode("utf-8"),
-            b"\r\n",
-            f"--{boundary}--\r\n".encode(),
-        ]
-    )
-    return body, f"multipart/form-data; boundary={boundary}"
-
-
-def relay_offer(sdp: bytes) -> str:
+def relay_offer(sdp: str) -> str:
     """SDP offer を上流へ渡し、answer を返す。
 
     `sdp` は**一切加工しない。** WebRTC の交換相手はブラウザと OpenAI で、こちらは
     中身を解釈する立場にない。触ると通話が成立しなくなる。
     """
     api_key = os.environ["OPENAI_API_KEY"]
-    body, content_type = _multipart(sdp, build_session())
+    payload = {
+        "session": build_session(),
+        "transport": {"type": "webrtc", "sdp": sdp},
+    }
 
     request = urllib.request.Request(
-        REALTIME_CALLS_URL,
-        data=body,
+        LIVE_SESSIONS_URL,
+        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
         headers={
             "Authorization": f"Bearer {api_key}",
-            "Content-Type": content_type,
+            "Content-Type": "application/json",
         },
     )
-    with urllib.request.urlopen(request, timeout=REALTIME_TIMEOUT) as response:
-        return _decode(response.read())
+    with urllib.request.urlopen(request, timeout=LIVE_TIMEOUT) as response:
+        body = json.loads(_decode(response.read()))
+
+    # 201 が返っても中身が期待の形とは限らない。`KeyError` にせず、呼び出し側が
+    # 502 に落とせる形で投げる。
+    answer = body.get("transport", {}).get("sdp")
+    if not answer:
+        raise ValueError(f"answer が無い応答: {json.dumps(body)[:300]}")
+    return answer
 
 
 # --------------------------------------------------------------------------- #
@@ -260,8 +266,9 @@ def start_realtime_call(request):
         headers.update(
             {
                 "Access-Control-Allow-Methods": "POST, OPTIONS",
-                # ブラウザは SDP を本文に、Turnstile のトークンを**ヘッダ**に載せる。
-                # 本文が JSON ではないので、トークンを混ぜる場所が本文に無い。
+                # Turnstile のトークンは**ヘッダ**のまま。本文が JSON になったので
+                # 混ぜる場所はできたが、動かす理由が無い — `application/json` も
+                # カスタムヘッダも等しく preflight を起こすので、速くもならない。
                 "Access-Control-Allow-Headers": "Content-Type, X-Turnstile-Token",
                 "Access-Control-Max-Age": "3600",
             }
@@ -274,11 +281,18 @@ def start_realtime_call(request):
     if origin is None:
         return _error("許可されていない origin です", 403, origin)
 
-    sdp = request.get_data()
-    if not sdp:
-        return _error("SDP offer がありません", 400, origin)
-    if len(sdp) > MAX_SDP_BYTES:
+    # 大きさは**パースの前に**見る。JSON を解いてから測ると、10MB の本文を一度
+    # メモリに展開したあとで捨てることになる。
+    raw = request.get_data()
+    if len(raw) > MAX_SDP_BYTES:
         return _error("SDP offer が大きすぎます", 413, origin)
+
+    try:
+        sdp = json.loads(raw).get("sdp", "")
+    except (ValueError, AttributeError):
+        return _error("本文が JSON ではありません", 400, origin)
+    if not isinstance(sdp, str) or not sdp:
+        return _error("SDP offer がありません", 400, origin)
 
     if not verify_turnstile(request.headers.get("X-Turnstile-Token", "")):
         return _error("検証に失敗しました", 403, origin)
@@ -297,6 +311,10 @@ def start_realtime_call(request):
         return _error(CALL_FAILED, 502, origin)
     except (urllib.error.URLError, TimeoutError) as err:
         print(f"OpenAI に到達できなかった: {err}", file=sys.stderr)
+        return _error(CALL_FAILED, 502, origin)
+    except ValueError as err:
+        # 201 は返ったが answer が取り出せなかった。応答の形が変わった可能性。
+        print(f"OpenAI の応答を解釈できなかった: {err}", file=sys.stderr)
         return _error(CALL_FAILED, 502, origin)
 
     return answer, 200, cors_headers(origin, "application/sdp")
