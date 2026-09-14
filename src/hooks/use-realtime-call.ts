@@ -4,7 +4,7 @@
  * 流れは1往復で完結する。**STUN も TURN も signaling サーバも要らない。**
  *
  *   マイク取得 → RTCPeerConnection → offer を作る
- *     → SDP を中継関数へ POST（`application/sdp`）
+ *     → SDP を中継関数へ POST（`application/json` の `{sdp}`）
  *       → 返ってきた answer を setRemoteDescription
  *         → 以降は**ブラウザと OpenAI が直結**。関数は経路から外れる
  *
@@ -164,10 +164,10 @@ export const useRealtimeCall = (): UseRealtimeCall => {
         const response = await fetch(realtimeEndpoint, {
           method: "POST",
           headers: {
-            "Content-Type": "application/sdp",
+            "Content-Type": "application/json",
             "X-Turnstile-Token": turnstileToken,
           },
-          body: offer.sdp ?? "",
+          body: JSON.stringify({ sdp: offer.sdp ?? "" }),
         });
         if (!response.ok) {
           teardown();
@@ -177,6 +177,9 @@ export const useRealtimeCall = (): UseRealtimeCall => {
           setState("error");
           return;
         }
+        // 中継関数は上流の応答から answer だけを抜いて、生の SDP を返す。
+        // `{transport:{sdp}}` のまま渡さないのは、上流の応答の形をブラウザ側の
+        // コードに漏らさないため — 変わったときに直す場所が2つになる。
         answer = await response.text();
       } catch {
         teardown();

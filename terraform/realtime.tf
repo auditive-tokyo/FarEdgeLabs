@@ -171,9 +171,17 @@ resource "google_cloudfunctions2_function" "realtime_call" {
     # `Total cpu < 1 is not supported with concurrency > 1` で apply が落ちる）。
     max_instance_request_concurrency = 1
 
-    # `environment_variables` は無い。モデル ID も音声も指示文も**コードの中**にある
-    # （`main.py` の定数と `instruction.py`）。設定に逃がすと、どの値で喋ったのかが
-    # git から追えなくなる。
+    # モデル ID も音声も指示文も**コードの中**にある（`main.py` の定数と
+    # `instruction.py`）。設定に逃がすと、どの値で喋ったのかが git から追えなくなる。
+    #
+    # **ベクトルストアの ID だけが例外。** そしてこれは上の原則を実際に破っている ——
+    # 資料の中身は git に無く、いつ何が入っていたかを履歴から辿れない。それを承知で
+    # こうしているのは、**資料をデプロイなしで直せること**を取ったから。分量が
+    # 増えても文脈を圧迫しない、という利点もこちら側にある。
+    environment_variables = {
+      OPENAI_VECTOR_STORE_ID = var.openai_vector_store_id
+    }
+
     dynamic "secret_environment_variables" {
       for_each = merge(
         { for key, secret in google_secret_manager_secret.realtime : key => secret.secret_id },
