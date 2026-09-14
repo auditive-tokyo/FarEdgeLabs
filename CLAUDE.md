@@ -334,13 +334,12 @@ Federation removes the reason to avoid CI.
   payloads are added with `gcloud secrets versions add` so they stay out of state.
   Use `printf`, not `echo` — a trailing newline authenticates nowhere and looks
   perfectly present
-- **`realtime-call` が喋る内容は、このリポジトリに無い。** 会社案内と経歴は OpenAI の
-  ベクトルストアにあり、関数は `file_search` で引く。Terraform が持つのは ID だけ
-  （`openai_vector_store_id`）で、**器は IaC、中身は手**という上と同じ形。原本は
-  `private/vector-store/`（git 管理外）。
-  **代償を承知で選んでいる** — いつ何を喋っていたかが git から辿れない。取ったのは
-  「資料を直すのにデプロイが要らない」ほう。費用ではない（file_search は
-  $2.50/1k calls で、プロンプトに積むより桁で高い）
+- **`realtime-call` が喋る内容は `gc_run_functions/realtime_call/company.md`。** 委譲先
+  （`gpt-5.6-luna`）の指示に丸ごと積まれる。**音声層は資料を持たない**ので、長々と
+  読み上げようがない — これが1つのモデルで喋らせていた頃との一番の違い。
+  **ベクトルストア（`file_search`）は試して駄目だった**（2026-09-15、本番で 502）。
+  Luna 単体は対応しているが、**GPT-Live の委譲では `function` と `web_search` しか
+  使えない**。経緯は `instruction.py` の冒頭
 - **Flow:** one path in. A human merges the release PR, `production` gets the push,
   and `infra.yml` plans and then applies in the same job. **The review is the pull
   request diff, not the plan** — the same shape as putting `sam deploy` behind a

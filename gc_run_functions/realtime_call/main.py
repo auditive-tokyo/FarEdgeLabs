@@ -19,10 +19,6 @@
 > `requirements.txt` は `functions-framework` だけ。`requests` や `openai` を入れた
 > 瞬間にコールドスタートが伸びる — この関数は「話しかける」を押してから鳴るまでの
 > 待ち時間そのものなので、そこが効く。標準ライブラリで足りている。
->
-> 以前は `/v1/realtime/calls` が **multipart/form-data** を要求したので、本文を手で
-> 組んでいた。`/v1/live/sessions` は JSON なので、その一式（`_multipart()` と
-> `secrets` の import）は消えた。**依存を増やさない方針の側が正しかった**ことになる。
 
 STUN も TURN も signaling サーバも要らない。SDP の交換がこの1往復で完結する。
 """
@@ -71,8 +67,8 @@ LIVE_TIMEOUT = 30
 #: バックエンドは別課金で、Luna は in $0.20 / cached $0.02 / out $1.20 per 1M。
 LIVE_MODEL = "gpt-live-1"
 
-#: 委譲先。**一番安い層で足りる**という判断。ここがやるのは、file_search で引いた
-#: 資料を会話向けに短くまとめて返すことだけで、難しい推論は要らない。
+#: 委譲先。**一番安い層で足りる**という判断。ここがやるのは、渡された資料から
+#: 答えを探して会話向けに短くまとめることだけで、難しい推論は要らない。
 #: 足りなければ `gpt-5.6-terra`（in $2.00 / out $12.00）へ上げる。
 BACKEND_MODEL = "gpt-5.6-luna"
 
@@ -201,17 +197,10 @@ def build_session() -> dict:
             "type": "responses",
             "responses": {
                 "model": BACKEND_MODEL,
+                # 資料は `BACKEND_INSTRUCTIONS` に積んである。**`tools` は渡さない** —
+                # `file_search` を入れて本番で 502 を踏んだ（`instruction.py` の注記）。
+                # Live の委譲で使えるのは `function` と `web_search` だけ。
                 "instructions": BACKEND_INSTRUCTIONS,
-                # 資料は**コードの中に無い**。ベクトルストアに置いてあり、更新に
-                # デプロイが要らない。それが積み込みではなく file_search を選んだ
-                # 理由で、費用ではない（$2.50/1k calls 対 実質ゼロ）。
-                "tools": [
-                    {
-                        "type": "file_search",
-                        "vector_store_ids": [os.environ["OPENAI_VECTOR_STORE_ID"]],
-                    }
-                ],
-                "tool_choice": "auto",
             },
         },
     }
