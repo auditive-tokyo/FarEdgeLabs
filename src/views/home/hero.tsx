@@ -1,12 +1,15 @@
 import type { HomeContent } from "@/data/mocks/home";
+import type { Locale } from "@/locales";
 
 import { HeroCopy } from "./hero-copy";
 import { HeroHeadline } from "./hero-headline";
-
 import { HeroStats } from "./hero-stats";
+import { HeroVoice } from "./hero-voice";
 
 export interface HeroProps {
   hero: HomeContent["hero"];
+  /** Turnstile のウィジェットの言語に要る。`<ContactForm>` と同じ渡し方。 */
+  locale: Locale;
   /**
    * Italics on the accent word. Off for Japanese: the CJK fonts a browser falls
    * back to carry no italic cut, so the engine shears the glyphs instead —
@@ -36,7 +39,7 @@ export interface HeroProps {
  * frame's absolute coordinates. Source order is therefore also the mobile
  * reading order — keep them in the order they should be read.
  */
-export const Hero = ({ hero, italicAccent = true }: HeroProps) => {
+export const Hero = ({ hero, locale, italicAccent = true }: HeroProps) => {
   return (
     <section
       aria-labelledby="hero-title"
@@ -46,8 +49,10 @@ export const Hero = ({ hero, italicAccent = true }: HeroProps) => {
          fill a phone on its own, but the form and the social-proof pill are gone
          and three blocks no longer reach the bottom, which left the stats
          stranded mid-screen. They are pushed down instead of the gaps being
-         stretched (`mt-auto` on the grid), so the headline and copy stay
-         together at the top and read as one block. `pt-20` clears the fixed
+         stretched (`mt-auto`), so the headline and copy stay together at the top
+         and read as one block. **`mt-auto` は下の塊の先頭が持つ** — いまは
+         `<HeroVoice>`。flex では `margin-top: auto` の要素が複数あると余白がその数で
+         割られるので、2つに付けると塊にならず離れる。`pt-20` clears the fixed
          header.
 
          From `lg`: exactly the viewport, never more. The bottom row is pinned to
@@ -62,6 +67,8 @@ export const Hero = ({ hero, italicAccent = true }: HeroProps) => {
         italicAccent={italicAccent}
       />
       <HeroCopy lead={hero.lead} body={hero.body} />
+
+      <HeroVoice copy={hero.voice} locale={locale} />
 
       <HeroStats stats={hero.stats} />
     </section>

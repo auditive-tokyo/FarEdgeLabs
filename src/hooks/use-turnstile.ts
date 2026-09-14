@@ -23,7 +23,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { turnstileSiteKey } from "@/env";
-import type { TurnstileApi } from "@/types/turnstile";
+import type { TurnstileApi, TurnstileRenderOptions } from "@/types/turnstile";
 
 const SCRIPT_SRC =
   "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
@@ -75,6 +75,21 @@ const loadScript = (): Promise<void> => {
 export interface UseTurnstileOptions {
   /** ウィジェットの表示言語。ページのロケールをそのまま渡す。 */
   language: string;
+  /**
+   * `false` のあいだはスクリプトも読まず、ウィジェットも描かない。既定は `true`。
+   *
+   * 問い合わせフォームはページを開いた時点で検証を始めてよい（フォームがそこにある
+   * のが訪問の目的）。**ヒーローの通話ボタンは違う** — 話しかけない訪問者にまで
+   * Turnstile のスクリプトと通信を負わせることになる。そちらは手を伸ばした時点で
+   * `true` にする。
+   */
+  enabled?: boolean;
+  /**
+   * 既定は `always`（フォームはウィジェットが見えていたほうが、何が起きているか
+   * 分かる）。ヒーローは `interaction-only` — 被写体の上に Cloudflare のバッジを
+   * 置かないため。**人間なら大半は何も出ない。**
+   */
+  appearance?: TurnstileRenderOptions["appearance"];
 }
 
 export interface UseTurnstile {
@@ -87,13 +102,19 @@ export interface UseTurnstile {
   reset: () => void;
 }
 
-export const useTurnstile = ({ language }: UseTurnstileOptions): UseTurnstile => {
+export const useTurnstile = ({
+  language,
+  enabled = true,
+  appearance = "always",
+}: UseTurnstileOptions): UseTurnstile => {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | undefined>(undefined);
   const [token, setToken] = useState("");
   const [status, setStatus] = useState<TurnstileStatus>("loading");
 
   useEffect(() => {
+    if (!enabled) return;
+
     let cancelled = false;
     // API を掴んでおく。cleanup の時点で `window.turnstile` を読み直すと、ページを
     // 離れる途中で消えている可能性がある。
@@ -114,6 +135,7 @@ export const useTurnstile = ({ language }: UseTurnstileOptions): UseTurnstile =>
           sitekey: turnstileSiteKey,
           theme: "auto",
           language,
+          appearance,
           callback: (value) => {
             setToken(value);
             setStatus("solved");
@@ -143,7 +165,7 @@ export const useTurnstile = ({ language }: UseTurnstileOptions): UseTurnstile =>
       if (widgetIdRef.current !== undefined) api?.remove(widgetIdRef.current);
       widgetIdRef.current = undefined;
     };
-  }, [language]);
+  }, [language, enabled, appearance]);
 
   const reset = useCallback(() => {
     setToken("");

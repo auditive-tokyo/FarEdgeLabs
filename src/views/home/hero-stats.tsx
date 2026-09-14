@@ -191,7 +191,7 @@ export const HeroStats = ({ stats }: HeroStatsProps) => {
       tag="div"
       role="group"
       aria-labelledby={SCOPE_ID}
-      className="mt-auto rounded-card border border-accent bg-surface/75 p-4 lg:absolute lg:right-7.5 lg:top-[24.3125rem] lg:mt-0 lg:w-[24.25rem] lg:p-6"
+      className="rounded-card border border-accent bg-surface/75 p-4 lg:absolute lg:right-7.5 lg:top-[24.3125rem] lg:w-[24.25rem] lg:p-6"
       from={LIFT_OUT}
       to={LIFT_IN}
       config={REVEAL_SPRING}
