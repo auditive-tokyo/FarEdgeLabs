@@ -26,10 +26,15 @@ const VIDEO_WIDTH = 962;
 const VIDEO_HEIGHT = 720;
 
 /**
- * 頭の中心（クリップ座標の正規化）。**3フレーム（0 / 50 / 100%）を実測して決めた値**で、
+ * 頭の位置（クリップ座標の正規化）。**3フレーム（0 / 50 / 100%）を実測して決めた値**で、
  * 首から上が回転するだけで body は移動しないので、クリップのどこでも同じ位置にある。
+ *
+ * 基準を上端ではなく**下端**にしているのは、上に置けないから。頭の上端は画面上
+ * 77〜205px に来るのに対し、ヘッダーは `top-2.5` + `h-[3.125rem]` で**下端が 60px**。
+ * 1440×800 のような 16:10 のノートだと隙間が 17px しか無く、1行も入らない。
+ * 下端側は 346〜468px で余裕がある。
  */
-const HEAD_CENTER = { x: 0.485, y: 0.325 };
+const HEAD = { x: 0.485, bottom: 0.45 };
 
 /**
  * 男に話しかけるボタン。
@@ -77,6 +82,8 @@ export const HeroVoice = ({ copy, locale }: HeroVoiceProps) => {
   const { containerRef, token, status, reset } = useTurnstile({
     language: locale,
     enabled: armed,
+    // 被写体の上に Cloudflare のバッジを置かない。人間なら大半は何も描かれない。
+    appearance: "interaction-only",
   });
   const { state, error, start, stop, audioRef } = useRealtimeCall();
 
@@ -97,8 +104,8 @@ export const HeroVoice = ({ copy, locale }: HeroVoiceProps) => {
   const scale = Math.max(width / VIDEO_WIDTH, height / VIDEO_HEIGHT);
   const drawnWidth = VIDEO_WIDTH * scale;
   const drawnHeight = VIDEO_HEIGHT * scale;
-  const left = (width - drawnWidth) / 2 + (1 - HEAD_CENTER.x) * drawnWidth;
-  const top = (height - drawnHeight) / 2 + HEAD_CENTER.y * drawnHeight;
+  const left = (width - drawnWidth) / 2 + (1 - HEAD.x) * drawnWidth;
+  const top = (height - drawnHeight) / 2 + HEAD.bottom * drawnHeight;
 
   const live = state === "live";
   const busy = pending || state === "requesting-mic" || state === "connecting";
@@ -134,7 +141,10 @@ export const HeroVoice = ({ copy, locale }: HeroVoiceProps) => {
   return (
     <Inview
       tag="div"
-      className="self-start lg:absolute lg:left-(--voice-left) lg:top-(--voice-top) lg:-translate-x-1/2 lg:-translate-y-1/2"
+      /* `lg` 未満では統計パネルの**すぐ上**に立つ（`hero.tsx` の注記）。下端側に
+         置くのは、被写体の頭がコピーカードの裏に来て指せないから。誘い文句が
+         画面の途中で宙に浮くより、読み終わった先にあるほうが順番に合う。 */
+      className="mt-auto self-start lg:absolute lg:left-(--voice-left) lg:top-(--voice-top) lg:mt-0 lg:-translate-x-1/2 lg:-translate-y-1/2"
       style={
         {
           "--voice-left": `${left}px`,
@@ -161,7 +171,25 @@ export const HeroVoice = ({ copy, locale }: HeroVoiceProps) => {
           setArmed(true);
           setPending(true);
         }}
-        className="rounded-card border border-accent bg-surface/75 px-4 py-2 font-mulish text-body leading-[1.2] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-60"
+        /* 統計パネルに倣う（`border-accent` + `bg-surface/75`）。
+
+           最初はヘッダーのピル（`border-hairline`）にしたが、**ダークモードで箱が
+           見えなかった**。`--surface #161a19` と `--halftone-bg #0b0e0d` はほぼ同じ
+           暗さで、75% の膜を重ねても分離しない。統計パネルが成立しているのは
+           `border-accent` が輪郭を描いているからで、コピーカードは `lg` で
+           `lg:contents` にしてカード自体を捨てている。**忙しい側に置く箱は、地では
+           なく枠で成立している。**
+
+           一度**背景なしの素のテキスト**にしたが、読めなかった。被写体の周りは定義上
+           フィールドが一番密なところで、`hero-copy.tsx` が「`/75` を両方のカードで
+           共有して同じ深さに座らせる」と書いているのはそのため。**その値から外さない。**
+           `backdrop-blur` も足さない — フィールドは毎フレーム描き直す WebGL なので、
+           フィルタも同じ頻度で掛け直すことになる（同じ注記）。
+
+           `<button>` をやめたわけではない。canvas にヒットテストを置くと `aria-hidden`
+           のフィールドをインタラクティブにすることになり、キーボードと支援技術から
+           **始める手段が消える**。 */
+        className="rounded-card border border-accent bg-surface/75 px-4 py-2 font-mulish text-caption leading-[1.2] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-60"
       >
         {live ? copy.stop : copy.start}
       </button>

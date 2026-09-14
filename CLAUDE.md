@@ -58,10 +58,13 @@ two directions work differently:
 - **Reading the figures does not touch a function at all.** `work-statistics` writes a
   public object to Cloud Storage and the page `fetch`es that. GCS answers the preflight
   itself
-- **Sending an enquiry is a `POST` to a function that anyone may call.** It has to be:
-  a static page holds no credential to present. `contact-form` is therefore the one
-  unauthenticated endpoint in the project, and its defences are all inside its own
-  handler. See "The backend"
+- **問い合わせの送信と通話の開始は、誰でも叩ける関数への `POST`。** そうするしかない —
+  静的なページは提示できる資格情報を持たない。`contact-form` と `realtime-call` の
+  2本がそれで、守りは全部それぞれのハンドラの中にある。See "The backend"
+- **2本の性質は同じではない。** `contact-form` を素通しさせると届くのは迷惑メールだが、
+  `realtime-call` を素通しさせると**出ていくのは金**（OpenAI の従量課金）。だから
+  `realtime_call/main.py` の Turnstile 検証は **`TURNSTILE_SECRET` 未設定で fail closed**
+  にしてあり、`contact_form` とは意図的に挙動が違う
 
 ## Two locales, two root layouts
 
@@ -304,8 +307,12 @@ directory is pushed to `gh-pages`.
   `NEXT_PUBLIC_CONTACT_ENDPOINT` must agree with `terraform output contact_form_uri`.
   There is nothing that checks that they agree
 - `npm run brand` is not part of the build. Run it locally and commit the PNGs
-- Do not delete `.next` while `npm run dev` is running — Turbopack's cache is in
-  there and the server does not recover
+- **`npm run dev` が動いている間に `npm run build` を走らせない。** どちらも `.next/`
+  を使うので、dev サーバが**静かに更新を拾わなくなる**。一度やった（2026-09-14）:
+  ソースもビルド成果物も正しいのにブラウザだけ古いまま、という一番たちの悪い形で
+  出る。`.next/dev` の mtime が編集時刻より古ければこれ。直し方は dev の再起動。
+  同じ理由で、dev 中に `.next` を消してもいけない — Turbopack のキャッシュがそこに
+  あり、サーバは回復しない
 
 ## The backend
 

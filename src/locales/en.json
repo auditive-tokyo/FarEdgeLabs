@@ -81,8 +81,8 @@
       }
     },
     "voice": {
-      "start": "Talk to him",
-      "stop": "End",
+      "start": "This man can talk",
+      "stop": "End the call",
       "label": "Talk to the site's guide by voice",
       "states": {
         "verifying": "Checking",

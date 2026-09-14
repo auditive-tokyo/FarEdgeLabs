@@ -49,8 +49,10 @@ export const Hero = ({ hero, locale, italicAccent = true }: HeroProps) => {
          fill a phone on its own, but the form and the social-proof pill are gone
          and three blocks no longer reach the bottom, which left the stats
          stranded mid-screen. They are pushed down instead of the gaps being
-         stretched (`mt-auto` on the grid), so the headline and copy stay
-         together at the top and read as one block. `pt-20` clears the fixed
+         stretched (`mt-auto`), so the headline and copy stay together at the top
+         and read as one block. **`mt-auto` は下の塊の先頭が持つ** — いまは
+         `<HeroVoice>`。flex では `margin-top: auto` の要素が複数あると余白がその数で
+         割られるので、2つに付けると塊にならず離れる。`pt-20` clears the fixed
          header.
 
          From `lg`: exactly the viewport, never more. The bottom row is pinned to
@@ -66,9 +68,9 @@ export const Hero = ({ hero, locale, italicAccent = true }: HeroProps) => {
       />
       <HeroCopy lead={hero.lead} body={hero.body} />
 
-      <HeroStats stats={hero.stats} />
-
       <HeroVoice copy={hero.voice} locale={locale} />
+
+      <HeroStats stats={hero.stats} />
     </section>
   );
 };

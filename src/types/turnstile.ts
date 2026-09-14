@@ -21,6 +21,13 @@ export interface TurnstileRenderOptions {
   theme?: "auto" | "light" | "dark";
   language?: string;
   action?: string;
+  /**
+   * `interaction-only` はウィジェットを**普段は描かない**。操作を求められたときだけ
+   * 出る。ヒーローの通話ボタンで使っている — 既定の `always` だと Cloudflare の
+   * バッジが被写体の上に乗る。
+   */
+  appearance?: "always" | "execute" | "interaction-only";
+  size?: "normal" | "flexible" | "compact";
 }
 
 export interface TurnstileApi {

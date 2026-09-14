@@ -23,7 +23,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { turnstileSiteKey } from "@/env";
-import type { TurnstileApi } from "@/types/turnstile";
+import type { TurnstileApi, TurnstileRenderOptions } from "@/types/turnstile";
 
 const SCRIPT_SRC =
   "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
@@ -84,6 +84,12 @@ export interface UseTurnstileOptions {
    * `true` にする。
    */
   enabled?: boolean;
+  /**
+   * 既定は `always`（フォームはウィジェットが見えていたほうが、何が起きているか
+   * 分かる）。ヒーローは `interaction-only` — 被写体の上に Cloudflare のバッジを
+   * 置かないため。**人間なら大半は何も出ない。**
+   */
+  appearance?: TurnstileRenderOptions["appearance"];
 }
 
 export interface UseTurnstile {
@@ -99,6 +105,7 @@ export interface UseTurnstile {
 export const useTurnstile = ({
   language,
   enabled = true,
+  appearance = "always",
 }: UseTurnstileOptions): UseTurnstile => {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | undefined>(undefined);
@@ -128,6 +135,7 @@ export const useTurnstile = ({
           sitekey: turnstileSiteKey,
           theme: "auto",
           language,
+          appearance,
           callback: (value) => {
             setToken(value);
             setStatus("solved");
@@ -157,7 +165,7 @@ export const useTurnstile = ({
       if (widgetIdRef.current !== undefined) api?.remove(widgetIdRef.current);
       widgetIdRef.current = undefined;
     };
-  }, [language, enabled]);
+  }, [language, enabled, appearance]);
 
   const reset = useCallback(() => {
     setToken("");
