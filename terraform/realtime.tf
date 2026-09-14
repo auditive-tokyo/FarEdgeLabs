@@ -82,10 +82,10 @@ data "archive_file" "realtime_call" {
 
   # `main.tf` / `contact.tf` と同じで、**ディレクトリではなくファイルを列挙する**。
   #
-  # > [!warning] `instruction.py` を落とすと ModuleNotFoundError で死ぬ
-  # > この関数だけソースが3つある。`main.py` が `from instruction import ...` して
-  # > いるので、ここに書き忘れると **apply は通り、デプロイも成功し、最初の通話で
-  # > 落ちる**。ファイルを増やしたらここも増やすこと。
+  # > [!warning] 書き忘れると apply もデプロイも通って、最初の通話で落ちる
+  # > この関数だけソースが4つある。`main.py` が `from instruction import ...` し、
+  # > その `instruction.py` が `company.md` を読む。どちらを落としても
+  # > **apply は通り、デプロイも成功し、通話だけが落ちる**。増やしたらここも増やすこと。
   source {
     content  = file("${local.realtime_call_src}/main.py")
     filename = "main.py"
@@ -99,6 +99,12 @@ data "archive_file" "realtime_call" {
   source {
     content  = file("${local.realtime_call_src}/requirements.txt")
     filename = "requirements.txt"
+  }
+
+  # man が喋る中身。**コードではなく原稿**なので markdown のまま同梱する。
+  source {
+    content  = file("${local.realtime_call_src}/company.md")
+    filename = "company.md"
   }
 }
 
@@ -173,15 +179,7 @@ resource "google_cloudfunctions2_function" "realtime_call" {
 
     # モデル ID も音声も指示文も**コードの中**にある（`main.py` の定数と
     # `instruction.py`）。設定に逃がすと、どの値で喋ったのかが git から追えなくなる。
-    #
-    # **ベクトルストアの ID だけが例外。** そしてこれは上の原則を実際に破っている ——
-    # 資料の中身は git に無く、いつ何が入っていたかを履歴から辿れない。それを承知で
-    # こうしているのは、**資料をデプロイなしで直せること**を取ったから。分量が
-    # 増えても文脈を圧迫しない、という利点もこちら側にある。
-    environment_variables = {
-      OPENAI_VECTOR_STORE_ID = var.openai_vector_store_id
-    }
-
+    # 会社の資料も同じで、`gc_run_functions/realtime_call/company.md` にある。
     dynamic "secret_environment_variables" {
       for_each = merge(
         { for key, secret in google_secret_manager_secret.realtime : key => secret.secret_id },
