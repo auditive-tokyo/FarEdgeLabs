@@ -67,9 +67,18 @@ REALTIME_TIMEOUT = 30
 #: ここを疑う。
 REALTIME_MODEL = "gpt-realtime-2.1-mini"
 
-#: 音声。**日本語での品質は未確認**（2026-09-10 時点）。既定ロケールが日本語なので、
-#: 実際に喋らせて選び直すこと。読んで決められる類ではない。
-REALTIME_VOICE = "marin"
+#: 音声。選べるのは10種類で、公式が薦めているのは **`marin` と `cedar` の2つ**だけ。
+#: 残り8つ（`alloy` `ash` `ballad` `coral` `echo` `sage` `shimmer` `verse`）は
+#: `gpt-4o` 世代からの継続で、期待値は下がる方向。
+#:
+#: **voice を変えてもモデルの発音品質は戻らない。** Realtime API は speech-to-speech で
+#: 音声をモデル自身が生成するため、声は独立した TTS ではない。`gpt-realtime-2.1` から
+#: mini に落として発音が劣化したのはモデル側の話で、10種類どれを選んでも mini は
+#: mini の品質で鳴る。**戻したければ `REALTIME_MODEL` を触ること。**
+#:
+#: `marin` で日本語を実際に聴いたうえで `cedar` を試している（2026-09-14）。
+#: どちらが良いかは聴いて決める類で、読んで決められない。
+REALTIME_VOICE = "cedar"
 
 #: SDP offer の上限。実際の offer は数 KB で、これは桁で言えば十分に緩い。
 #: 上限が無いと 10MB の本文をそのまま上流へ中継してしまう。
