@@ -83,6 +83,10 @@ export interface UseRealtimeCall {
  * 45秒なのは**非対称だから**。短すぎると次の質問を考えている訪問者を切ってしまい、
  * 押し直し + Turnstile の取り直しになる。長すぎたときの損は15秒ぶんの $0.0125。
  * **迷ったら長いほうへ倒す。**
+ *
+ * 壁時計で課金されることは実測済み（2026-09-15）。マイクを切って放置し、残高が
+ * **$1.03 → $1.21（3.6分ぶん）**。ドキュメントの "billed by duration" は
+ * 「音声のやり取りがある時間」ではなく**セッションが開いている時間**だった。
  */
 const IDLE_HANGUP_MS = 45_000;
 
@@ -200,12 +204,26 @@ export const useRealtimeCall = (): UseRealtimeCall => {
       // イベント用のデータチャネル。後から足すには再ネゴシエーションが要るので、
       // 作るなら最初。
       //
-      // **どのイベントでも無音タイマーを叩き直す。** 発話のイベントだけを選り分ける
-      // ほうが正確だが、上流のイベント名を取り違えると**会話の最中に切る**。逆に
-      // 選り分けないと、キープアライブがあった場合にタイマーが発火しなくなる —— が、
-      // そちらは `MAX_CALL_MS` が拾う。**壊れ方が軽いほうへ倒している。**
+      // **`usage` を含むイベントでは叩き直さない。** 最初は「どのイベントでも叩き
+      // 直す」にしていて、**無音タイマーが一度も発火しなかった**。実測すると
+      // `session.usage.updated` が定期的に流れていて、これが延々とリセットしていた
+      // （2026-09-15、`npm run dev` のコンソールで確認）。
+      //
+      // 除外リスト（ここに挙げたものを無視する）にしてあるのは、許可リスト（挙げた
+      // ものだけで叩き直す）だと**名前を1つ取りこぼしたときに会話の最中に切る**から。
+      // 除外リストの取りこぼしはタイマーが効かなくなるだけで、`MAX_CALL_MS` が拾う。
+      // **壊れ方が軽いほうを選ぶ。**
       const events = pc.createDataChannel("oai-events");
-      events.onmessage = armIdleTimer;
+      events.onmessage = (event) => {
+        let type = "";
+        try {
+          type = JSON.parse(event.data as string).type ?? "";
+        } catch {
+          // JSON でないものが来たら、中身の判断はしない。会話の証拠として扱う。
+        }
+        if (type.includes("usage")) return;
+        armIdleTimer();
+      };
 
       pc.onconnectionstatechange = () => {
         if (pc !== pcRef.current) return;
