@@ -132,6 +132,7 @@ export const HeroVoice = ({ copy, locale }: HeroVoiceProps) => {
     rejected: copy.errors.rejected,
     unavailable: copy.errors.unavailable,
     "connection-lost": copy.errors.connectionLost,
+    "timed-out": copy.errors.timedOut,
   };
 
   // Turnstile の検証は `useRealtimeCall` の外で起きるので、状態の写像に無い。

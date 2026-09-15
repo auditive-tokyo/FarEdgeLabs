@@ -51,7 +51,15 @@ export type RealtimeCallError =
   | "mic-denied"
   | "rejected"
   | "unavailable"
-  | "connection-lost";
+  | "connection-lost"
+  /**
+   * 無音が続いた、または通話が上限に達した。**故障ではない。**
+   *
+   * それでもここに置いているのは、文言を必ず用意させるため —— `hero-voice.tsx` の
+   * `Record<RealtimeCallError, string>` が網羅性を検査するので、種別を足すと
+   * ロケールの追加漏れがコンパイルエラーになる。黙って終わるのが一番不親切。
+   */
+  | "timed-out";
 
 export interface UseRealtimeCall {
   state: RealtimeCallState;
@@ -64,6 +72,34 @@ export interface UseRealtimeCall {
   audioRef: React.RefObject<HTMLAudioElement | null>;
 }
 
+/**
+ * 無音がこれだけ続いたら切る。
+ *
+ * **GPT-Live は「セッションが開いている時間」で課金される**（$0.05/分、秒課金）。
+ * Realtime とは逆で、**黙っていても止まらない** — あちらは server VAD 下の無音が
+ * 0 トークンだった。タブを開いたまま席を離れられると、WebRTC はバックグラウンド
+ * タブでも動き続けるので課金も続く。1晩で $24、1週間で $500。
+ *
+ * 45秒なのは**非対称だから**。短すぎると次の質問を考えている訪問者を切ってしまい、
+ * 押し直し + Turnstile の取り直しになる。長すぎたときの損は15秒ぶんの $0.0125。
+ * **迷ったら長いほうへ倒す。**
+ */
+const IDLE_HANGUP_MS = 45_000;
+
+/**
+ * 喋り続けていても、ここで切る。
+ *
+ * **こちらが費用の保証で、無音タイマーはその手前の最適化。** 下の `onmessage` が
+ * どのイベントでも無音タイマーを叩き直す作りなので、キープアライブが流れていれば
+ * 無音タイマーは永久に発火しない。**そのときに効くのがこの上限**で、だから
+ * 「イベントを選り分けて判定する」より「上限で保証する」ほうを選んでいる。
+ *
+ * 3分。**この man は商談をしない** —— 具体的な相談は問い合わせフォームへ回す約束に
+ * なっている（`instruction.py` の「料金・期間・受注可否・見積りは答えない」）ので、
+ * 会話は一言二言で終わる設計。足りなければ押し直せばよい。
+ */
+const MAX_CALL_MS = 3 * 60_000;
+
 export const useRealtimeCall = (): UseRealtimeCall => {
   const [state, setState] = useState<RealtimeCallState>("idle");
   const [error, setError] = useState<RealtimeCallError | null>(null);
@@ -71,6 +107,8 @@ export const useRealtimeCall = (): UseRealtimeCall => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const micRef = useRef<MediaStream | null>(null);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const capTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
    * 後始末。**マイクのトラックを止め忘れると、通話が終わってもブラウザの録音表示が
@@ -78,6 +116,13 @@ export const useRealtimeCall = (): UseRealtimeCall => {
    * 見た目に出るぶん、これは静かに壊れない類の不具合。
    */
   const teardown = useCallback(() => {
+    // タイマーを先に落とす。**残すと、切ったあとのタイマーが `setState` を叩いて
+    // `idle` に戻した画面をいきなり `error` にする。**
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    if (capTimerRef.current) clearTimeout(capTimerRef.current);
+    idleTimerRef.current = null;
+    capTimerRef.current = null;
+
     micRef.current?.getTracks().forEach((track) => track.stop());
     micRef.current = null;
 
@@ -139,14 +184,38 @@ export const useRealtimeCall = (): UseRealtimeCall => {
 
       mic.getTracks().forEach((track) => pc.addTrack(track, mic));
 
-      // イベント用のデータチャネル。**いまは何も読まないが、offer に含めておく。**
-      // 後から足すには再ネゴシエーションが要るので、作るなら最初。文字起こしや
-      // function calling を使うときの受け口になる。
-      pc.createDataChannel("oai-events");
+      /** 時間切れで切る。**故障ではないが、黙って終わると訪問者に伝わらない。** */
+      const hangUp = () => {
+        if (pc !== pcRef.current) return;
+        teardown();
+        setError("timed-out");
+        setState("error");
+      };
+
+      const armIdleTimer = () => {
+        if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = setTimeout(hangUp, IDLE_HANGUP_MS);
+      };
+
+      // イベント用のデータチャネル。後から足すには再ネゴシエーションが要るので、
+      // 作るなら最初。
+      //
+      // **どのイベントでも無音タイマーを叩き直す。** 発話のイベントだけを選り分ける
+      // ほうが正確だが、上流のイベント名を取り違えると**会話の最中に切る**。逆に
+      // 選り分けないと、キープアライブがあった場合にタイマーが発火しなくなる —— が、
+      // そちらは `MAX_CALL_MS` が拾う。**壊れ方が軽いほうへ倒している。**
+      const events = pc.createDataChannel("oai-events");
+      events.onmessage = armIdleTimer;
 
       pc.onconnectionstatechange = () => {
         if (pc !== pcRef.current) return;
-        if (pc.connectionState === "connected") setState("live");
+        if (pc.connectionState === "connected") {
+          setState("live");
+          armIdleTimer();
+          // 通話の上限は繋がった時点から。**張り直さない** —— 叩き直せる無音タイマーと
+          // 違って、こちらは伸びては意味が無い。
+          if (!capTimerRef.current) capTimerRef.current = setTimeout(hangUp, MAX_CALL_MS);
+        }
         if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
           teardown();
           setError("connection-lost");
