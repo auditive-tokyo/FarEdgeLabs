@@ -94,7 +94,8 @@
         "micDenied": "The microphone was not available. Allow it in your browser settings and try again.",
         "rejected": "The check did not pass. A browser extension may be blocking it.",
         "unavailable": "Could not connect just now. Please try again in a moment.",
-        "connectionLost": "The connection dropped."
+        "connectionLost": "The connection dropped.",
+        "timedOut": "Ended after a quiet stretch. You can start again any time."
       }
     }
   }

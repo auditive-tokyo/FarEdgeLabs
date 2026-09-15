@@ -74,12 +74,6 @@ BACKEND_MODEL = "gpt-5.6-luna"
 
 #: 音声。被写体が男性なので男性の声から選ぶ:
 #: `ripple` `vesper` `stone` `meridian` `tempo` `beacon` `cinder`
-#:
-#: > [!warning] フィールドの位置が未確認
-#: > 公式のセッション設定例に `voice` が出てこない。Realtime 2.x と同じ
-#: > `audio.output.voice` に置いてあるが、**裏は取れていない**。外れていれば上流が
-#: > 400 を返し、エラー本文の先頭500文字が Cloud Logging に出る（`start_realtime_call`
-#: > の `HTTPError` 節）。そこにフィールド名が書いてあるはず。
 LIVE_VOICE = "vesper"
 
 #: SDP offer の上限。実際の offer は数 KB で、これは桁で言えば十分に緩い。
