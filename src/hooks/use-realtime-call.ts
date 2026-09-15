@@ -83,6 +83,10 @@ export interface UseRealtimeCall {
  * 45秒なのは**非対称だから**。短すぎると次の質問を考えている訪問者を切ってしまい、
  * 押し直し + Turnstile の取り直しになる。長すぎたときの損は15秒ぶんの $0.0125。
  * **迷ったら長いほうへ倒す。**
+ *
+ * 壁時計で課金されることは実測済み（2026-09-15）。マイクを切って放置し、残高が
+ * **$1.03 → $1.21（3.6分ぶん）**。ドキュメントの "billed by duration" は
+ * 「音声のやり取りがある時間」ではなく**セッションが開いている時間**だった。
  */
 const IDLE_HANGUP_MS = 45_000;
 
@@ -192,20 +196,65 @@ export const useRealtimeCall = (): UseRealtimeCall => {
         setState("error");
       };
 
+      // 開発時だけの計測用。**残してある。**
+      //
+      // このタイマーは上流のイベントの流れ方に依存していて、そこは公式に完全な一覧が
+      // 無い。**一度これを消してから直したせいで、直ったかどうかを確かめられずに
+      // もう一往復した。** 本番ビルドでは `process.env.NODE_ENV` の置換で消えるので、
+      // 置いておく費用がゼロ。次に挙動が変わったときは `npm run dev` で即わかる。
+      const startedAt = Date.now();
+      const probe = (...parts: unknown[]) => {
+        if (process.env.NODE_ENV === "production") return;
+        const at = ((Date.now() - startedAt) / 1000).toFixed(1).padStart(5);
+        console.log(`[call ${at}s]`, ...parts);
+      };
+
       const armIdleTimer = () => {
         if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-        idleTimerRef.current = setTimeout(hangUp, IDLE_HANGUP_MS);
+        idleTimerRef.current = setTimeout(() => {
+          probe("★ 無音タイマー発火");
+          hangUp();
+        }, IDLE_HANGUP_MS);
       };
 
       // イベント用のデータチャネル。後から足すには再ネゴシエーションが要るので、
       // 作るなら最初。
       //
-      // **どのイベントでも無音タイマーを叩き直す。** 発話のイベントだけを選り分ける
-      // ほうが正確だが、上流のイベント名を取り違えると**会話の最中に切る**。逆に
-      // 選り分けないと、キープアライブがあった場合にタイマーが発火しなくなる —— が、
-      // そちらは `MAX_CALL_MS` が拾う。**壊れ方が軽いほうへ倒している。**
+      // **`usage` を含むイベントでは叩き直さない。** 最初は「どのイベントでも叩き
+      // 直す」にしていて、**無音タイマーが一度も発火しなかった**。
+      //
+      // 2026-09-15 に実測した1通話の全イベント:
+      //
+      //     2.0s  session.started
+      //     4.9s〜5.9s  session.input_transcript.delta   （訪問者が喋った）
+      //     7.1s〜8.3s  session.output_transcript.delta  （man が喋った）
+      //    15.7s / 30.7s / 45.7s  session.usage.updated  （**15秒周期**）
+      //    53.3s ＝ 8.3 + 45.0 で発火
+      //
+      // 活動を示すのは transcript の2つだけ。定期的に流れるのは `usage` だけで、
+      // それが延々とリセットしていた。
+      //
+      // 除外リスト（ここに挙げたものを無視する）にしてあるのは、許可リスト（挙げた
+      // ものだけで叩き直す）だと**名前を1つ取りこぼしたときに会話の最中に切る**から。
+      // 除外リストの取りこぼしはタイマーが効かなくなるだけで、`MAX_CALL_MS` が拾う。
+      // **壊れ方が軽いほうを選ぶ。** `usage` が15秒周期だとわかったいまも、取りこぼし
+      // は3分以内に必ず止まる側に倒っている。
       const events = pc.createDataChannel("oai-events");
-      events.onmessage = armIdleTimer;
+      events.onmessage = (event) => {
+        let type = "";
+        try {
+          type = JSON.parse(event.data as string).type ?? "(type なし)";
+        } catch {
+          // JSON でないものが来たら、中身の判断はしない。会話の証拠として扱う。
+          type = "(JSON ではない)";
+        }
+        if (type.includes("usage")) {
+          probe("無視 :", type);
+          return;
+        }
+        probe("叩き直し:", type);
+        armIdleTimer();
+      };
 
       pc.onconnectionstatechange = () => {
         if (pc !== pcRef.current) return;
