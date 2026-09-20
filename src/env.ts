@@ -52,12 +52,9 @@ const publicSchema = z.object({
   /**
    * The contact function's URL.
    *
-   * An environment variable, unlike `siteConfig.statsUrl` which is hardcoded —
-   * and the reason for the difference is local development. The stats object has
-   * one address that works from everywhere; this one has two, because the
-   * function runs on `localhost:8080` under the Functions Framework while being
-   * written. Baking the deployed URL in would mean no way to exercise the form
-   * without deploying it.
+   * 環境変数にしてあるのは**ローカル開発のため**。この関数は書いている間
+   * `localhost:8080` の Functions Framework で動くので、宛先が2つある。デプロイ先の
+   * URL を焼き込むと、デプロイせずにフォームを試す手段が無くなる。
    *
    * The value is not a secret. `terraform/outputs.tf` says so plainly: the
    * endpoint is unauthenticated, so knowing the URL is not what protects it —
@@ -82,8 +79,7 @@ const publicSchema = z.object({
    * **既定値を置かないのが要点。** ここをリテラルにすると `npm run dev` でも
    * ビーコンが飛び、`localhost` のアクセスが本番の計測に混ざる。集めている当の
    * データが静かに汚れるので、既定値の無い任意項目にして「未設定ならビーコンを
-   * 出さない」を既定の挙動にしてある。`statsUrl` がリテラルなのと逆の判断で、
-   * 逆にしている理由がこれ。
+   * 出さない」を既定の挙動にしてある。
    */
   NEXT_PUBLIC_CF_BEACON_TOKEN: z.string().min(1).optional(),
 });
