@@ -37,8 +37,8 @@ export const REVEAL_DELAY = {
   rule: 420,
   cta: 480,
   lead: 500,
-  /** The figures panel. One object, so there is no per-item step. */
-  stats: 560,
+  /** いま動いている案件のパネル。1つの物として入るので、項目ごとの段差は無い。 */
+  projects: 560,
   body: 620,
   /**
    * 話しかけるボタン。**最後**。

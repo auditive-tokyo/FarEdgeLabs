@@ -3,7 +3,7 @@ import type { Locale } from "@/locales";
 
 import { HeroCopy } from "./hero-copy";
 import { HeroHeadline } from "./hero-headline";
-import { HeroStats } from "./hero-stats";
+import { HeroProjects } from "./hero-projects";
 import { HeroVoice } from "./hero-voice";
 
 export interface HeroProps {
@@ -70,7 +70,7 @@ export const Hero = ({ hero, locale, italicAccent = true }: HeroProps) => {
 
       <HeroVoice copy={hero.voice} locale={locale} />
 
-      <HeroStats stats={hero.stats} />
+      <HeroProjects projects={hero.projects} />
     </section>
   );
 };

@@ -55,9 +55,6 @@ and has been deleted.
 The browser talks to the backend directly — there is nothing between the two — and the
 two directions work differently:
 
-- **Reading the figures does not touch a function at all.** `work-statistics` writes a
-  public object to Cloud Storage and the page `fetch`es that. GCS answers the preflight
-  itself
 - **問い合わせの送信と通話の開始は、誰でも叩ける関数への `POST`。** そうするしかない —
   静的なページは提示できる資格情報を持たない。`contact-form` と `realtime-call` の
   2本がそれで、守りは全部それぞれのハンドラの中にある。See "The backend"
@@ -142,7 +139,7 @@ Sans is **Latin-only** — a Japanese OG card needs a font with the glyphs added
 
 **翻訳だけのコミットは作らない。** 差分がレビューできない大きさになり、`git blame` が全行そのコミットに付け替わって、そのコメントが書かれた理由を辿れなくなる。急いで揃える必要はない。英語のコメントが残っていること自体は不具合ではない。
 
-言語が変わってもコメントの基準は変わらない。**何をしているか**はコードが言うので書かない。書くのは**なぜそうなっているか**と、**素直に書くと何が壊れるか**。`gc_run_functions/work_statics/main.py` の `WINDOW_TIMEZONE` と `duration_to_hours` の注記が見本で、どちらも「もっともらしいが間違っている数字」がどこから出てくるかを説明している。訳すときにそこを削ってはいけない。日本語にした結果ただの要約になるなら、英語のまま残したほうがまだよい。
+言語が変わってもコメントの基準は変わらない。**何をしているか**はコードが言うので書かない。書くのは**なぜそうなっているか**と、**素直に書くと何が壊れるか**。`gc_run_functions/contact_form/main.py` 冒頭のレートリミッタの注記が見本で、**一度作って捨てたものを次の人が作り直さない**ために、実効性と代償を数字で並べている。訳すときにそこを削ってはいけない。日本語にした結果ただの要約になるなら、英語のまま残したほうがまだよい。
 
 英語のまま残すもの:
 
@@ -208,23 +205,26 @@ The hero's entrance is sequenced by one signal: `<IntroReveal>` fires
 **every millisecond in `reveal.ts` is one the visitor waits**; treat the budget as
 something to spend down.
 
-> [!important] `hero.stats` の数字は実測値。作らないこと
+> [!important] 右下のパネルは数字ではなく、いま動いている案件
 > テンプレートの 2×2 グリッド（Projects / Clients / Uptime / Rating）は捨てた。あれは
-> 実績のある会社を描いていて、この会社には数える実績が無かった。いまは `<dl>` 1枚に
-> **クライアント数・プロジェクト数・稼働時間**の3行で、値は Jibble の打刻から
-> `work-statistics` 関数が日次で集計している。行はデータなので、増減はレイアウトの
-> 問題ではない。
+> 実績のある会社を描いていて、この会社には数える実績が無かった。
 >
-> **`—` が出ているのは壊れているのではない。** 初回描画と、関数やバケットが落ちた日の
-> 設計された状態。`fetchWorkStatistics` は失敗を全部 `null` に潰す（見せるものが何も
-> 無いので、対処が1つしかない）。リトライもスケルトンも足さないこと。
+> 次に置いたのが `hero.stats` —— クライアント数・プロジェクト数・稼働時間の3行を、
+> Jibble の打刻から `work-statistics` 関数が日次で集計していた。**これも捨てた**
+> （2026-09-18）。理由は「数字が小さいから」ではなく、**稼働時間が固定値になっていた
+> から** —— 実測でない値が1つ混ざった時点で、パネル全体が「実測です」と言えなくなる。
 >
-> **数字は休むと下がる。** 直近30日の窓なので当然で、累計に変えれば下がらないが累計は
-> 「いま」を何も語らない。見栄えのために黙って累計へ変えないこと。
+> いまは `hero.projects`（`src/views/home/hero-projects.tsx`）で、**いま動いている案件を
+> 文で書いている。** 何をやっているかが直接書いてあるぶん、数字より多くを語る。
 >
-> `Rating` は数字としては戻さない。評価が付いたら Google のレビューへ**リンクする**
-> 方針で、星の隣に打ち直した数字はリンク元より価値が低い。つまりレイアウトのどこかの
-> リンクであって、この一覧の行ではない。
+> **顧客名は書かない。** 業種と担当範囲まで。受託なので、名前を出すのは別途同意が要る
+> 判断になる。`<details>` にその断りが入っている。
+>
+> **稼働統計の機構は丸ごと消した**（同日）。`src/lib/work-statistics.ts`、`work-statistics`
+> 関数、Cloud Scheduler、公開バケット、Jibble のシークレット2つ、deployer の
+> `cloudscheduler.admin`、`site_origins`、`siteConfig.statsUrl` —— 全部。読み手が消えた
+> 時点で、書き手だけ残す理由が無かった。**Jibble はアカウントごと解約**したので、資格情報も
+> 残していない。
 
 > [!important] The blank hero on old browsers is a decision, not a bug
 > `<HalftoneVideo>` needs **WebGL2** and **`createImageBitmap`**, both of which
@@ -350,12 +350,12 @@ Federation removes the reason to avoid CI.
 - There is **no `pull_request` trigger**, because the release PR is opened with
   `GITHUB_TOKEN` and **GitHub raises no workflow event for it**. Do not add one back
   expecting it to fire
-- **There are two functions and they have opposite exposure.** `work-statistics` is
-  private: `roles/run.invoker` goes to the scheduler's service account **on the
-  underlying Cloud Run service** — granting `cloudfunctions.invoker` instead is how a
-  gen2 function keeps answering 403. `contact-form` grants the same role to
-  **`allUsers`**, because a static page has no credential to present. It is the only
-  resource here for which that is correct
+- **関数は2本で、どちらも無認証。** `contact-form` と `realtime-call` が
+  `roles/run.invoker` を **`allUsers`** に渡している。静的なページは提示できる資格情報を
+  持たないので、これが正しい。守りはそれぞれのハンドラの中。
+  **私物の関数を作るときのために1つ:** gen2 の関数を非公開にするなら、`run.invoker` を
+  **裏の Cloud Run サービスに**付ける。`cloudfunctions.invoker` を付けるのが、関数が
+  403 を返し続ける典型的な原因。以前 `work-statistics` がその形で動いていた
 - **`contact-form` has no rate limiter, and that was a decision.** One was built —
   Firestore, TTL, sliding window — and removed: three in five minutes still passes 864
   a day, distributing the source misses per-IP entirely, and what remained overlapped

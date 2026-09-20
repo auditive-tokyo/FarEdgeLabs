@@ -13,11 +13,26 @@
   },
   "_nav_readme": "`path` is the page's own segment, with no locale in it. The URL is assembled by localeHref(locale, path) (src/locales/index.ts). Do not write hrefs here — that is how a locale prefix ends up doubled or missing.",
   "nav": [
-    { "label": "Home", "path": "" },
-    { "label": "Services", "path": "services" },
-    { "label": "Works", "path": "works" },
-    { "label": "About", "path": "about" },
-    { "label": "Contact", "path": "contact" }
+    {
+      "label": "Home",
+      "path": ""
+    },
+    {
+      "label": "Services",
+      "path": "services"
+    },
+    {
+      "label": "Works",
+      "path": "works"
+    },
+    {
+      "label": "About",
+      "path": "about"
+    },
+    {
+      "label": "Contact",
+      "path": "contact"
+    }
   ],
   "underConstruction": {
     "heading": "Under construction",
@@ -37,10 +52,19 @@
     "optional": "(optional)",
     "_fields_readme": "Only `message` has a placeholder. The test is whether it says something the label cannot: a sample company name is an example, not a format, and it silently picks a side on where 株式会社 goes in Japanese (this company puts it last). Name and email are fully described by their labels. A placeholder also disappears the moment someone starts typing, and whether it is announced varies by screen reader — it is not the place for a restatement of the label. `message` keeps one because \"what should I write here\" does not fit in a label.",
     "fields": {
-      "company": { "label": "Company" },
-      "name": { "label": "Name" },
-      "email": { "label": "Email" },
-      "message": { "label": "Message", "placeholder": "Tell us the background, and what you are trying to make possible." }
+      "company": {
+        "label": "Company"
+      },
+      "name": {
+        "label": "Name"
+      },
+      "email": {
+        "label": "Email"
+      },
+      "message": {
+        "label": "Message",
+        "placeholder": "Tell us the background, and what you are trying to make possible."
+      }
     },
     "submit": {
       "idle": "Send",
@@ -63,20 +87,23 @@
     "headlineAccent": "edge",
     "lead": "From proof of concept to production",
     "body": "Serverless on AWS and GCP: AI agents, distributed data pipelines and feature engineering, and inference models quantised to fit their hardware budget. Requirements without precedent, delivered as working systems.",
-    "stats": {
-      "scope": "Activity, last 30 days",
-      "placeholder": "—",
+    "projects": {
+      "scope": "Current engagements",
       "items": [
-        { "field": "clients", "label": "Clients", "suffix": "" },
-        { "field": "projects", "label": "Projects", "suffix": "" },
-        { "field": "hours", "label": "Hours tracked", "suffix": "h" }
+        {
+          "role": "Machine learning engineer",
+          "body": "Machine learning and quantisation, plus application development. Feature design and pipeline construction."
+        },
+        {
+          "role": "Tech lead on an online sports simulation game",
+          "body": "Leading the development team across the whole stack, application through infrastructure. Four months in, it has moved to serverless: far stronger under concurrent load, at 60% lower operating cost."
+        }
       ],
       "note": {
-        "summary": "What are these figures?",
+        "summary": "Which clients?",
         "body": [
-          "The lead engineer's tracked time over the last 30 days, pulled from Jibble's API and compiled daily.",
-          "It is mostly for the fun of building it — there is no deeper meaning in the numbers.",
-          "They may still serve as a rough indicator if you are considering an engagement."
+          "These are client engagements, so the clients are not named — the sector and the role are as far as it goes.",
+          "Get in touch through the contact form if you would like to know more."
         ]
       }
     },

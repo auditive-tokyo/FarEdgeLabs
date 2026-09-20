@@ -1,8 +1,7 @@
 """お問い合わせフォームの受け口 — Cloud Run function。
 
-ブラウザから直接叩かれる。`work_statistics` と違って**公開（`allUsers` に
-`run.invoker`）が必須**で、そこがこの関数の設計を全部決めている。前段に認証がない
-ので、防御はこのファイルの中にしかない。
+ブラウザから直接叩かれるので**公開（`allUsers` に `run.invoker`）が必須**で、そこが
+この関数の設計を全部決めている。前段に認証がないので、防御はこのファイルの中にしかない。
 
     # ローカル、Functions Framework 越しに本番と同じ形で叩く
     functions-framework --target submit_contact_form --debug
@@ -395,6 +394,5 @@ try:  # pragma: no cover - 直接実行したときは無い
 
     submit_contact_form = functions_framework.http(submit_contact_form)
 except ImportError:
-    # `work_statics/main.py` と同じ理由で生かしてある。関数単体は Framework 無しでも
-    # import して試せる。
+    # 関数単体は Framework 無しでも import して試せるように、握り潰す。
     pass

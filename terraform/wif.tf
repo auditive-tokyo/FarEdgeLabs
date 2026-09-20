@@ -80,7 +80,6 @@ locals {
     "roles/secretmanager.admin",
     "roles/cloudfunctions.admin",
     "roles/run.admin",
-    "roles/cloudscheduler.admin",
     "roles/iam.serviceAccountAdmin",
     "roles/iam.serviceAccountUser",
     "roles/iam.workloadIdentityPoolAdmin",

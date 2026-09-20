@@ -11,12 +11,12 @@
  * different things. What stays here is what is not language: file paths for the
  * mark and the clip.
  *
- * > [!note] Placeholder figures
- * > `hero.stats` is still the template's slots with their numbers removed. Fill
- * > them with real figures or drop the section before this goes to production —
- * > inventing metrics is worse than having none. The social-proof pill that sat
- * > beside it is gone for the same reason: it claimed trust the site cannot
- * > evidence, and its three faces were stock decoration.
+ * > [!note] 作った数字を置かない
+ * > テンプレートの `hero.stats`（Projects / Clients / Uptime / Rating）は、数字を
+ * > 抜いた枠だけが残っていた。**枠を埋めずに捨てた。** いまその場所にあるのは
+ * > `hero.projects` —— いま動いている案件を文で書いたもので、数えた値ではない。
+ * > 横にあった social-proof のピルも同じ理由で消えている（証拠の無い信頼を主張し、
+ * > 3つの顔はストック素材だった）。
  */
 
 import { getCopy, localeHref, type Locale } from "@/locales";
