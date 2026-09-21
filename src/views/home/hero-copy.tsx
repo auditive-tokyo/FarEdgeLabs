@@ -25,19 +25,27 @@ export interface HeroCopyProps {
  * the headline turned through ninety degrees, which is what keeps the two
  * reading as one entrance rather than two effects.
  *
- * > [!note] Each `<TextEngine>` sits inside its own positioned box
- * > The engine writes `position: relative` into its root's inline style to
- * > anchor the layers it measures, and inline style beats a class — so an
- * > `absolute` utility on the engine itself is silently dropped. The wrapper
- * > carries the position; the engine only carries type.
+ * > [!important] 座標は箱1つぶんだけ。中身は内容に追随させる
+ * > 以前は罫線・lead・body の3つがそれぞれ `lg:absolute` で別々の座標を持ち、
+ * > 段落の間隔は **`top` の差**（10.25rem）でできていた。フレームはいまより長い
+ * > コピーを前提に引かれていたので、`検証から、本番まで` の1行に縮んだ時点で
+ * > **その下に7〜8rem の空白が残った**。
+ * >
+ * > 座標を詰めても直らない。罫線は `h-60` 固定で「lead の頭から body の足まで」を
+ * > 張る寸法なので、body を上げると今度は罫線が下に余る。**コピーの長さが変わる
+ * > たびに2つの数字を調整し直す形**になっていた。
+ * >
+ * > いまは箱1つ（`lg:left-7.5 / lg:top-[24.3125rem] / lg:w-[27.6875rem]`）だけを
+ * > 置いて、中はスマホと同じ flex。罫線は伸び、段落は `gap` で離れる。**幅と左端は
+ * > フレームのまま**（罫線 1.875rem、本文 3.875rem、本文幅 25.6875rem から算出）。
+ * >
+ * > `lg:contents` は要らなくなった。あれは「各ピースをセクションに対して置く」ための
+ * > 仕掛けで、置く対象が1つになれば入れ子を消す理由も無い。
  *
- * > [!note] `lg:contents` is what lets one DOM serve both layouts
- * > On a phone the rule is a real flex item that stretches beside the copy, so
- * > it needs a row to live in and the paragraphs need a column. The frame has no
- * > such nesting — each piece is placed against the section. Dropping the two
- * > wrappers to `display: contents` at `lg` removes their boxes, so the
- * > paragraphs position against the section exactly as before rather than
- * > against a wrapper that only mobile needed.
+ * > [!note] `<TextEngine>` に `absolute` は効かない
+ * > エンジンはルートのインラインスタイルに `position: relative` を書き込むので、
+ * > クラスの `absolute` は静かに落ちる。**位置を持たせるなら必ず外側の箱に。**
+ * > いまは絶対配置が箱1つだけなので、段落を包む必要は無くなっている。
  */
 export const HeroCopy = ({ lead, body }: HeroCopyProps) => {
   const isRevealed = useIntroRevealed();
@@ -51,20 +59,22 @@ export const HeroCopy = ({ lead, body }: HeroCopyProps) => {
        card sits *in* the field rather than punching a hole in it. Below about
        `/70` the body copy starts losing contrast against the darkest part of the
        subject, which is the floor to tune against.
-       `lg:contents` removes this box entirely, and an element that generates no
-       box paints no background — so the card disappears at `lg` without a single
-       override.
+       `lg` ではカードの装飾だけを外す（`lg:rounded-none lg:bg-transparent lg:p-0`）。
+       箱そのものは残す —— **フレームの座標を持つのがこの箱**だから。以前は
+       `lg:contents` で箱ごと消しており、「箱を生成しない要素は背景も塗らない」ので
+       上書きが1つも要らなかった。座標を中の3要素が分担していたぶん、その手が使えた。
        No `backdrop-blur`: the field behind it is a WebGL canvas redrawing every
        frame, and a backdrop filter would have to re-blur it just as often. A
        near-opaque ground costs nothing per frame and reads the same. */
-    <div className="flex gap-4 rounded-card bg-surface/75 p-5 lg:contents">
-      {/* Drawn downward from the top, so it reads as the copy's spine arriving
-          rather than a line fading up. On mobile it stretches to the column it
-          sits beside; the frame gives it a fixed length. */}
+    <div className="flex gap-4 rounded-card bg-surface/75 p-5 lg:absolute lg:left-7.5 lg:top-[24.3125rem] lg:w-[27.6875rem] lg:gap-8 lg:rounded-none lg:bg-transparent lg:p-0">
+      {/* 上から下へ引かれる。コピーの背骨が届く動きで、線が浮き上がるのとは別物。
+          **長さは指定しない** —— flex アイテムとして隣の段落の高さまで伸びる。
+          以前は `lg` だけ `h-60`（15rem）固定で、「lead の頭から body の足まで」に
+          合わせた寸法だった。コピーが縮んだ日に合わなくなる書き方だった。 */}
       <Inview
         tag="span"
         aria-hidden="true"
-        className="w-px shrink-0 origin-top bg-foreground lg:absolute lg:left-7.5 lg:top-[24.3125rem] lg:h-60"
+        className="w-px shrink-0 origin-top bg-foreground"
         from={{ scaleY: 0 }}
         to={{ scaleY: 1 }}
         config={REVEAL_SPRING}
@@ -73,38 +83,34 @@ export const HeroCopy = ({ lead, body }: HeroCopyProps) => {
         enabled={isRevealed}
       />
 
-      <div className="flex flex-col gap-6 lg:contents">
-        <div className="lg:absolute lg:left-[3.875rem] lg:top-[24.3125rem] lg:w-[25.6875rem]">
-          <TextEngine
-            tag="p"
-            className="text-lead leading-[1.2]"
-            mode="once"
-            enabled={isRevealed}
-            delayIn={REVEAL_DELAY.lead}
-            wordOut={WORD_OUT}
-            wordIn={WORD_IN}
-            wordStagger={WORD_STAGGER}
-            wordConfig={REVEAL_SPRING}
-          >
-            {lead}
-          </TextEngine>
-        </div>
+      <div className="flex flex-col gap-6">
+        <TextEngine
+          tag="p"
+          className="text-lead leading-[1.2]"
+          mode="once"
+          enabled={isRevealed}
+          delayIn={REVEAL_DELAY.lead}
+          wordOut={WORD_OUT}
+          wordIn={WORD_IN}
+          wordStagger={WORD_STAGGER}
+          wordConfig={REVEAL_SPRING}
+        >
+          {lead}
+        </TextEngine>
 
-        <div className="lg:absolute lg:left-[3.875rem] lg:top-[34.5625rem] lg:w-[25.6875rem]">
-          <TextEngine
-            tag="p"
-            className="text-body leading-[1.2]"
-            mode="once"
-            enabled={isRevealed}
-            delayIn={REVEAL_DELAY.body}
-            wordOut={WORD_OUT}
-            wordIn={WORD_IN}
-            wordStagger={WORD_STAGGER}
-            wordConfig={REVEAL_SPRING}
-          >
-            {body}
-          </TextEngine>
-        </div>
+        <TextEngine
+          tag="p"
+          className="text-body leading-[1.2]"
+          mode="once"
+          enabled={isRevealed}
+          delayIn={REVEAL_DELAY.body}
+          wordOut={WORD_OUT}
+          wordIn={WORD_IN}
+          wordStagger={WORD_STAGGER}
+          wordConfig={REVEAL_SPRING}
+        >
+          {body}
+        </TextEngine>
       </div>
     </div>
   );
