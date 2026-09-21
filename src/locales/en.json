@@ -154,8 +154,8 @@
   "hero": {
     "headline": "Beyond the leading",
     "headlineAccent": "edge",
-    "lead": "From proof of concept to production",
-    "body": "Serverless on AWS and GCP: AI agents, distributed data pipelines and feature engineering, and inference models quantised to fit their hardware budget. Requirements without precedent, delivered as working systems.",
+    "lead": "Measure first, then decide",
+    "body": "Serverless on AWS and GCP: AI agents, distributed data pipelines and feature engineering, and inference models quantised to fit their hardware budget. What gets built is decided on measured numbers rather than datasheets, so what is not needed does not get built. Delivered as systems that run.",
     "projects": {
       "scope": "Current engagements",
       "items": [
