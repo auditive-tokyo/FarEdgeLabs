@@ -44,6 +44,8 @@ export const getHomeContent = (locale: Locale) => {
      * switch need the segment itself.
      */
     contact: copy.contact,
+    /** 実績ページのコピー。`contact` と同じで、ページ単位の塊をそのまま渡す。 */
+    works: copy.works,
     hero: {
       ...copy.hero,
       /**

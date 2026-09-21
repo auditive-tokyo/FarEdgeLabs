@@ -43,5 +43,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "yearly" as const,
       priority: 0.8,
     },
+    {
+      // 実績。案件が増減するので `contact` より更新頻度が高い。優先度は同じ —
+      // 「納得したあとに行く先」という点で contact と同格で、説得するのは home。
+      url: `${siteConfig.url}${localeHref(locale, getCopy(locale).works.path)}`,
+      lastModified,
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    },
   ]);
 }
