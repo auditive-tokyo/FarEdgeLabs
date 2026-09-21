@@ -1,6 +1,6 @@
 {
   "_readme": "Every user-facing string in English. JSON rather than TS on purpose: scripts/generate-brand-assets.mjs runs in plain Node and reads this same file, so the Open Graph card and the page cannot drift apart. Keys must match ja.json — src/locales/index.ts types both as one shape. Asset paths and layout live in src/data/mocks/home.ts.",
-  "_stats_readme": "hero.stats labels must stay unique: <HeroStats> keys its cards by label. The values are placeholders awaiting real figures — fill them in or drop the section rather than inventing numbers.",
+  "_projects_readme": "hero.projects roles must stay unique: <HeroProjects> keys its items by role. The same applies to works.groups[].items[].title.",
   "meta": {
     "title": "FarEdge Labs — Beyond the leading edge",
     "description": "Serverless on AWS and GCP: AI agents, distributed data pipelines and feature engineering, inference model quantisation. From proof of concept to production.",
@@ -81,6 +81,75 @@
       "turnstile": "The check has not finished yet. Give it a moment.",
       "failed": "It could not be sent. Please try again in a little while."
     }
+  },
+  "works": {
+    "path": "works",
+    "heading": "Selected work",
+    "lead": "FarEdge Labs was incorporated on 29 July 2026, so what follows is the lead engineer's own record rather than the company's. The work was carried out under contract, on client sites or inside an employer — in every case for another company, which is why none of them can be named. Clients who agree to being named on the web will be named here from now on.",
+    "groups": [
+      {
+        "title": "Current",
+        "items": [
+          {
+            "title": "Machine learning models: training, quantisation and deployment",
+            "body": "From model development through quantisation to running inside a real application. Feature design and data pipelines included."
+          },
+          {
+            "title": "Online sports simulation game — tech lead",
+            "body": "Leading the development team across the whole stack, application through infrastructure. Moved to serverless: far stronger under concurrent load, at 60% lower operating cost."
+          },
+          {
+            "title": "Corporate site and internal cloud platform (this site)",
+            "body": "A statically exported Next.js front end, a halftone renderer in WebGL / GLSL, and GCP serverless functions provisioned entirely with Terraform. Speak to the figure in the hero and a full-duplex voice conversation opens — the speaking model and the reasoning model are separate, and the function only relays one SDP offer, so no infrastructure of mine sits in the media path however long the call runs. Deployment authenticates through Workload Identity Federation, so there are no long-lived credentials anywhere."
+          }
+        ]
+      },
+      {
+        "title": "Previously",
+        "items": [
+          {
+            "title": "Systems for a major automotive manufacturer",
+            "body": "Full-stack work on driving analysis, a road information API and a health-data integration. One of the team that laid the infrastructure-as-code foundation, redesigning the AWS architecture and rebuilding nearly every resource in it, from the build platform through to the application runtime — runtime environments, monitoring and alerting, and a cross-account bulk data migration. Proposals went to the product owner, and what was approved I implemented, rebuilding the system to deliver the same capability or better on fewer resources."
+          },
+          {
+            "title": "Hotel support AI and automated check-in",
+            "body": "A hashed URL emailed two days before arrival signs the guest in over JWT, so there is no account to create. Identity documents go through AppSync into S3 and guest details into DynamoDB, both encrypted with KMS, which satisfies the guest identification Japanese hotel law requires without staff in the loop — except the final match, which stays with a person. On the support side, a RAG and parallel-tool-calling agent answers enquiries and hands over the ones it cannot."
+          },
+          {
+            "title": "Edge AI inference benchmarking PoC",
+            "body": "Testing whether an embedded AI accelerator's quoted performance holds up under a real workload. Handled INT8 quantisation (PTQ and QAT), ONNX conversion, inference and measurement — and answered the adoption question with measured numbers rather than the datasheet."
+          },
+          {
+            "title": "Internal operations system",
+            "body": "Digitised time tracking, goal setting and payslips. Rather than standing up a new database, it used the Notion API to fit the operation the company already ran on. As tech lead: requirements, task breakdown, and allocating and tracking work across the team."
+          },
+          {
+            "title": "Cryptocurrency price prediction PoC",
+            "body": "A multi-step Transformer forecast built in TensorFlow. Compared several feature configurations and dropped the news-derived features, which showed no measurable contribution."
+          },
+          {
+            "title": "Maintenance and feature work on a major metaverse platform",
+            "body": "Proposed and led full automation of performance and load testing. Built the harness in FastAPI, automatic transfer of results to S3, and graphing and report generation from CloudWatch logs."
+          },
+          {
+            "title": "Agricultural field scoring PoC",
+            "body": "Pulled Sentinel-2 NDVI and SAR data through Google Earth Engine and designed per-field scoring. Combined two observation types with different characteristics, so cloud-obscured optical data could be filled in."
+          },
+          {
+            "title": "Question answering AI for ophthalmologists",
+            "body": "Embedded medical papers into a knowledge base and generated answers through vector search. An early BERT fine-tune was replaced with an external API — the binding constraint turned out to be latency and running cost, not accuracy."
+          },
+          {
+            "title": "Serverless CMS",
+            "body": "React / Vite with AWS CDK. The project started on AppSync and moved off it — a GraphQL layer was heavier to run and more expensive to bill than this needed — leaving API Gateway calling Lambda, with everything resolved against DynamoDB and S3. CMS-equivalent features without depending on WordPress, handed over as a template that stays easy to edit."
+          },
+          {
+            "title": "Cloud migration and a production management platform",
+            "body": "Moved a medical device manufacturer off on-premises infrastructure entirely. The file server went to AWS FSx, a production management system was built from scratch with role-based access control, and the entry point was redesigned around CloudFront, WAF and an ALB in a private subnet."
+          }
+        ]
+      }
+    ]
   },
   "hero": {
     "headline": "Beyond the leading",
