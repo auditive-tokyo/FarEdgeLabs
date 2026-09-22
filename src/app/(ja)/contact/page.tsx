@@ -12,8 +12,8 @@ export const metadata: Metadata = buildMetadata({
   path: PATH,
   title: `${getCopy(LOCALE).contact.heading} — FarEdge Labs`,
   description: getCopy(LOCALE).contact.body,
-  // `noindex` は付けない。プレースホルダー3枚と違って中身があり、検索から直接来て
-  // ほしい唯一の下層ページ。`src/app/sitemap.ts` にも入れてある。
+  // `noindex` は付けない。中身のあるページなので `src/app/sitemap.ts` にも入れてある。
+  // 残るプレースホルダーは `about` の1枚だけ。
 });
 
 export default function Contact() {

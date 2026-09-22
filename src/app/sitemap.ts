@@ -10,14 +10,12 @@ import { getCopy, localeHref, locales } from "@/locales";
  * other: they are separate URLs serving separate content, and the `hreflang`
  * tags in the pages themselves are what relate them.
  *
- * The `/services`, `/works` and `/about` placeholders are **deliberately absent**.
- * A sitemap is a request to index, and those pages have nothing to index yet —
- * they also carry `noindex`, so listing them would be asking for something and
- * refusing it in the same breath. Add each one here when it becomes a real page.
+ * **`/about` だけが載っていない。** まだプレースホルダーで、`noindex` を付けてある。
+ * sitemap はインデックスの要求なので、載せると**要求しながら同じ息で断る**ことになる。
+ * 実ページになったらここに足す。
  *
- * `/contact` **is** here, and carries no `noindex`, because it is a real page.
- * Lower priority than home: it is where someone goes after being convinced, not
- * the page that does the convincing.
+ * home 以外は priority 0.8 で揃えてある。**説得するのは home** で、他は納得した人が
+ * 行く先だから。`/works` だけ `changeFrequency` が `monthly` なのは案件が増減するため。
  */
 
 // Required by `output: "export"` — metadata routes have no server to run on,
@@ -49,6 +47,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${siteConfig.url}${localeHref(locale, getCopy(locale).works.path)}`,
       lastModified,
       changeFrequency: "monthly" as const,
+      priority: 0.8,
+    },
+    {
+      // サービス。頼めることの一覧なので、実績より動かない。
+      url: `${siteConfig.url}${localeHref(locale, getCopy(locale).services.path)}`,
+      lastModified,
+      changeFrequency: "yearly" as const,
       priority: 0.8,
     },
   ]);
