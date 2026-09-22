@@ -46,6 +46,8 @@ export const getHomeContent = (locale: Locale) => {
     contact: copy.contact,
     /** 実績ページのコピー。`contact` と同じで、ページ単位の塊をそのまま渡す。 */
     works: copy.works,
+    /** サービスページのコピー。`contact` / `works` と同じ渡し方。 */
+    services: copy.services,
     hero: {
       ...copy.hero,
       /**

@@ -109,7 +109,7 @@
         "items": [
           {
             "title": "Systems for a major automotive manufacturer",
-            "body": "Full-stack work on driving analysis, a road information API and a health-data integration. One of the team that laid the infrastructure-as-code foundation, redesigning the AWS architecture and rebuilding nearly every resource in it, from the build platform through to the application runtime — runtime environments, monitoring and alerting, and a cross-account bulk data migration. Proposals went to the product owner, and what was approved I implemented, rebuilding the system to deliver the same capability or better on fewer resources."
+            "body": "Full-stack work on driving analysis, a road information API and a health-data integration. One of the team that laid the infrastructure-as-code foundation, redesigning the AWS architecture from the build platform through to the application runtime, monitoring and alerting and a cross-account bulk data migration included. Proposals went to the product owner and the accepted ones I implemented. The always-on Tomcat / Java 8 stack was migrated in stages until no long-running instance was left, and the last step was settled by measurement — moving the implementation language from Java to Python more than halved the memory each invocation needed, and Lambda bills on memory × time."
           },
           {
             "title": "Hotel support AI and automated check-in",
@@ -150,6 +150,67 @@
         ]
       }
     ]
+  },
+  "services": {
+    "path": "services",
+    "heading": "Services",
+    "lead": "Contract development. The five below are the usual shapes a request takes, and they combine freely. Why no client is named is explained on the work page.",
+    "offeringsTitle": "What you can ask for",
+    "offerings": [
+      {
+        "title": "Building something new",
+        "body": "Requirements through to production release — front end, back end, runtime platform, CI/CD and security design, all of it."
+      },
+      {
+        "title": "Rearchitecting an existing system, and cutting what it costs",
+        "body": "Revisiting architecture built around always-on servers. Usually that means moving toward serverless, without forcing anything that genuinely has to stay running. How much there is to save depends on the system, so the first thing delivered is a measurement and an estimate."
+      },
+      {
+        "title": "Getting machine learning into production",
+        "body": "The strength is less in training a model than in landing one somewhere it actually runs: ONNX conversion, INT8 quantisation, feature design, and measured inference performance."
+      },
+      {
+        "title": "Technical validation and proofs of concept",
+        "body": "Producing what you need in order to decide. Measured numbers from a real workload rather than a datasheet, shaped so the adoption question and the running-cost question can both be answered."
+      },
+      {
+        "title": "Making a codebase an agent can work in",
+        "body": "Getting a codebase into a state where an agent can read it and be useful: conventions and documentation designed for that, and AI review wired into CI. The point is that your team can keep working the same way after handover."
+      },
+      {
+        "title": "Joining your team",
+        "body": "Either holding one area as a member or leading the whole application as tech lead. Implementing tickets is not where it stops — design improvements get proposed actively, and when one is accepted the implementation comes with it."
+      }
+    ],
+    "layersTitle": "Layers covered",
+    "layers": [
+      {
+        "layer": "Web front end",
+        "example": "React + Vite / Next.js / TypeScript"
+      },
+      {
+        "layer": "Native applications",
+        "example": "C++ / JUCE, real-time signal processing"
+      },
+      {
+        "layer": "Back end",
+        "example": "Python, Node.js, Go, Java"
+      },
+      {
+        "layer": "Runtime platform",
+        "example": "Serverless by preference, without forcing what has to stay running. AWS and GCP, provisioned as code, including platforms for large-scale distributed processing"
+      },
+      {
+        "layer": "Machine learning",
+        "example": "Inference optimisation and quantisation, feature design, model development"
+      },
+      {
+        "layer": "AI features",
+        "example": "RAG and knowledge bases, agents and tool calling, realtime voice"
+      }
+    ],
+    "languagesTitle": "Languages",
+    "languages": "Python, TypeScript, Go, Java, C++, Dart"
   },
   "hero": {
     "headline": "Beyond the leading",

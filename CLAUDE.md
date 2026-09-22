@@ -75,11 +75,14 @@ src/app/
 ├─ (ja)/layout.tsx       root layout, locale="ja"  → /
 ├─ (ja)/page.tsx         + not-found / loading / error
 ├─ (ja)/contact/         → /contact/          a real page, in the nav
-├─ (ja)/{services,works,about}/               placeholders, noindex
+├─ (ja)/services/        → /services/         a real page, in the nav
+├─ (ja)/works/           → /works/            a real page, in the nav
+├─ (ja)/about/                                the last placeholder, noindex
 ├─ (en)/layout.tsx       root layout, locale="en"
 ├─ (en)/en/page.tsx      → /en/
 ├─ (en)/en/contact/      → /en/contact/
-└─ (en)/en/{services,works,about}/
+├─ (en)/en/{services,works}/
+└─ (en)/en/about/
 ```
 
 `not-found` / `loading` / `error` exist only under `(ja)`. A new segment needs a
